@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import "./Splash.css";
+import "./static/Splash.css";
 
 function Splash() {
     return (
