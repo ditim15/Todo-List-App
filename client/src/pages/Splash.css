@@ -1,0 +1,45 @@
+.splash-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 2rem;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.splash-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.splash-container p {
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 2rem;
+    max-width: 400px;
+}
+
+.splash-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.splash-links a {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.splash-links a:first-child {
+    background-color: #2453eb;
+    color: white;
+}
+
+.splash-links a:last-child {
+    background-color: transparent;
+    color: #2563eb;
+    border: 1px solid #2563eb;
+}
