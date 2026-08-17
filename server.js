@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorhandler.js";
 import helmet from 'helmet';
+import cors from 'cors';
 
 dotenv.config({
     path: './.env'
@@ -11,6 +12,10 @@ const app = express();
 
 app.use(helmet());
 app.use(express.json());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
 
 import authRouter from "./routes/auth.js";
 import todosRouter from "./routes/todos.js";
