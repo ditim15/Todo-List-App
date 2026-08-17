@@ -1,11 +1,40 @@
-import { createContext, useContext, useState } from "react";
-import { loginUser } from "../api/auth";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { loginUser, refreshAccessToken } from "../api/auth";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [accessToken, setAccessToken] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const hasRun = useRef(false);
+
+    useEffect(() => {
+        if (hasRun.current) return;
+        hasRun.current = true;
+
+        async function restoreSession() {
+            const storedRefreshToken = localStorage.getItem('refreshToken');
+
+            if (!storedRefreshToken) {
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const data = await refreshAccessToken(storedRefreshToken);
+                setAccessToken(data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+            } catch (error) {
+                console.error('Refresh failed:', error.message);
+                localStorage.removeItem('refreshToken');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        restoreSession();
+    }, []);
 
     async function login(email, password) {
         const data = await loginUser(email, password);
@@ -27,6 +56,7 @@ export function AuthProvider({ children }) {
         user,
         accessToken,
         isAuthenticated: !!accessToken,
+        isLoading,
         login,
         logout,
     };
