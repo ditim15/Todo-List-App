@@ -13,3 +13,10 @@ export function refreshAccessToken(refreshToken) {
         body: JSON.stringify({ refreshToken }),
     });
 }
+
+export function registerUser(name, email, password) {
+    return apiRequest('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password }),
+    });
+}
