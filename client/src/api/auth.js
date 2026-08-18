@@ -1,5 +1,8 @@
 import { apiRequest } from "./client";
 
+// Auth endpoints. These are unauthenticated (no access token required), unlike the
+// todos endpoints in api/todos.js which go through AuthContext's authFetch.
+
 export function loginUser(email, password) {
     return apiRequest('/auth/login', {
         method: 'POST',

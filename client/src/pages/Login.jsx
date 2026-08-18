@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import './static/Login.css';
 
+// Login form: authenticates via AuthContext.login and redirects to the dashboard on success.
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -20,6 +21,7 @@ function Login() {
             await login(email, password);
             navigate('/dashboard');
         } catch (err) {
+            // login() throws with a user-facing message (see api/client.js apiRequest).
             setError(err.message);
         } finally {
             setIsLoading(false);

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import './static/Register.css';
 
+// Registration form: creates an account via AuthContext.register (which also logs the
+// user in) and redirects to the dashboard on success.
 function Register() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -17,6 +19,7 @@ function Register() {
         e.preventDefault();
         setError('');
 
+        // Client-side check only; the server does not receive confirmPassword.
         if (password !== confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -28,6 +31,7 @@ function Register() {
             await register(name, email, password);
             navigate('/dashboard');
         } catch (err) {
+            // register() throws with a user-facing message (see api/client.js apiRequest).
             setError(err.message);
         } finally {
             setIsLoading(false);

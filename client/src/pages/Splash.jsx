@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import "./static/Splash.css";
 
+// Public landing page; entry point for new visitors to register or log in.
 function Splash() {
     return (
         <div className="splash-container">

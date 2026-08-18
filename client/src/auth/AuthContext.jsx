@@ -3,16 +3,25 @@ import { loginUser, registerUser, refreshAccessToken } from "../api/auth";
 
 const AuthContext = createContext(null);
 
+// Provides auth state (user, access token) and auth-related actions to the whole app.
+// Access tokens are kept in memory only; refresh tokens are persisted to localStorage
+// so a session can be restored across page reloads.
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [accessToken, setAccessToken] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    // Guards against React StrictMode/dev double-invoking this effect, which would
+    // otherwise fire two concurrent refresh requests on mount.
     const hasRun = useRef(false);
 
     useEffect(() => {
         if (hasRun.current) return;
         hasRun.current = true;
 
+        // On load, try to silently re-authenticate using a stored refresh token so the
+        // user doesn't have to log in again after a page refresh. Note: this only
+        // restores accessToken, not `user` — the user object is unavailable until a
+        // fresh login/register call.
         async function restoreSession() {
             const storedRefreshToken = localStorage.getItem('refreshToken');
 
@@ -46,6 +55,8 @@ export function AuthProvider({ children }) {
         return data;
     }
 
+    // Registration also logs the user in: the backend returns the same
+    // user/accessToken/refreshToken shape as login.
     async function register(name, email, password) {
         const data = await registerUser(name, email, password);
 
@@ -62,6 +73,9 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('refreshToken');
     }
 
+    // Authenticated fetch wrapper for API calls that require a valid access token
+    // (e.g. the todos endpoints). On a 401, transparently refreshes the access token
+    // once using the stored refresh token and retries the request before giving up.
     async function authFetch(endpoint, options = {}) {
         const makeRequest = (token) =>
             fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
@@ -72,7 +86,7 @@ export function AuthProvider({ children }) {
                     ...options.headers,
                 },
             });
-        
+
         let response = await makeRequest(accessToken);
 
         if (response.status === 401) {
@@ -116,6 +130,8 @@ export function AuthProvider({ children }) {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Hook for consuming auth state/actions; throws if used outside an AuthProvider so
+// misuse fails fast instead of returning undefined values.
 export function useAuth() {
     const context = useContext(AuthContext);
     if (!context) {
