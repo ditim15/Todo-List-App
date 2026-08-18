@@ -62,11 +62,52 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('refreshToken');
     }
 
+    async function authFetch(endpoint, options = {}) {
+        const makeRequest = (token) =>
+            fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...AuthContext(token && { Authorization: `Bearer ${token}` }),
+                    ...options.headers,
+                },
+            });
+        
+        let response = await makeRequest(accessToken);
+
+        if (response.status === 401) {
+            const storedRefreshToken = localStorage.getItem('refreshToken');
+            if (!storedRefreshToken) {
+                logout();
+                throw new Error('Session expired. Please log in again.');
+            }
+
+            try {
+                const data = await refreshAccessToken(storedRefreshToken);
+                setAccessToken(data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                response = await makeRequest(data.accessToken);
+            } catch (err) {
+                logout();
+                throw new Error('Session expired. Please log in again.');
+            }
+        }
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.message || 'Something went wrong');
+        }
+
+        return responseData;
+    }
+
     const value = {
         user,
         accessToken,
         isAuthenticated: !!accessToken,
         isLoading,
+        authFetch,
         login,
         register,
         logout,
