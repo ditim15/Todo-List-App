@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { loginUser, refreshAccessToken } from "../api/auth";
+import { loginUser, registerUser, refreshAccessToken } from "../api/auth";
 
 const AuthContext = createContext(null);
 
@@ -46,6 +46,16 @@ export function AuthProvider({ children }) {
         return data;
     }
 
+    async function register(name, email, password) {
+        const data = await registerUser(name, email, password);
+
+        setUser(data.user);
+        setAccessToken(data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+
+        return data;
+    }
+
     function logout() {
         setUser(null);
         setAccessToken(null);
@@ -58,6 +68,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!accessToken,
         isLoading,
         login,
+        register,
         logout,
     };
 
