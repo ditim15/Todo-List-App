@@ -19,7 +19,7 @@ const FEATURES = [
     {
         Icon: CalendarIcon,
         title: 'Deadlines up front',
-        text: 'Due today and overdue counts greet you on login, so nothing sneaks up on you.',
+        text: "Nudge greets you with what's due today and what's overdue, so nothing sneaks up on you.",
     },
     {
         Icon: ListsIcon,
@@ -51,7 +51,7 @@ const FEATURES = [
 const STEPS = [
     { title: 'Make a list for each class', text: 'Start with your courses, then add anything else on your plate.' },
     { title: 'Add work as it is assigned', text: 'Give each task a due date and a priority straight from the syllabus.' },
-    { title: 'Check it off and keep going', text: 'Finished tasks move aside and your progress bars fill up.' },
+    { title: 'Let Nudge keep you on track', text: 'Check things off, watch your progress fill up, and see what needs you next.' },
 ];
 
 function Bullet({ children }) {
@@ -104,7 +104,7 @@ function Splash() {
                 <div className="landing-nav-inner">
                     <Link to="/" className="landing-brand">
                         <span className="landing-logo" aria-hidden="true"><CheckIcon /></span>
-                        Todo
+                        Nudge
                     </Link>
                     <nav className="landing-links" aria-label="Page sections">
                         <a href="#features">Features</a>
@@ -133,8 +133,8 @@ function Splash() {
                                 Your semester, <span className="hero-highlight">finally under control.</span>
                             </h1>
                             <p className="hero-lead">
-                                Todo keeps every assignment, exam and deadline in one calm place, sorted by
-                                class and priority, so you always know what to work on next.
+                                Nudge keeps every assignment, exam and deadline in one calm place, sorted by
+                                class and priority, with a gentle reminder of what to work on next.
                             </p>
                             <div className="hero-ctas">
                                 <Link to={primaryCta.to} className="btn btn-primary btn-lg">{primaryCta.label}</Link>
@@ -158,7 +158,7 @@ function Splash() {
                             <span className="eyebrow">Features</span>
                             <h2>Built for how students actually work</h2>
                             <p>
-                                Lectures, labs, group projects and a job on the side. Todo gives each its place
+                                Lectures, labs, group projects and a job on the side. Nudge gives each its place
                                 without making you manage a complicated system.
                             </p>
                         </div>
@@ -183,7 +183,7 @@ function Splash() {
                         <div className="showcase-row reveal">
                             <div className="showcase-copy">
                                 <span className="eyebrow">Stay ahead</span>
-                                <h2>Open the app, know your next move</h2>
+                                <h2>A gentle nudge toward what's next</h2>
                                 <p>
                                     Your dashboard leads with what's due today and what's overdue, then shows
                                     how your open work splits by priority. No digging through syllabi the
@@ -264,8 +264,8 @@ function Splash() {
                 <section className="section section--cta">
                     <div className="section-inner">
                         <div className="cta-card reveal">
-                            <h2>Start your semester organized</h2>
-                            <p>Create an account and add your first class in under a minute.</p>
+                            <h2>Start your semester with a nudge</h2>
+                            <p>Create an account and add your first class in under a minute. We'll keep track from there.</p>
                             <div className="hero-ctas">
                                 <Link to={primaryCta.to} className="btn btn-primary btn-lg">{primaryCta.label}</Link>
                                 {!isAuthenticated && (
@@ -279,7 +279,7 @@ function Splash() {
 
             <footer className="landing-footer">
                 <div className="landing-footer-inner">
-                    <span>© {new Date().getFullYear()} Todo</span>
+                    <span>© {new Date().getFullYear()} Nudge · Gentle reminders for busy students</span>
                     <nav aria-label="Footer">
                         <a href="#features">Features</a>
                         <a href="#how-it-works">How it works</a>
