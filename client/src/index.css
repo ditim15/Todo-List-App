@@ -1,17 +1,39 @@
+/* ---------- Theme tokens ----------
+   Light is the default. Dark applies when the user picks it (data-theme="dark" on
+   <html>), or when they haven't picked and their system prefers dark. The saved choice
+   is applied before React loads by the inline script in index.html. */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
+  --canvas: #f4f5f7;
+  --surface: #ffffff;
+  --surface-hover: #eef0f3;
+  --line: #e2e5ea;
+  --ink: #14161b;
+  --ink-2: #545b69;
+  --ink-3: #737b88;
+  --accent: #2563eb;
+  --accent-hover: #1d4fd8;
+  --accent-soft: #e9effe;
+  --on-accent: #ffffff;
+  --track: #dce5fb;
+  --critical: #d03b3b;
+  --critical-text: #b42323;
+  --warning: #e8a317;
+  /* Priority (severity) colors. Validated as a set; always shown with a text label. */
+  --prio-high: #d03b3b;
+  --prio-medium: #e8a317;
+  --prio-low: #3b6fd9;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(17, 19, 24, 0.05);
+  --shadow-lg: 0 10px 30px rgba(17, 19, 24, 0.08);
+  /* Native controls (date pickers, scrollbars, checkboxes) follow the theme. */
+  color-scheme: light;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--ink-2);
+  background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,18 +45,181 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
+  :root:not([data-theme="light"]) {
+    --canvas: #111318;
+    --surface: #1a1d24;
+    --surface-hover: #232731;
+    --line: #2b2f3a;
+    --ink: #eceef2;
+    --ink-2: #a5abb8;
+    --ink-3: #7f8694;
+    --accent: #7aa2f7;
+    --accent-hover: #93b4f9;
+    --accent-soft: #1f2a44;
+    --on-accent: #0b1020;
+    --track: #273252;
+    --critical: #e05252;
+    --critical-text: #f08a8a;
+    --warning: #fab219;
+    --prio-high: #e05252;
+    --prio-medium: #fab219;
+    --prio-low: #5b8def;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
   }
+}
+
+/* Same values as above, for an explicit dark choice. Keep the two blocks in sync. */
+:root[data-theme="dark"] {
+  --canvas: #111318;
+  --surface: #1a1d24;
+  --surface-hover: #232731;
+  --line: #2b2f3a;
+  --ink: #eceef2;
+  --ink-2: #a5abb8;
+  --ink-3: #7f8694;
+  --accent: #7aa2f7;
+  --accent-hover: #93b4f9;
+  --accent-soft: #1f2a44;
+  --on-accent: #0b1020;
+  --track: #273252;
+  --critical: #e05252;
+  --critical-text: #f08a8a;
+  --warning: #fab219;
+  --prio-high: #e05252;
+  --prio-medium: #fab219;
+  --prio-low: #5b8def;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
+  background: var(--canvas);
+  color: var(--ink-2);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--ink);
 }
 
 p {
   margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* ---------- Shared auth-page layout (Login, Register, Not Found) ---------- */
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  box-sizing: border-box;
+}
+
+.auth-card h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  color: var(--ink-3);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-form label {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.auth-form input {
+  height: 42px;
+  padding: 0 12px;
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.auth-form input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.auth-form button {
+  margin-top: 18px;
+  height: 44px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-form button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.auth-form button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  margin-top: 10px;
+  padding: 8px 12px;
+  color: var(--critical-text);
+  background: var(--canvas);
+  border-left: 3px solid var(--critical);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.auth-footer {
+  margin-top: 20px;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.auth-footer a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
 }
