@@ -60,10 +60,11 @@ All todos routes require an `Authorization: Bearer <accessToken>` header.
  
 | Method | Route          | Description                          |
 |--------|----------------|---------------------------------------|
-| GET    | `/todos`       | List the authenticated user's todos (open first, soonest due first). Supports `?page=`, `?limit=` and `?category=` (one list). |
+| GET    | `/todos`       | List the authenticated user's todos (open first, soonest due first). Supports `?page=`, `?limit=`, `?category=` (one list), `?priority=` (comma-separated, e.g. `high,medium`), `?search=` (title contains, case-insensitive), and `?dueFrom=` / `?dueTo=` (`YYYY-MM-DD`, inclusive). |
 | GET    | `/todos/stats` | Dashboard summary: totals, `dueToday` / `overdue`, open-task priority counts, per-list progress, next due tasks. Pass `?today=YYYY-MM-DD` (client's local date). |
 | POST   | `/todos`       | Create a new todo. Optional: `due_date` (`YYYY-MM-DD`), `priority` (`low` / `medium` / `high`, default `medium`), `category` (list name, default `General`) |
 | PUT    | `/todos/:id`   | Update a todo (must be owned by the requesting user) |
+| PUT    | `/todos/lists/:name` | Rename a list: moves all of the user's todos in `:name` to the `name` given in the body (renaming to an existing list merges them) |
 | DELETE | `/todos/:id`   | Delete a todo (must be owned by the requesting user) |
 
 ## Auth Flow Notes
