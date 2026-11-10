@@ -159,16 +159,25 @@ const createTodo = async (req, res, next) => {
 const updateTodo = async (req, res, next) => {
     try {
 
+        const { title, description, completed } = req.body;
+
+        if (!title || title.trim() === "") {
+            return res.status(400).json({
+                message: "Title is required"
+            });
+        }
+
         const fields = parseTodoFields(req.body);
         if (fields.error) {
             return res.status(400).json({ message: fields.error });
         }
 
+        // COALESCE keeps the current completed state if the client leaves it out.
         const updated = await pool.query(
-            'UPDATE todos SET title = $1, description = $2, completed = $3, due_date = $4,'
-            + ' priority = $5, category = $6, updated_at = NOW()'
+            'UPDATE todos SET title = $1, description = $2, completed = COALESCE($3, completed),'
+            + ' due_date = $4, priority = $5, category = $6, updated_at = NOW()'
             + ' WHERE todo_id = $7 AND user_id = $8 RETURNING *',
-            [req.body.title, req.body.description, req.body.completed, fields.dueDate,
+            [title.trim(), description || null, completed, fields.dueDate,
                 fields.priority, fields.category, req.params.id, req.user.id]
         );
 
