@@ -32,6 +32,7 @@ export function AuthProvider({ children }) {
 
             try {
                 const data = await refreshAccessToken(storedRefreshToken);
+                setUser(data.user);
                 setAccessToken(data.accessToken);
                 localStorage.setItem('refreshToken', data.refreshToken);
             } catch (error) {
@@ -82,7 +83,7 @@ export function AuthProvider({ children }) {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
-                    ...AuthContext(token && { Authorization: `Bearer ${token}` }),
+                    ...(token && { Authorization: `Bearer ${token}` }),
                     ...options.headers,
                 },
             });
