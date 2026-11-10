@@ -1,5 +1,5 @@
-# Todo List API
-A RESTful Todo List API with JWT-based authentication, built as a learning project to understand backend fundamentals.
+# Nudge API
+The backend for **Nudge**, a gentle-reminder task app for students. A RESTful todo API with JWT-based authentication, built as a learning project to understand backend fundamentals.
 
 ## Tech Stack
 - **Runtime**: Node.js v24

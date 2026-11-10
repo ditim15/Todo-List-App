@@ -761,7 +761,7 @@ function Dashboard() {
     return (
         <div className="dash">
             <header className="topbar">
-                <span className="topbar-brand">Todo</span>
+                <span className="topbar-brand">Nudge</span>
                 <div className="topbar-user">
                     {user?.name && <span className="topbar-name">{user.name}</span>}
                     <ThemeToggle />

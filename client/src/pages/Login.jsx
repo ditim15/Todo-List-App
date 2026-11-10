@@ -31,7 +31,7 @@ function Login() {
         <div className="auth-page">
             <div className="auth-card">
                 <h1>Log In</h1>
-                <p className="auth-subtitle">Welcome back. Pick up where you left off.</p>
+                <p className="auth-subtitle">Welcome back to Nudge. Pick up where you left off.</p>
                 <form onSubmit={handleSubmit} className="auth-form">
                     <label htmlFor="email">Email</label>
                     <input
