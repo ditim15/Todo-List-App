@@ -60,8 +60,9 @@ All todos routes require an `Authorization: Bearer <accessToken>` header.
  
 | Method | Route          | Description                          |
 |--------|----------------|---------------------------------------|
-| GET    | `/todos`       | List the authenticated user's todos. Supports `?page=` and `?limit=` query params. |
-| POST   | `/todos`       | Create a new todo                     |
+| GET    | `/todos`       | List the authenticated user's todos (open first, soonest due first). Supports `?page=`, `?limit=` and `?category=` (one list). |
+| GET    | `/todos/stats` | Dashboard summary: totals, `dueToday` / `overdue`, open-task priority counts, per-list progress, next due tasks. Pass `?today=YYYY-MM-DD` (client's local date). |
+| POST   | `/todos`       | Create a new todo. Optional: `due_date` (`YYYY-MM-DD`), `priority` (`low` / `medium` / `high`, default `medium`), `category` (list name, default `General`) |
 | PUT    | `/todos/:id`   | Update a todo (must be owned by the requesting user) |
 | DELETE | `/todos/:id`   | Delete a todo (must be owned by the requesting user) |
 
