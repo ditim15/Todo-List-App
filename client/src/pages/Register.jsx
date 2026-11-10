@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import AuthLayout, { AuthBullet } from '../components/auth/AuthLayout';
+import { ListsMock } from '../components/landing/AppMocks';
 
 // Registration form: creates an account via AuthContext.register (which also logs the
 // user in) and redirects to the dashboard on success.
@@ -38,7 +40,20 @@ function Register() {
     }
 
     return (
-        <div className="auth-page">
+        <AuthLayout
+            aside={
+                <>
+                    <span className="eyebrow">Free for students</span>
+                    <h2>Every class and deadline in one calm place.</h2>
+                    <ul className="check-list">
+                        <AuthBullet>A list and progress bar for each course</AuthBullet>
+                        <AuthBullet>High, medium and low priorities at a glance</AuthBullet>
+                        <AuthBullet>Overdue work flagged so nothing slips</AuthBullet>
+                    </ul>
+                    <ListsMock />
+                </>
+            }
+        >
             <div className="auth-card">
                 <h1>Create your Nudge account</h1>
                 <p className="auth-subtitle">Start organizing your day in under a minute.</p>
@@ -87,7 +102,7 @@ function Register() {
                     Already have an account? <Link to='/login'>Log In</Link>
                 </p>
             </div>
-        </div>
+        </AuthLayout>
     );
 }
 

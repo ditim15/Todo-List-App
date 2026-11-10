@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import AuthLayout from '../components/auth/AuthLayout';
+import { PriorityMock } from '../components/landing/AppMocks';
 
 // Login form: authenticates via AuthContext.login and redirects to the dashboard on success.
 function Login() {
@@ -28,7 +30,16 @@ function Login() {
     }
 
     return (
-        <div className="auth-page">
+        <AuthLayout
+            aside={
+                <>
+                    <span className="eyebrow">Welcome back</span>
+                    <h2>Your deadlines are right where you left them.</h2>
+                    <p>See what's due today, what's overdue and what's coming up next, all in one place.</p>
+                    <PriorityMock />
+                </>
+            }
+        >
             <div className="auth-card">
                 <h1>Log In</h1>
                 <p className="auth-subtitle">Welcome back to Nudge. Pick up where you left off.</p>
@@ -61,7 +72,7 @@ function Login() {
                     Don't have an account? <Link to='/register'>Register</Link>
                 </p>
             </div>
-        </div>
+        </AuthLayout>
     );
 }
 
