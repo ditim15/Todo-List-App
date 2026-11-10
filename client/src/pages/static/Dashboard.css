@@ -1,47 +1,4 @@
-/* ---------- Tokens ---------- */
-.dash {
-    --canvas: #f5f6f8;
-    --surface: #ffffff;
-    --surface-hover: #f1f3f6;
-    --line: #e4e6eb;
-    --ink: #111318;
-    --ink-2: #5b6170;
-    --ink-3: #8a909c;
-    --accent: #2563eb;
-    --accent-soft: #e8efff;
-    --track: #dfe7fb;
-    --critical: #d03b3b;
-    --critical-text: #b42323;
-    --warning: #e8a317;
-    /* Priority (severity) colors. Validated as a set; always shown with a text label. */
-    --prio-high: #d03b3b;
-    --prio-medium: #e8a317;
-    --prio-low: #3b6fd9;
-    --radius: 10px;
-    --shadow: 0 1px 2px rgba(17, 19, 24, 0.04);
-}
-
-@media (prefers-color-scheme: dark) {
-    .dash {
-        --canvas: #16171d;
-        --surface: #1e2028;
-        --surface-hover: #262933;
-        --line: #2e313c;
-        --ink: #f3f4f6;
-        --ink-2: #a3a9b6;
-        --ink-3: #7b8190;
-        --accent: #6b97f2;
-        --accent-soft: #24304d;
-        --track: #2a3350;
-        --critical: #e05252;
-        --critical-text: #f07a7a;
-        --warning: #fab219;
-        --prio-high: #e05252;
-        --prio-medium: #fab219;
-        --prio-low: #5b8def;
-        --shadow: none;
-    }
-}
+/* Colors come from the shared light/dark tokens in src/index.css. */
 
 /* ---------- Shell ---------- */
 .dash {
@@ -115,7 +72,7 @@
 .button-primary {
     padding: 6px 16px;
     background: var(--accent);
-    color: #ffffff;
+    color: var(--on-accent);
     border: 1px solid var(--accent);
     border-radius: 6px;
     font-weight: 600;
@@ -453,7 +410,7 @@
     height: 36px;
     padding: 0 18px;
     background: var(--accent);
-    color: #ffffff;
+    color: var(--on-accent);
     border: none;
     border-radius: 6px;
     font-weight: 600;
