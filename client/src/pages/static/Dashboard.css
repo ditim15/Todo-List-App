@@ -63,7 +63,8 @@
 
 .dash button,
 .dash input,
-.dash select {
+.dash select,
+.dash textarea {
     font: inherit;
 }
 
@@ -109,6 +110,21 @@
 .button-ghost:hover {
     background: var(--surface-hover);
     color: var(--ink);
+}
+
+.button-primary {
+    padding: 6px 16px;
+    background: var(--accent);
+    color: #ffffff;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.button-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .dash-main {
@@ -400,11 +416,17 @@
     font-size: 0.85em;
 }
 
+/* Open + completed lists scroll together inside the task panel. */
+.task-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .task-list {
     list-style: none;
     margin: 0;
     padding: 0;
-    overflow-y: auto;
 }
 
 .task {
@@ -413,6 +435,208 @@
     gap: 12px;
     padding: 12px 2px;
     border-bottom: 1px solid var(--line);
+}
+
+.task-body {
+    flex: 1;
+}
+
+/* Edit button appears on hover/focus with a mouse; always visible on touch screens. */
+.task-edit-button {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.82em;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.task:hover .task-edit-button,
+.task:focus-within .task-edit-button {
+    opacity: 1;
+}
+
+.task-edit-button:hover {
+    background: var(--surface-hover);
+    color: var(--ink);
+}
+
+@media (hover: none) {
+    .task-edit-button {
+        opacity: 1;
+    }
+}
+
+/* Just checked off: briefly shown done in place, then fades before moving. */
+.task--settling {
+    animation: task-settle 1.5s ease-in forwards;
+}
+
+@keyframes task-settle {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task--settling {
+        animation: none;
+    }
+}
+
+/* ---------- Inline edit form ---------- */
+.task--editing {
+    background: var(--canvas);
+    margin: 4px 0;
+    padding: 12px 10px;
+    border-radius: 8px;
+    border-bottom-color: transparent;
+}
+
+.task-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.task-edit input,
+.task-edit select,
+.task-edit textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 0 10px;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.task-edit input,
+.task-edit select {
+    height: 34px;
+}
+
+.task-edit textarea {
+    padding: 8px 10px;
+    resize: vertical;
+    font-size: 0.9em;
+}
+
+.task-edit input:focus,
+.task-edit select:focus,
+.task-edit textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.task-edit-title {
+    font-weight: 600;
+}
+
+.task-edit-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+@container tasks (max-width: 480px) {
+    .task-edit-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.task-edit-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.task-edit-fields label > span {
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+}
+
+.task-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* ---------- Completed section ---------- */
+.completed-section {
+    margin-top: 6px;
+    border-top: 1px solid var(--line);
+}
+
+.completed-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 2px 6px;
+    background: transparent;
+    border: none;
+    color: var(--ink-2);
+    font-weight: 600;
+    font-size: 0.88em;
+    cursor: pointer;
+    text-align: left;
+}
+
+.completed-toggle:hover {
+    color: var(--ink);
+}
+
+.completed-chevron {
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+}
+
+.completed-toggle[aria-expanded="true"] .completed-chevron {
+    transform: rotate(45deg) translate(-2px, -2px);
+}
+
+.completed-count {
+    padding: 0 8px;
+    background: var(--surface-hover);
+    border-radius: 999px;
+    font-size: 0.9em;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+}
+
+.completed-section .task {
+    animation: task-arrive 0.25s ease-out;
+}
+
+@keyframes task-arrive {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .completed-section .task {
+        animation: none;
+    }
+}
+
+.tasks-all-done {
+    padding: 18px 2px;
+    font-size: 0.9em;
+    color: var(--ink-3);
 }
 
 .task:last-child {
