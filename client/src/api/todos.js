@@ -2,21 +2,42 @@
 // its first argument so calls carry the current access token and get transparent
 // refresh-and-retry on 401.
 
-export function getTodos(authFetch, page = 1, limit = 10) {
-    return authFetch(`/todos?page=${page}&limit=${limit}`);
+// Today's date in the user's local timezone as YYYY-MM-DD (the server uses it to work
+// out which todos are due today vs. overdue).
+export function localToday() {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
 }
 
-export function createTodo(authFetch, { title, description, completed = false}) {
+// Pass `category` to only fetch todos in that list.
+export function getTodos(authFetch, { page = 1, limit = 10, category } = {}) {
+    const params = new URLSearchParams({ page, limit });
+    if (category) params.set('category', category);
+    return authFetch(`/todos?${params}`);
+}
+
+// Dashboard summary: total, completed, dueToday, overdue, priorities {high, medium, low}
+// (open tasks only), and lists [{ name, total, completed }].
+export function getTodoStats(authFetch) {
+    return authFetch(`/todos/stats?today=${localToday()}`);
+}
+
+// `due_date` is an optional 'YYYY-MM-DD' string; `priority` is 'low' | 'medium' | 'high';
+// `category` is the list name (server defaults it to 'General').
+export function createTodo(authFetch, { title, description, completed = false, due_date = null, priority = 'medium', category }) {
     return authFetch('/todos', {
         method: 'POST',
-        body: JSON.stringify({ title, description, completed }),
+        body: JSON.stringify({ title, description, completed, due_date, priority, category }),
     });
 }
 
-export function updateTodo(authFetch, id, { title, description, completed }) {
+// PUT replaces every field, so pass the whole todo (omitted fields reset to defaults).
+export function updateTodo(authFetch, id, { title, description, completed, due_date = null, priority, category }) {
     return authFetch(`/todos/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title, description, completed }),
+        body: JSON.stringify({ title, description, completed, due_date, priority, category }),
     });
 }
 
