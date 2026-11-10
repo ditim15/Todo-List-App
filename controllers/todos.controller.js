@@ -27,25 +27,58 @@ function parseToday(value) {
     return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
-// Gets the authenticated user's todos, optionally filtered to one list (?category=).
-// Open tasks come first, soonest due date first, then newest.
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// Builds the WHERE clause for getTodos from the optional query filters. Values are
+// always passed as parameters, never interpolated into the SQL.
+function buildTodoFilters(userId, query) {
+    const conditions = ['user_id = $1'];
+    const values = [userId];
+    const add = (sql, value) => {
+        values.push(value);
+        conditions.push(sql.replace('?', `$${values.length}`));
+    };
+
+    if (query.category) add('category = ?', query.category);
+
+    // ?priority=high,medium
+    const priorities = String(query.priority || '')
+        .split(',')
+        .filter((p) => PRIORITIES.includes(p));
+    if (priorities.length > 0) add('priority = ANY(?)', priorities);
+
+    // ?search= matches anywhere in the title, case-insensitively. Escape LIKE
+    // wildcards so "%" or "_" are searched for literally.
+    const search = String(query.search || '').trim();
+    if (search) add('title ILIKE ?', `%${search.replace(/[\\%_]/g, '\\$&')}%`);
+
+    // ?dueFrom= / ?dueTo= (inclusive). Tasks without a due date are excluded once a
+    // range is set.
+    if (DATE_PATTERN.test(query.dueFrom)) add('due_date >= ?::date', query.dueFrom);
+    if (DATE_PATTERN.test(query.dueTo)) add('due_date <= ?::date', query.dueTo);
+
+    return { where: conditions.join(' AND '), values };
+}
+
+// Gets the authenticated user's todos. Optional filters: ?category=, ?priority=,
+// ?search=, ?dueFrom=, ?dueTo=. Open tasks come first, soonest due date first, then newest.
 const getTodos = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
-        const category = req.query.category || null;
+        const { where, values } = buildTodoFilters(req.user.id, req.query);
 
         const result = await pool.query(
-            'SELECT * FROM todos WHERE user_id = $1 AND ($2::text IS NULL OR category = $2)'
+            `SELECT * FROM todos WHERE ${where}`
             + ' ORDER BY completed, due_date NULLS LAST, created_at DESC, todo_id DESC'
-            + ' LIMIT $3 OFFSET $4',
-            [req.user.id, category, limit, offset]
+            + ` LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+            [...values, limit, offset]
         );
 
         const totalTodos = await pool.query(
-            'SELECT COUNT(*) FROM todos WHERE user_id = $1 AND ($2::text IS NULL OR category = $2)',
-            [req.user.id, category]
+            `SELECT COUNT(*) FROM todos WHERE ${where}`,
+            values
         );
 
         const total = parseInt(totalTodos.rows[0].count);
@@ -195,6 +228,38 @@ const updateTodo = async (req, res, next) => {
     }
 };
 
+// Renames one of the user's lists by moving all of its todos to the new name.
+// Renaming to a name that already exists merges the two lists.
+const renameList = async (req, res, next) => {
+    try {
+        const newName = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+
+        if (!newName) {
+            return res.status(400).json({ message: "List name is required" });
+        }
+        if (newName.length > 50) {
+            return res.status(400).json({ message: "List name must be 50 characters or fewer" });
+        }
+
+        const renamed = await pool.query(
+            'UPDATE todos SET category = $1, updated_at = NOW() WHERE user_id = $2 AND category = $3',
+            [newName, req.user.id, req.params.name]
+        );
+
+        if (renamed.rowCount === 0) {
+            return res.status(404).json({ message: "List not found" });
+        }
+
+        res.status(200).json({
+            message: "List renamed successfully",
+            name: newName,
+            updated: renamed.rowCount
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
 // Delete an existing todo for the user.
 const deleteTodo = async (req, res, next) => {
     try {
@@ -224,5 +289,6 @@ export {
     getTodoStats,
     createTodo,
     updateTodo,
+    renameList,
     deleteTodo
 }
