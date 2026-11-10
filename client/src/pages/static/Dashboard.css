@@ -127,6 +127,27 @@
     cursor: not-allowed;
 }
 
+/* Text-style button for small secondary actions (Edit/Done, Clear). */
+.link-button {
+    padding: 2px 4px;
+    margin: -2px -4px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+.link-button:focus-visible {
+    outline: 2px solid var(--accent);
+}
+
 .dash-main {
     display: flex;
     flex-direction: column;
@@ -322,6 +343,40 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Rename mode: each list becomes a text field. */
+.list-rows--editing {
+    margin: 0;
+    gap: 6px;
+}
+
+.list-rename form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.list-rename input {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0 10px;
+    background: var(--canvas);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-weight: 600;
+}
+
+.list-rename input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.list-rename .form-error {
+    margin-top: 4px;
+}
+
 .progress {
     height: 6px;
     background: var(--track);
@@ -414,6 +469,106 @@
     grid-column: 1 / -1;
     color: var(--critical-text);
     font-size: 0.85em;
+}
+
+/* ---------- Filter toolbar ---------- */
+/* Wraps onto extra rows in narrow task panels. */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.filters input {
+    height: 32px;
+    padding: 0 10px;
+    background: var(--canvas);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.filters input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.filters-search {
+    flex: 1 1 160px;
+}
+
+.filter-chips {
+    display: flex;
+    gap: 4px;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.filter-chip:hover {
+    background: var(--surface-hover);
+}
+
+.filter-chip--on {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.filter-chip--on:hover {
+    background: var(--accent-soft);
+}
+
+.filter-dates {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-dates input {
+    width: 140px;
+}
+
+.filter-dates-label,
+.filter-dates-sep {
+    font-size: 0.85em;
+    color: var(--ink-3);
+}
+
+/* Narrow panel: search on its own row; the date range fills its row. */
+@container tasks (max-width: 520px) {
+    .filters-search {
+        flex-basis: 100%;
+    }
+
+    /* Grid, not flex: date inputs refuse to shrink below their content in a flex row. */
+    .filter-dates {
+        flex: 1 1 100%;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+
+    .filter-dates input {
+        width: 100%;
+        padding: 0 6px;
+    }
 }
 
 /* Open + completed lists scroll together inside the task panel. */
