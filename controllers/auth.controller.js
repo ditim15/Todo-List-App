@@ -166,8 +166,15 @@ const refreshAccessToken = async (req, res, next) => {
             { expiresIn: '1h' }
         );
 
+        // Include the user so the client can restore it (e.g. for the dashboard greeting)
+        // after a page reload, when only the refresh token survives.
+        const userResult = await pool.query(
+            'SELECT id, name, email FROM users WHERE id = $1', [storedToken.user_id]
+        );
+
         res.status(200).json({
             message: "Access token refreshed successfully",
+            user: userResult.rows[0],
             accessToken: accessToken,
             refreshToken: newRefreshToken
         });
