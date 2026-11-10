@@ -1,4 +1,10 @@
 .theme-toggle {
+    /* Hover palette, set per mode below. */
+    --toggle-glow: transparent;
+    --toggle-bg: var(--surface-hover);
+    --toggle-fg: var(--ink);
+    --toggle-border: var(--line);
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -10,16 +16,83 @@
     border: 1px solid var(--line);
     border-radius: 8px;
     cursor: pointer;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+/* Sun (shown in dark mode): lights up warm amber, like turning the lights on. */
+.theme-toggle--to-light {
+    --toggle-glow: rgba(251, 191, 36, 0.45);
+    --toggle-bg: color-mix(in srgb, #fbbf24 16%, var(--surface));
+    --toggle-fg: #fbbf24;
+    --toggle-border: color-mix(in srgb, #fbbf24 50%, var(--line));
+}
+
+/* Moon (shown in light mode): dims to a night sky with a cool glow. */
+.theme-toggle--to-dark {
+    --toggle-glow: rgba(99, 102, 241, 0.35);
+    --toggle-bg: #1e2340;
+    --toggle-fg: #c7d2fe;
+    --toggle-border: #1e2340;
 }
 
 .theme-toggle:hover {
-    background: var(--surface-hover);
-    color: var(--ink);
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border-color: var(--toggle-border);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--toggle-glow) 40%, transparent),
+        0 0 16px var(--toggle-glow);
 }
 
 .theme-toggle:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+}
+
+/* ---------- Icon ---------- */
+.theme-toggle-icon {
+    display: inline-flex;
+    animation: theme-icon-in 0.4s ease;
+}
+
+.theme-toggle-icon svg {
+    transition: transform 0.35s ease;
+}
+
+/* The sun's rays turn and the moon tilts on hover. */
+.theme-toggle--to-light:hover svg {
+    transform: rotate(45deg) scale(1.1);
+}
+
+.theme-toggle--to-dark:hover svg {
+    transform: rotate(-18deg) scale(1.08);
+}
+
+@keyframes theme-icon-in {
+    from {
+        opacity: 0;
+        transform: rotate(-90deg) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle,
+    .theme-toggle-icon svg {
+        transition: none;
+    }
+
+    .theme-toggle-icon {
+        animation: none;
+    }
+
+    .theme-toggle--to-light:hover svg,
+    .theme-toggle--to-dark:hover svg {
+        transform: none;
+    }
 }
 
 .theme-toggle--floating {

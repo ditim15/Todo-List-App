@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 // Must match the key read by the inline script in index.html.
 const STORAGE_KEY = 'theme';
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+let fallbackTimer;
 
 const ThemeContext = createContext(null);
 
@@ -38,11 +41,30 @@ export function ThemeProvider({ children }) {
 
     function toggleTheme() {
         const next = theme === 'dark' ? 'light' : 'dark';
-        setPreference(next);
         try {
             localStorage.setItem(STORAGE_KEY, next);
         } catch {
             // Not persisted, but still applied for this visit.
+        }
+
+        const root = document.documentElement;
+        // Apply synchronously so a view transition can snapshot the new state.
+        const apply = () => {
+            root.dataset.theme = next;
+            flushSync(() => setPreference(next));
+        };
+
+        if (reducedMotionQuery.matches) {
+            apply();
+        } else if (document.startViewTransition) {
+            // Cross-fades the whole page between the old and new theme (see index.css).
+            document.startViewTransition(apply);
+        } else {
+            // Fallback: briefly transition colors on every element.
+            root.classList.add('theme-transition');
+            apply();
+            window.clearTimeout(fallbackTimer);
+            fallbackTimer = window.setTimeout(() => root.classList.remove('theme-transition'), 450);
         }
     }
 

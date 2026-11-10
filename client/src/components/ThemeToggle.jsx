@@ -29,7 +29,8 @@ function MoonIcon() {
     );
 }
 
-// Light/dark switch. Shows the icon of the mode you'd switch *to*.
+// Light/dark switch. Shows the icon of the mode you'd switch *to*; on hover the sun
+// lights up warm and the moon dims to night (see ThemeToggle.css).
 // `floating` pins it to the top-right corner (used on pages without a top bar).
 function ThemeToggle({ floating = false }) {
     const { theme, toggleTheme } = useTheme();
@@ -38,12 +39,15 @@ function ThemeToggle({ floating = false }) {
     return (
         <button
             type="button"
-            className={`theme-toggle${floating ? ' theme-toggle--floating' : ''}`}
+            className={`theme-toggle theme-toggle--to-${next}${floating ? ' theme-toggle--floating' : ''}`}
             onClick={toggleTheme}
             aria-label={`Switch to ${next} mode`}
             title={`Switch to ${next} mode`}
         >
-            {next === 'dark' ? <MoonIcon /> : <SunIcon />}
+            {/* Keyed so the new icon remounts and plays its entrance animation. */}
+            <span key={next} className="theme-toggle-icon">
+                {next === 'dark' ? <MoonIcon /> : <SunIcon />}
+            </span>
         </button>
     );
 }
