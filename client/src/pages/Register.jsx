@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import './static/Register.css';
 
 // Registration form: creates an account via AuthContext.register (which also logs the
 // user in) and redirects to the dashboard on success.
@@ -39,52 +38,55 @@ function Register() {
     }
 
     return (
-        <div className="register-container">
-            <h1>Register</h1>
-            <form onSubmit={handleSubmit} className="register-form">
-                <label htmlFor="name">Name</label>
-                <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                />
-                <label htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                <label htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                />
+        <div className="auth-page">
+            <div className="auth-card">
+                <h1>Create an account</h1>
+                <p className="auth-subtitle">Start organizing your day in under a minute.</p>
+                <form onSubmit={handleSubmit} className="auth-form">
+                    <label htmlFor="name">Name</label>
+                    <input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                    />
+                    <label htmlFor="email">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                    <label htmlFor="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <label htmlFor="confirmPassword">Confirm Password</label>
+                    <input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                    />
 
-                {error && <p className="register-error">{error}</p>}
+                    {error && <p className="auth-error">{error}</p>}
 
-                <button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Registering...' : 'Register'}
-                </button>
-            </form>
+                    <button type="submit" disabled={isLoading}>
+                        {isLoading ? 'Registering...' : 'Register'}
+                    </button>
+                </form>
 
-            <p>
-                Already have an account? <Link to='/login'>Log In</Link>
-            </p>
+                <p className="auth-footer">
+                    Already have an account? <Link to='/login'>Log In</Link>
+                </p>
+            </div>
         </div>
     );
 }
