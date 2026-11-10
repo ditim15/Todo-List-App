@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { createTodo, getTodoStats, getTodos, localToday, updateTodo } from '../api/todos';
+import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
 import './static/Dashboard.css';
 
 const PRIORITIES = [
@@ -14,6 +14,16 @@ const TASK_PAGE_SIZE = 50;
 
 // How long a just-completed task stays in place before moving to the Completed section.
 const COMPLETE_MOVE_DELAY_MS = 1500;
+
+const SEARCH_DEBOUNCE_MS = 300;
+
+const EMPTY_FILTERS = { search: '', priorities: [], dueFrom: '', dueTo: '' };
+
+function hasActiveFilters(filters) {
+    return Boolean(
+        filters.search.trim() || filters.priorities.length > 0 || filters.dueFrom || filters.dueTo
+    );
+}
 
 // Time-of-day greeting based on the user's local clock.
 function getGreeting() {
@@ -87,9 +97,74 @@ function StatTile({ label, value, detail, tone }) {
     );
 }
 
+// One list's name as an editable field (used in the My lists panel's edit mode).
+// Saves on Enter or when the field loses focus; Esc reverts.
+function ListRenameRow({ list, onRename }) {
+    const [name, setName] = useState(list.name);
+    const [error, setError] = useState('');
+    // Enter saves and the field may then blur; this stops the second save.
+    const isSaving = useRef(false);
+
+    async function save() {
+        const trimmed = name.trim();
+        if (isSaving.current) return;
+        if (!trimmed || trimmed === list.name) {
+            setName(list.name);
+            setError('');
+            return;
+        }
+
+        isSaving.current = true;
+        setError('');
+        try {
+            // On success the panel re-renders with the new name and this row is replaced.
+            await onRename(list.name, trimmed);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            isSaving.current = false;
+        }
+    }
+
+    function handleKeyDown(e) {
+        if (e.key === 'Escape') {
+            setName(list.name);
+            setError('');
+            e.currentTarget.blur();
+        }
+    }
+
+    return (
+        <li className="list-rename">
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    save();
+                }}
+            >
+                <input
+                    type="text"
+                    value={name}
+                    maxLength={50}
+                    aria-label={`Rename list "${list.name}"`}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={save}
+                    onKeyDown={handleKeyDown}
+                />
+                <span className="list-row-count">{list.total}</span>
+            </form>
+            {error && <p className="form-error">{error}</p>}
+        </li>
+    );
+}
+
 // Left column: "All tasks" plus one row per list, each with a count and progress bar.
-// Clicking a row filters the task panel to that list.
-function ListsPanel({ stats, selectedList, onSelect }) {
+// Clicking a row filters the task panel to that list. "Edit" switches the rows to
+// rename fields.
+function ListsPanel({ stats, selectedList, onSelect, onRename }) {
+    const [editMode, setEditMode] = useState(false);
+    // Leave edit mode automatically if there's nothing left to rename.
+    const isEditing = editMode && stats.lists.length > 0;
     const rows = [
         { name: null, label: 'All tasks', total: stats.total, completed: stats.completed },
         ...stats.lists.map((list) => ({ ...list, label: list.name })),
@@ -99,13 +174,37 @@ function ListsPanel({ stats, selectedList, onSelect }) {
         <aside className="panel lists-panel" aria-labelledby="lists-heading">
             <div className="panel-header">
                 <h2 id="lists-heading">My lists</h2>
-                <span className="panel-meta">{stats.lists.length}</span>
+                {stats.lists.length > 0 ? (
+                    <button
+                        type="button"
+                        className="link-button"
+                        aria-pressed={isEditing}
+                        onClick={() => setEditMode(!isEditing)}
+                    >
+                        {isEditing ? 'Done' : 'Edit'}
+                    </button>
+                ) : (
+                    <span className="panel-meta">0</span>
+                )}
             </div>
+
+            {isEditing ? (
+                <>
+                    <ul className="list-rows list-rows--editing">
+                        {stats.lists.map((list) => (
+                            <ListRenameRow key={list.name} list={list} onRename={onRename} />
+                        ))}
+                    </ul>
+                    <p className="panel-hint">
+                        Press Enter to save. Renaming a list to an existing name merges them.
+                    </p>
+                </>
+            ) : (
             <ul className="list-rows">
                 {rows.map((list) => {
                     const isActive = list.name === selectedList;
                     return (
-                        <li key={list.label}>
+                        <li key={list.name ?? '__all__'}>
                             <button
                                 type="button"
                                 className={`list-row${isActive ? ' list-row--active' : ''}`}
@@ -128,6 +227,7 @@ function ListsPanel({ stats, selectedList, onSelect }) {
                     );
                 })}
             </ul>
+            )}
             {stats.lists.length === 0 && (
                 <p className="panel-hint">
                     Lists appear here once you add a task to one, e.g. "Work" or "Personal".
@@ -211,6 +311,72 @@ function PrioritySelect({ value, onChange }) {
                 </option>
             ))}
         </select>
+    );
+}
+
+// Toolbar above the task list: title search, priority toggles and a due-date range.
+// Filters apply within the selected list.
+function TaskFilters({ filters, onChange, onClear }) {
+    const update = (changes) => onChange({ ...filters, ...changes });
+
+    function togglePriority(key) {
+        const priorities = filters.priorities.includes(key)
+            ? filters.priorities.filter((p) => p !== key)
+            : [...filters.priorities, key];
+        update({ priorities });
+    }
+
+    return (
+        <div className="filters" role="search" aria-label="Filter tasks">
+            <input
+                className="filters-search"
+                type="search"
+                placeholder="Search tasks"
+                aria-label="Search tasks by name"
+                value={filters.search}
+                onChange={(e) => update({ search: e.target.value })}
+            />
+            <div className="filter-chips" role="group" aria-label="Filter by priority">
+                {PRIORITIES.map((p) => {
+                    const isOn = filters.priorities.includes(p.key);
+                    return (
+                        <button
+                            key={p.key}
+                            type="button"
+                            className={`filter-chip${isOn ? ' filter-chip--on' : ''}`}
+                            aria-pressed={isOn}
+                            onClick={() => togglePriority(p.key)}
+                        >
+                            <span className={`priority-dot priority-dot--${p.key}`} aria-hidden="true" />
+                            {p.label}
+                        </button>
+                    );
+                })}
+            </div>
+            <div className="filter-dates" role="group" aria-label="Due date range">
+                <span className="filter-dates-label">Due</span>
+                <input
+                    type="date"
+                    aria-label="Due from"
+                    value={filters.dueFrom}
+                    max={filters.dueTo || undefined}
+                    onChange={(e) => update({ dueFrom: e.target.value })}
+                />
+                <span className="filter-dates-sep" aria-hidden="true">–</span>
+                <input
+                    type="date"
+                    aria-label="Due to"
+                    value={filters.dueTo}
+                    min={filters.dueFrom || undefined}
+                    onChange={(e) => update({ dueTo: e.target.value })}
+                />
+            </div>
+            {hasActiveFilters(filters) && (
+                <button type="button" className="link-button filters-clear" onClick={onClear}>
+                    Clear
+                </button>
+            )}
+        </div>
     );
 }
 
@@ -445,6 +611,9 @@ function Dashboard() {
     const [error, setError] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [showCompleted, setShowCompleted] = useState(true);
+    const [filters, setFilters] = useState(EMPTY_FILTERS);
+    // Search is applied after typing pauses, so each keystroke doesn't hit the server.
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     // Ids of tasks just checked off that stay in the open list until their timer fires.
     const [settlingIds, setSettlingIds] = useState(() => new Set());
     const settleTimers = useRef(new Map());
@@ -474,7 +643,8 @@ function Dashboard() {
         });
     }
 
-    async function loadDashboard(list) {
+    // Loads stats plus the task list for the current list and filters.
+    async function loadDashboard() {
         const requestId = ++latestRequest.current;
         try {
             // Sequential on purpose: two concurrent requests with an expired access token
@@ -482,7 +652,11 @@ function Dashboard() {
             const statsData = await getTodoStats(authFetch);
             const todoData = await getTodos(authFetch, {
                 limit: TASK_PAGE_SIZE,
-                category: list ?? undefined,
+                category: selectedList ?? undefined,
+                priorities: filters.priorities,
+                search: debouncedSearch,
+                dueFrom: filters.dueFrom,
+                dueTo: filters.dueTo,
             });
             if (requestId !== latestRequest.current) return;
 
@@ -499,14 +673,32 @@ function Dashboard() {
     }
 
     useEffect(() => {
-        loadDashboard(selectedList);
-        // authFetch is recreated every render; reload only when the selected list changes.
+        const timer = setTimeout(() => setDebouncedSearch(filters.search.trim()), SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [filters.search]);
+
+    // Reload whenever the list or an applied filter changes. The priorities array is
+    // joined so the effect compares by value, not by array identity.
+    const priorityKey = filters.priorities.join(',');
+    useEffect(() => {
+        loadDashboard();
+        // authFetch is recreated every render, so it's deliberately not a dependency.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedList]);
+    }, [selectedList, debouncedSearch, priorityKey, filters.dueFrom, filters.dueTo]);
 
     async function handleCreate(fields) {
         await createTodo(authFetch, fields);
-        await loadDashboard(selectedList);
+        await loadDashboard();
+    }
+
+    // Throws on failure so the rename field can show the error.
+    async function handleRenameList(oldName, newName) {
+        await renameList(authFetch, oldName, newName);
+        if (selectedList === oldName) {
+            setSelectedList(newName); // triggers the reload effect
+        } else {
+            await loadDashboard();
+        }
     }
 
     async function handleToggle(todo) {
@@ -527,7 +719,7 @@ function Dashboard() {
             setSettling(todo.todo_id, false);
         }
         // Reload so counts and progress update; this also reverts the flip on failure.
-        await loadDashboard(selectedList);
+        await loadDashboard();
         if (failure) setError(failure.message);
     }
 
@@ -535,7 +727,7 @@ function Dashboard() {
     async function handleSave(todo, fields) {
         await updateTodo(authFetch, todo.todo_id, { ...todo, ...fields });
         setEditingId(null);
-        await loadDashboard(selectedList);
+        await loadDashboard();
     }
 
     function handleLogout() {
@@ -545,6 +737,7 @@ function Dashboard() {
 
     const today = localToday();
     const firstName = user?.name?.split(' ')[0];
+    const filtersActive = hasActiveFilters(filters);
     const openTodos = todos.filter((t) => !t.completed || settlingIds.has(t.todo_id));
     const completedTodos = todos.filter((t) => t.completed && !settlingIds.has(t.todo_id));
 
@@ -617,6 +810,7 @@ function Dashboard() {
                             stats={stats}
                             selectedList={selectedList}
                             onSelect={setSelectedList}
+                            onRename={handleRenameList}
                         />
 
                         <section className="panel tasks-panel" aria-labelledby="tasks-heading">
@@ -625,7 +819,9 @@ function Dashboard() {
                                 <span className="panel-meta">
                                     {todoTotal > todos.length
                                         ? `Showing ${todos.length} of ${todoTotal}`
-                                        : pluralizeTasks(todoTotal)}
+                                        : filtersActive
+                                            ? `${todoTotal} matching`
+                                            : pluralizeTasks(todoTotal)}
                                 </span>
                             </div>
 
@@ -636,16 +832,38 @@ function Dashboard() {
                                 ))}
                             </datalist>
 
+                            {stats.total > 0 && (
+                                <TaskFilters
+                                    filters={filters}
+                                    onChange={setFilters}
+                                    onClear={() => setFilters(EMPTY_FILTERS)}
+                                />
+                            )}
+
                             {todos.length === 0 ? (
                                 <div className="tasks-empty">
-                                    <p className="tasks-empty-title">
-                                        {stats.total === 0 ? 'Create your first task' : 'No tasks in this list'}
-                                    </p>
-                                    <p>
-                                        {stats.total === 0
-                                            ? 'Type a task above, pick a list and priority, and press Add.'
-                                            : 'Add one above, or choose another list.'}
-                                    </p>
+                                    {stats.total === 0 ? (
+                                        <>
+                                            <p className="tasks-empty-title">Create your first task</p>
+                                            <p>Type a task above, pick a list and priority, and press Add.</p>
+                                        </>
+                                    ) : filtersActive ? (
+                                        <>
+                                            <p className="tasks-empty-title">No tasks match these filters</p>
+                                            <button
+                                                type="button"
+                                                className="link-button"
+                                                onClick={() => setFilters(EMPTY_FILTERS)}
+                                            >
+                                                Clear filters
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="tasks-empty-title">No tasks in this list</p>
+                                            <p>Add one above, or choose another list.</p>
+                                        </>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="task-scroll">
@@ -653,7 +871,9 @@ function Dashboard() {
                                         <ul className="task-list">{openTodos.map(renderTask)}</ul>
                                     ) : (
                                         <p className="tasks-all-done">
-                                            All done here. Every task in this list is complete.
+                                            {filtersActive
+                                                ? 'No open tasks match these filters.'
+                                                : 'All done here. Every task in this list is complete.'}
                                         </p>
                                     )}
 
