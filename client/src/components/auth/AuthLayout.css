@@ -1,0 +1,138 @@
+/* Shell around the auth pages. Card and form styles live in src/index.css (.auth-*);
+   shared bits (.btn, .landing-brand, .eyebrow, mocks, footer) come from Splash.css. */
+
+.auth-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.55;
+    background: var(--canvas);
+}
+
+/* ---------- Top bar ---------- */
+.auth-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--canvas) 82%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.auth-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 1180px;
+    height: 64px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.auth-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.auth-nav-hint {
+    margin-left: 6px;
+    font-size: 0.9em;
+    color: var(--ink-3);
+}
+
+/* ---------- Main area ---------- */
+/* Same accent glow and fading grid as the landing hero. */
+.auth-main {
+    position: relative;
+    isolation: isolate;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 72px;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 56px 24px;
+    box-sizing: border-box;
+}
+
+.auth-main::before,
+.auth-main::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.auth-main::before {
+    background: radial-gradient(ellipse 50% 60% at 50% 45%, var(--accent-soft), transparent 70%);
+}
+
+.auth-main::after {
+    background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 44px 44px;
+    opacity: 0.45;
+    mask-image: radial-gradient(ellipse 65% 70% at 50% 45%, #000 15%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 65% 70% at 50% 45%, #000 15%, transparent 75%);
+}
+
+.auth-content {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ---------- Side panel ---------- */
+.auth-aside {
+    flex: 1 1 0;
+    max-width: 480px;
+    color: var(--ink-2);
+}
+
+.auth-aside h2 {
+    margin: 0;
+    font-size: clamp(1.8em, 3vw, 2.4em);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+
+.auth-aside > p {
+    margin-top: 14px;
+    font-size: 1.05em;
+}
+
+.auth-aside .mock-window {
+    margin-top: 32px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .auth-aside {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .auth-nav-inner {
+        padding: 0 16px;
+    }
+
+    .auth-nav-hint {
+        display: none;
+    }
+
+    .auth-main {
+        align-items: flex-start;
+        padding: 32px 16px 48px;
+    }
+}
