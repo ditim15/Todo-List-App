@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import ThemeToggle from '../components/ThemeToggle';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
 import './static/Dashboard.css';
 
@@ -763,6 +764,7 @@ function Dashboard() {
                 <span className="topbar-brand">Todo</span>
                 <div className="topbar-user">
                     {user?.name && <span className="topbar-name">{user.name}</span>}
+                    <ThemeToggle />
                     <button type="button" className="button-ghost" onClick={handleLogout}>
                         Log out
                     </button>
