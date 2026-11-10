@@ -11,11 +11,24 @@ export function localToday() {
     return `${now.getFullYear()}-${month}-${day}`;
 }
 
-// Pass `category` to only fetch todos in that list.
-export function getTodos(authFetch, { page = 1, limit = 10, category } = {}) {
+// Optional filters: `category` (one list), `priorities` (array of 'low' | 'medium' |
+// 'high'), `search` (title contains), `dueFrom` / `dueTo` ('YYYY-MM-DD', inclusive).
+export function getTodos(authFetch, { page = 1, limit = 10, category, priorities = [], search, dueFrom, dueTo } = {}) {
     const params = new URLSearchParams({ page, limit });
     if (category) params.set('category', category);
+    if (priorities.length > 0) params.set('priority', priorities.join(','));
+    if (search) params.set('search', search);
+    if (dueFrom) params.set('dueFrom', dueFrom);
+    if (dueTo) params.set('dueTo', dueTo);
     return authFetch(`/todos?${params}`);
+}
+
+// Renames a list by moving all of its todos to `newName` (merges if that list exists).
+export function renameList(authFetch, oldName, newName) {
+    return authFetch(`/todos/lists/${encodeURIComponent(oldName)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: newName }),
+    });
 }
 
 // Dashboard summary: total, completed, dueToday, overdue, priorities {high, medium, low}
