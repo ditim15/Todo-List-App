@@ -10,7 +10,7 @@ import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 
 // Wraps pages that have no top bar, giving them a floating light/dark toggle.
-// The dashboard renders its own toggle in its top bar.
+// The landing page and dashboard render their own toggle in their top bars.
 function PublicLayout() {
     return (
         <>
@@ -29,8 +29,9 @@ function App() {
             <AuthProvider>
                 <BrowserRouter>
                     <Routes>
+                        {/* The landing page has its own nav with a theme toggle. */}
+                        <Route path="/" element={<Splash />} />
                         <Route element={<PublicLayout />}>
-                            <Route path="/" element={<Splash />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
                             {/* Catch-all for unmatched routes. */}
