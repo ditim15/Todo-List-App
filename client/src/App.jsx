@@ -1,33 +1,51 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
+import { ThemeProvider } from './theme/ThemeContext';
+import ThemeToggle from './components/ThemeToggle';
 import Splash from './pages/Splash';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 
+// Wraps pages that have no top bar, giving them a floating light/dark toggle.
+// The dashboard renders its own toggle in its top bar.
+function PublicLayout() {
+    return (
+        <>
+            <ThemeToggle floating />
+            <Outlet />
+        </>
+    );
+}
+
 // Top-level route table for the app.
 function App() {
     return (
-        // AuthProvider must wrap the router so every route (including ProtectedRoute) can read auth state.
-        <AuthProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<Splash />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    {/* Dashboard requires an authenticated session; ProtectedRoute redirects to /login otherwise. */}
-                    <Route path="/dashboard" element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }/>
-                    {/* Catch-all for unmatched routes. */}
-                    <Route path="*" element={<NotFound />} />
-                </Routes>
-            </BrowserRouter>
-        </AuthProvider>
+        // ThemeProvider is outermost so every page, including loading states, is themed.
+        <ThemeProvider>
+            {/* AuthProvider must wrap the router so every route (including ProtectedRoute) can read auth state. */}
+            <AuthProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route element={<PublicLayout />}>
+                            <Route path="/" element={<Splash />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            {/* Catch-all for unmatched routes. */}
+                            <Route path="*" element={<NotFound />} />
+                        </Route>
+                        {/* Dashboard requires an authenticated session; ProtectedRoute redirects to /login otherwise. */}
+                        <Route path="/dashboard" element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        }/>
+                    </Routes>
+                </BrowserRouter>
+            </AuthProvider>
+        </ThemeProvider>
     );
 }
 
