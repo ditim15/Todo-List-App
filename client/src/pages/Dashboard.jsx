@@ -12,6 +12,9 @@ const PRIORITIES = [
 
 const TASK_PAGE_SIZE = 50;
 
+// How long a just-completed task stays in place before moving to the Completed section.
+const COMPLETE_MOVE_DELAY_MS = 1500;
+
 // Time-of-day greeting based on the user's local clock.
 function getGreeting() {
     const hour = new Date().getHours();
@@ -196,8 +199,23 @@ function UpcomingPanel({ upcoming, today }) {
     );
 }
 
+// Shared suggestions for every "List" input (the add form and edit forms).
+const LISTS_DATALIST_ID = 'dashboard-lists';
+
+function PrioritySelect({ value, onChange }) {
+    return (
+        <select aria-label="Priority" value={value} onChange={(e) => onChange(e.target.value)}>
+            {PRIORITIES.map((p) => (
+                <option key={p.key} value={p.key}>
+                    {p.label}
+                </option>
+            ))}
+        </select>
+    );
+}
+
 // Compact inline form for adding a task to the current (or a new) list.
-function AddTaskForm({ lists, defaultList, onCreate }) {
+function AddTaskForm({ defaultList, onCreate }) {
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState(defaultList ?? '');
     const [priority, setPriority] = useState('medium');
@@ -248,27 +266,12 @@ function AddTaskForm({ lists, defaultList, onCreate }) {
                 type="text"
                 placeholder="List"
                 aria-label="List"
-                list="dashboard-lists"
+                list={LISTS_DATALIST_ID}
                 value={category}
                 maxLength={50}
                 onChange={(e) => setCategory(e.target.value)}
             />
-            <datalist id="dashboard-lists">
-                {lists.map((list) => (
-                    <option key={list.name} value={list.name} />
-                ))}
-            </datalist>
-            <select
-                aria-label="Priority"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-            >
-                {PRIORITIES.map((p) => (
-                    <option key={p.key} value={p.key}>
-                        {p.label}
-                    </option>
-                ))}
-            </select>
+            <PrioritySelect value={priority} onChange={setPriority} />
             <input
                 type="date"
                 aria-label="Due date"
@@ -283,12 +286,108 @@ function AddTaskForm({ lists, defaultList, onCreate }) {
     );
 }
 
-function TaskItem({ todo, today, onToggle }) {
-    const isOverdue = !todo.completed && todo.due_date && todo.due_date < today;
-    const priority = PRIORITIES.find((p) => p.key === todo.priority);
+// Inline editor that replaces a task's details while editing. Esc cancels.
+function TaskEditForm({ todo, onSave, onCancel }) {
+    const [title, setTitle] = useState(todo.title);
+    const [description, setDescription] = useState(todo.description ?? '');
+    const [category, setCategory] = useState(todo.category);
+    const [priority, setPriority] = useState(todo.priority);
+    const [dueDate, setDueDate] = useState(todo.due_date ?? '');
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        if (!title.trim()) {
+            setError('Title is required');
+            return;
+        }
+
+        setIsSaving(true);
+        setError('');
+        try {
+            await onSave(todo, {
+                title: title.trim(),
+                description: description.trim() || null,
+                category: category.trim() || undefined,
+                priority,
+                due_date: dueDate || null,
+            });
+        } catch (err) {
+            setError(err.message);
+            setIsSaving(false);
+        }
+    }
+
+    function handleKeyDown(e) {
+        if (e.key === 'Escape') onCancel();
+    }
 
     return (
-        <li className={`task${todo.completed ? ' task--done' : ''}`}>
+        <form className="task-edit" onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
+            <input
+                className="task-edit-title"
+                type="text"
+                aria-label="Task title"
+                value={title}
+                maxLength={255}
+                autoFocus
+                onChange={(e) => setTitle(e.target.value)}
+            />
+            <textarea
+                className="task-edit-description"
+                aria-label="Description"
+                placeholder="Description (optional)"
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+            />
+            <div className="task-edit-fields">
+                <label>
+                    <span>List</span>
+                    <input
+                        type="text"
+                        list={LISTS_DATALIST_ID}
+                        placeholder="General"
+                        value={category}
+                        maxLength={50}
+                        onChange={(e) => setCategory(e.target.value)}
+                    />
+                </label>
+                <label>
+                    <span>Priority</span>
+                    <PrioritySelect value={priority} onChange={setPriority} />
+                </label>
+                <label>
+                    <span>Due date</span>
+                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                </label>
+            </div>
+            {error && <p className="form-error">{error}</p>}
+            <div className="task-edit-actions">
+                <button type="button" className="button-ghost" onClick={onCancel}>
+                    Cancel
+                </button>
+                <button type="submit" className="button-primary" disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save'}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+// `isSettling`: just checked off; shown as done in place briefly before it moves to
+// the Completed section, so an accidental click can be undone.
+function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCancelEdit, onSave }) {
+    const isOverdue = !todo.completed && todo.due_date && todo.due_date < today;
+    const priority = PRIORITIES.find((p) => p.key === todo.priority);
+    const classes = ['task'];
+    if (todo.completed) classes.push('task--done');
+    if (isSettling) classes.push('task--settling');
+    if (isEditing) classes.push('task--editing');
+
+    return (
+        <li className={classes.join(' ')}>
             <input
                 type="checkbox"
                 className="task-check"
@@ -296,24 +395,38 @@ function TaskItem({ todo, today, onToggle }) {
                 onChange={() => onToggle(todo)}
                 aria-label={`Mark "${todo.title}" as ${todo.completed ? 'not done' : 'done'}`}
             />
-            <div className="task-body">
-                <span className="task-title">{todo.title}</span>
-                {todo.description && <span className="task-description">{todo.description}</span>}
-                <span className="task-meta">
-                    <span className="task-chip">{todo.category}</span>
-                    {priority && (
-                        <span className="task-priority">
-                            <span className={`priority-dot priority-dot--${priority.key}`} aria-hidden="true" />
-                            {priority.label}
+            {isEditing ? (
+                <TaskEditForm todo={todo} onSave={onSave} onCancel={onCancelEdit} />
+            ) : (
+                <>
+                    <div className="task-body">
+                        <span className="task-title">{todo.title}</span>
+                        {todo.description && <span className="task-description">{todo.description}</span>}
+                        <span className="task-meta">
+                            <span className="task-chip">{todo.category}</span>
+                            {priority && (
+                                <span className="task-priority">
+                                    <span className={`priority-dot priority-dot--${priority.key}`} aria-hidden="true" />
+                                    {priority.label}
+                                </span>
+                            )}
+                            {todo.due_date && (
+                                <span className={`task-due${isOverdue ? ' is-overdue' : ''}`}>
+                                    {todo.completed ? 'Done' : formatDueDate(todo.due_date, today)}
+                                </span>
+                            )}
                         </span>
-                    )}
-                    {todo.due_date && (
-                        <span className={`task-due${isOverdue ? ' is-overdue' : ''}`}>
-                            {todo.completed ? 'Done' : formatDueDate(todo.due_date, today)}
-                        </span>
-                    )}
-                </span>
-            </div>
+                    </div>
+                    <button
+                        type="button"
+                        className="task-edit-button"
+                        onClick={() => onEdit(todo.todo_id)}
+                        aria-label={`Edit "${todo.title}"`}
+                    >
+                        Edit
+                    </button>
+                </>
+            )}
         </li>
     );
 }
@@ -330,9 +443,36 @@ function Dashboard() {
     const [selectedList, setSelectedList] = useState(null);
     const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
     const [error, setError] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const [showCompleted, setShowCompleted] = useState(true);
+    // Ids of tasks just checked off that stay in the open list until their timer fires.
+    const [settlingIds, setSettlingIds] = useState(() => new Set());
+    const settleTimers = useRef(new Map());
     // Only the most recent load may update state, so a slow earlier response (or the
     // StrictMode double-run) can't overwrite newer data.
     const latestRequest = useRef(0);
+
+    // Clear pending move timers if the dashboard unmounts.
+    useEffect(() => {
+        const timers = settleTimers.current;
+        return () => timers.forEach((timer) => clearTimeout(timer));
+    }, []);
+
+    function setSettling(id, isSettling) {
+        clearTimeout(settleTimers.current.get(id));
+        settleTimers.current.delete(id);
+
+        if (isSettling) {
+            settleTimers.current.set(id, setTimeout(() => setSettling(id, false), COMPLETE_MOVE_DELAY_MS));
+        }
+
+        setSettlingIds((current) => {
+            const next = new Set(current);
+            if (isSettling) next.add(id);
+            else next.delete(id);
+            return next;
+        });
+    }
 
     async function loadDashboard(list) {
         const requestId = ++latestRequest.current;
@@ -370,19 +510,32 @@ function Dashboard() {
     }
 
     async function handleToggle(todo) {
-        // Optimistic: flip it immediately, then reload so counts and progress update.
+        const completed = !todo.completed;
+
+        // Optimistic: flip it immediately. A newly completed task lingers in place
+        // (settling) before moving to Completed; un-checking it cancels the move.
         setTodos((current) =>
-            current.map((t) => (t.todo_id === todo.todo_id ? { ...t, completed: !t.completed } : t))
+            current.map((t) => (t.todo_id === todo.todo_id ? { ...t, completed } : t))
         );
+        setSettling(todo.todo_id, completed);
+
         let failure = null;
         try {
-            await updateTodo(authFetch, todo.todo_id, { ...todo, completed: !todo.completed });
+            await updateTodo(authFetch, todo.todo_id, { ...todo, completed });
         } catch (err) {
             failure = err;
+            setSettling(todo.todo_id, false);
         }
-        // Reloading also reverts the optimistic flip if the update failed.
+        // Reload so counts and progress update; this also reverts the flip on failure.
         await loadDashboard(selectedList);
         if (failure) setError(failure.message);
+    }
+
+    // Throws on failure so the edit form can show the error and stay open.
+    async function handleSave(todo, fields) {
+        await updateTodo(authFetch, todo.todo_id, { ...todo, ...fields });
+        setEditingId(null);
+        await loadDashboard(selectedList);
     }
 
     function handleLogout() {
@@ -392,6 +545,24 @@ function Dashboard() {
 
     const today = localToday();
     const firstName = user?.name?.split(' ')[0];
+    const openTodos = todos.filter((t) => !t.completed || settlingIds.has(t.todo_id));
+    const completedTodos = todos.filter((t) => t.completed && !settlingIds.has(t.todo_id));
+
+    function renderTask(todo) {
+        return (
+            <TaskItem
+                key={todo.todo_id}
+                todo={todo}
+                today={today}
+                isEditing={editingId === todo.todo_id}
+                isSettling={settlingIds.has(todo.todo_id)}
+                onToggle={handleToggle}
+                onEdit={setEditingId}
+                onCancelEdit={() => setEditingId(null)}
+                onSave={handleSave}
+            />
+        );
+    }
 
     return (
         <div className="dash">
@@ -458,11 +629,12 @@ function Dashboard() {
                                 </span>
                             </div>
 
-                            <AddTaskForm
-                                lists={stats.lists}
-                                defaultList={selectedList}
-                                onCreate={handleCreate}
-                            />
+                            <AddTaskForm defaultList={selectedList} onCreate={handleCreate} />
+                            <datalist id={LISTS_DATALIST_ID}>
+                                {stats.lists.map((list) => (
+                                    <option key={list.name} value={list.name} />
+                                ))}
+                            </datalist>
 
                             {todos.length === 0 ? (
                                 <div className="tasks-empty">
@@ -476,16 +648,33 @@ function Dashboard() {
                                     </p>
                                 </div>
                             ) : (
-                                <ul className="task-list">
-                                    {todos.map((todo) => (
-                                        <TaskItem
-                                            key={todo.todo_id}
-                                            todo={todo}
-                                            today={today}
-                                            onToggle={handleToggle}
-                                        />
-                                    ))}
-                                </ul>
+                                <div className="task-scroll">
+                                    {openTodos.length > 0 ? (
+                                        <ul className="task-list">{openTodos.map(renderTask)}</ul>
+                                    ) : (
+                                        <p className="tasks-all-done">
+                                            All done here. Every task in this list is complete.
+                                        </p>
+                                    )}
+
+                                    {completedTodos.length > 0 && (
+                                        <section className="completed-section" aria-label="Completed tasks">
+                                            <button
+                                                type="button"
+                                                className="completed-toggle"
+                                                aria-expanded={showCompleted}
+                                                onClick={() => setShowCompleted((open) => !open)}
+                                            >
+                                                <span className="completed-chevron" aria-hidden="true" />
+                                                Completed
+                                                <span className="completed-count">{completedTodos.length}</span>
+                                            </button>
+                                            {showCompleted && (
+                                                <ul className="task-list">{completedTodos.map(renderTask)}</ul>
+                                            )}
+                                        </section>
+                                    )}
+                                </div>
                             )}
                         </section>
 
