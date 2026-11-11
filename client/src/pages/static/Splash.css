@@ -115,7 +115,7 @@ html:has(.landing) {
 .landing-brand {
     display: inline-flex;
     align-items: center;
-    font-size: 1.55em;
+    font-size: 2em;
     text-decoration: none;
 }
 

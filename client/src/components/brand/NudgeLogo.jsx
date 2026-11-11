@@ -1,26 +1,17 @@
-import { useEffect, useState } from 'react';
 import './NudgeLogo.css';
-
-// The intro plays once per page load, not on every route change.
-let introPlayed = false;
 
 // Nudge wordmark: an arrow, the word, and a checkbox.
 //
 // animate:
 //   'none'  - static mark (arrow at rest, box checked). Default.
-//   'intro' - on first mount after a page load, the arrow shoots through the word,
-//             striking it out, and clicks the box checked. Later mounts are static.
+//   'intro' - when it mounts, the arrow shoots through the word, striking it out, and
+//             clicks the box checked. Each page renders its own header, so this plays
+//             on every page change as well as on load. Re-renders don't replay it.
 //   'loop'  - the same motion repeating, used as a loading indicator.
 //
 // Size follows font-size, so set it from the parent.
 function NudgeLogo({ animate = 'none', className = '' }) {
-    const [playIntro] = useState(() => animate === 'intro' && !introPlayed);
-
-    useEffect(() => {
-        if (playIntro) introPlayed = true;
-    }, [playIntro]);
-
-    const mode = animate === 'loop' ? 'loop' : playIntro ? 'intro' : 'static';
+    const mode = animate === 'loop' ? 'loop' : animate === 'intro' ? 'intro' : 'static';
 
     return (
         <span className={`nudge-logo nudge-logo--${mode} ${className}`.trim()} role="img" aria-label="Nudge">
