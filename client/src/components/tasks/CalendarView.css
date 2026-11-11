@@ -1,0 +1,329 @@
+/* Calendar view of the task panel (components/tasks/CalendarView). Lays out by the
+   task panel's width via the `tasks` container set in Dashboard.css. */
+.calendar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 14px;
+}
+
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.calendar-title {
+    margin: 0;
+    font-size: 1.05em;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.calendar-today,
+.calendar-arrow {
+    display: inline-grid;
+    place-items: center;
+    height: 32px;
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.calendar-today {
+    padding: 0 12px;
+    font-weight: 600;
+}
+
+.calendar-arrow {
+    width: 32px;
+    padding: 0;
+}
+
+.calendar-today:hover:not(:disabled),
+.calendar-arrow:hover {
+    background: var(--surface-hover);
+    color: var(--ink);
+}
+
+.calendar-today:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* ---------- Month grid ---------- */
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calendar-row {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-row + .calendar-row {
+    border-top: 1px solid var(--line);
+}
+
+.calendar-weekday {
+    padding: 6px 8px;
+    background: var(--canvas);
+    color: var(--ink-3);
+    font-size: 0.72em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.calendar-weekday abbr {
+    text-decoration: none;
+}
+
+.calendar-cell {
+    display: flex;
+    min-width: 0;
+}
+
+.calendar-cell + .calendar-cell {
+    border-left: 1px solid var(--line);
+}
+
+.calendar-day {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    min-height: 76px;
+    padding: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    border: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+
+.calendar-day:hover {
+    background: var(--surface-hover);
+}
+
+.calendar-day:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.calendar-day--outside {
+    background: color-mix(in srgb, var(--canvas) 70%, var(--surface));
+}
+
+.calendar-day--outside .calendar-date,
+.calendar-day--outside .calendar-tasks {
+    opacity: 0.55;
+}
+
+.calendar-day--selected,
+.calendar-day--selected:hover {
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.calendar-date {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    margin: -2px 0 0 -2px;
+    align-self: flex-start;
+    border-radius: 999px;
+    font-size: 0.8em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    box-sizing: border-box;
+}
+
+.calendar-day--today .calendar-date {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.calendar-day--overdue:not(.calendar-day--today) .calendar-date {
+    color: var(--critical-text);
+}
+
+/* Task pills: priority color on the left edge, title truncated. */
+.calendar-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.calendar-task {
+    display: block;
+    min-width: 0;
+    padding: 1px 6px;
+    background: var(--canvas);
+    border-left: 3px solid var(--prio-medium);
+    border-radius: 3px;
+    font-size: 0.72em;
+    line-height: 1.5;
+    color: var(--ink);
+}
+
+/* Wide cells only; narrow cells draw tasks as colored dots. */
+@container tasks (min-width: 561px) {
+    .calendar-day--selected .calendar-task {
+        background: var(--surface);
+    }
+}
+
+.calendar-task--high {
+    border-left-color: var(--prio-high);
+}
+
+.calendar-task--low {
+    border-left-color: var(--prio-low);
+}
+
+.calendar-task-title {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Completed tasks are greyed and struck through, like in the list. */
+.calendar-task--done {
+    border-left-color: var(--line);
+    color: var(--ink-3);
+}
+
+.calendar-task--done .calendar-task-title {
+    text-decoration: line-through;
+}
+
+.calendar-more {
+    padding-left: 6px;
+    font-size: 0.7em;
+    font-weight: 600;
+    color: var(--ink-3);
+}
+
+/* Narrow panel: shorter cells, tasks as colored dots instead of titled pills. */
+@container tasks (max-width: 560px) {
+    .calendar-weekday {
+        padding: 6px 0;
+        text-align: center;
+    }
+
+    .calendar-day {
+        align-items: center;
+        min-height: 56px;
+        padding: 4px 2px;
+    }
+
+    .calendar-date {
+        margin: 0;
+        align-self: center;
+    }
+
+    .calendar-tasks {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 3px;
+    }
+
+    .calendar-task {
+        width: 6px;
+        height: 6px;
+        padding: 0;
+        background: var(--prio-medium);
+        border: none;
+        border-radius: 50%;
+    }
+
+    .calendar-task.calendar-task--high {
+        background: var(--prio-high);
+    }
+
+    .calendar-task.calendar-task--low {
+        background: var(--prio-low);
+    }
+
+    .calendar-task.calendar-task--done {
+        background: color-mix(in srgb, var(--ink-3) 45%, transparent);
+    }
+
+    .calendar-task-title {
+        display: none;
+    }
+
+    .calendar-more {
+        padding: 0;
+        font-size: 0.62em;
+        line-height: 6px;
+    }
+}
+
+/* ---------- Selected day ---------- */
+.calendar-agenda {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.calendar-agenda-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.calendar-agenda-header h3 {
+    margin: 0;
+    font-size: 0.95em;
+    font-weight: 650;
+}
+
+.calendar-agenda-date {
+    font-weight: 500;
+    color: var(--ink-3);
+}
+
+.calendar-agenda-empty {
+    padding: 14px 2px;
+    font-size: 0.88em;
+    color: var(--ink-3);
+}
+
+.calendar-hint {
+    font-size: 0.8em;
+    color: var(--ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-day {
+        transition: none;
+    }
+}
