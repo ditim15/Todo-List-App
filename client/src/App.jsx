@@ -5,6 +5,8 @@ import { ThemeProvider } from './theme/ThemeContext';
 import Splash from './pages/Splash';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CheckEmail from './pages/CheckEmail';
+import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 
@@ -22,6 +24,9 @@ function App() {
                         <Route path="/" element={<Splash />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        {/* Email verification: "check your inbox" after sign-up, and the emailed link's target. */}
+                        <Route path="/check-email" element={<CheckEmail />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
                         {/* Catch-all for unmatched routes. */}
                         <Route path="*" element={<NotFound />} />
                         {/* Dashboard requires an authenticated session; ProtectedRoute redirects to /login otherwise. */}

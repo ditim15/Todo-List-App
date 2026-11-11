@@ -16,7 +16,13 @@ export async function apiRequest(endpoint, options = {} ) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
+        // `code` lets callers react to specific failures (e.g. EMAIL_NOT_VERIFIED);
+        // `data` carries any extra fields the server sent.
+        const error = new Error(data.message || 'Something went wrong');
+        error.status = response.status;
+        error.code = data.code;
+        error.data = data;
+        throw error;
     }
 
     return data;

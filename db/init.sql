@@ -50,3 +50,23 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+
+-- Email verification. NULL = not verified yet; users can't log in until it's set.
+-- The column is added with DEFAULT NOW() so accounts that existed before verification
+-- was introduced count as verified, then the default is dropped so new sign-ups start
+-- unverified. Both statements are safe to re-run (the ADD is skipped once the column
+-- exists).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE users ALTER COLUMN email_verified_at DROP DEFAULT;
+
+-- One-time links emailed to verify an address. Only the SHA-256 hash of the token is
+-- stored, like refresh_tokens. Issuing a new link deletes the user's older ones.
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '24 hours'
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id ON email_verification_tokens(user_id);

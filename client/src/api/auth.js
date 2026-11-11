@@ -17,6 +17,24 @@ export function refreshAccessToken(refreshToken) {
     });
 }
 
+// Exchanges the token from the emailed link for a verified account + session.
+export function verifyEmail(token) {
+    return apiRequest('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+    });
+}
+
+// Emails a new verification link (the server answers the same whether or not the
+// address is registered).
+export function resendVerification(email) {
+    return apiRequest('/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    });
+}
+
+// Creates an unverified account and emails a verification link. Does not log in.
 export function registerUser(name, email, password) {
     return apiRequest('/auth/register', {
         method: 'POST',

@@ -11,8 +11,8 @@ import nodemailer from 'nodemailer';
 //
 // EMAIL_FROM sets the sender (default "Nudge <reminders@nudge.local>").
 //
-// Until sign-up verifies email addresses, keep this on console or ethereal: with smtp,
-// anyone could register someone else's address and have reminders sent to it.
+// Reminders only go to verified addresses; verification emails go to whatever address
+// someone signs up with (that's how ownership gets proven).
 
 let transporterPromise = null;
 

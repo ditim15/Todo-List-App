@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import AuthLayout from '../components/auth/AuthLayout';
+import ResendVerification from '../components/auth/ResendVerification';
 import { PriorityMock } from '../components/landing/AppMocks';
 
-// Login form: authenticates via AuthContext.login and redirects to the dashboard on success.
+// Login form: authenticates via AuthContext.login and redirects to the dashboard on
+// success. Accounts that haven't confirmed their email get a resend option instead.
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    // Set when the server says the account exists but isn't verified yet.
+    const [unverifiedEmail, setUnverifiedEmail] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -16,14 +20,16 @@ function Login() {
     async function handleSubmit(e) {
         e.preventDefault();
         setError('');
+        setUnverifiedEmail(null);
         setIsLoading(true);
 
         try {
-            await login(email, password);
+            await login(email.trim(), password);
             navigate('/dashboard');
         } catch (err) {
             // login() throws with a user-facing message (see api/client.js apiRequest).
             setError(err.message);
+            if (err.code === 'EMAIL_NOT_VERIFIED') setUnverifiedEmail(err.data?.email ?? email.trim());
         } finally {
             setIsLoading(false);
         }
@@ -48,6 +54,7 @@ function Login() {
                     <input
                         id="email"
                         type="email"
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -56,6 +63,7 @@ function Login() {
                     <input
                         id="password"
                         type="password"
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -67,6 +75,9 @@ function Login() {
                         {isLoading ? 'Logging in...' : 'Log In'}
                     </button>
                 </form>
+
+                {/* Outside the login form so its submit doesn't trigger a login. */}
+                {unverifiedEmail && <ResendVerification key={unverifiedEmail} email={unverifiedEmail} />}
 
                 <p className="auth-footer">
                     Don't have an account? <Link to='/register'>Register</Link>

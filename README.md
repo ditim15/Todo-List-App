@@ -49,8 +49,10 @@ Server runs on `http://localhost:4000` by default
 
 | Method | Route              | Description                                  | Auth required |
 |--------|---------------------|-----------------------------------------------|----------------|
-| POST   | `/auth/register`    | Create a new user                             | No             |
-| POST   | `/auth/login`        | Log in, returns access + refresh token         | No             |
+| POST   | `/auth/register`    | Create an unverified user and email a verification link (does not log in) | No |
+| POST   | `/auth/login`        | Log in, returns access + refresh token. Unverified accounts get `403` with `code: "EMAIL_NOT_VERIFIED"` | No |
+| POST   | `/auth/verify-email` | Confirm an email with the link's `token`; marks the account verified and returns access + refresh token | No |
+| POST   | `/auth/resend-verification` | Email a new verification link to `email` (same response whether or not it's registered; 60s cooldown per account) | No |
 | POST   | `/auth/refresh`      | Exchange a refresh token for a new access token (rotates the refresh token) | No |
 | POST   | `/auth/logout`       | Revoke a refresh token                        | No             |
 
@@ -98,9 +100,20 @@ SMTP_PASS=...
 
 - `console`: prints each email to the server log; nothing is sent.
 - `ethereal`: sends to a throwaway [Ethereal](https://ethereal.email) inbox and logs a link to view the email. Nothing reaches real inboxes.
-- `smtp`: real delivery. Don't use this until sign-up verifies email addresses; otherwise anyone could have reminders sent to an address they don't own.
+- `smtp`: real delivery to verified addresses.
 
 After pulling this change, re-run `db/init.sql` to add the reminder columns (it's safe to re-run).
+
+## Sign-up Rules and Email Verification
+
+- **Passwords** need at least 8 characters, an uppercase letter, a number and a symbol (max 72, bcrypt's limit). Rules live in `utils/validation.js`, mirrored for the live checklist in `client/src/auth/passwordRules.js`.
+- **Email addresses** must be well-formed, and their domain must publish mail servers (MX records), which catches typos like `gmial.con`.
+- **Verification:** registering emails a one-time link (`APP_URL/verify-email?token=...`, valid 24 hours). Users can't log in until they click it, and opening it logs them in. Only a hash of the token is stored. Reminders are only sent to verified addresses.
+- Accounts that existed before verification was added are treated as verified.
+- In `EMAIL_TRANSPORT=console` mode, the verification link is printed in the server log, so you can test sign-ups without a mail provider.
+- With verification in place, `EMAIL_TRANSPORT=smtp` is now safe to turn on for real delivery.
+
+After pulling this change, re-run `db/init.sql`.
 
 ## Auth Flow Notes
  

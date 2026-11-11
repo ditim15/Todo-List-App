@@ -89,6 +89,8 @@ export async function processDueReminders() {
         + ' WHERE u.id = t.user_id AND t.todo_id IN ('
         + '   SELECT todo_id FROM todos'
         + '   WHERE reminder_sent_at IS NULL AND remind_at IS NOT NULL AND NOT completed'
+        // Only send to email addresses the user has proven they own.
+        + '     AND user_id IN (SELECT id FROM users WHERE email_verified_at IS NOT NULL)'
         + `     AND remind_at <= NOW() AND remind_at > NOW() - INTERVAL '${MAX_LATENESS}'`
         + '   ORDER BY remind_at'
         + `   LIMIT ${BATCH_SIZE}`

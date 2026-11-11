@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { loginUser, registerUser, refreshAccessToken } from "../api/auth";
+import { loginUser, registerUser, refreshAccessToken, verifyEmail as verifyEmailRequest } from "../api/auth";
 
 const AuthContext = createContext(null);
 
@@ -56,10 +56,16 @@ export function AuthProvider({ children }) {
         return data;
     }
 
-    // Registration also logs the user in: the backend returns the same
-    // user/accessToken/refreshToken shape as login.
+    // Registration creates an unverified account and emails a verification link; it
+    // does not log in. Resolves with { email, emailSent }.
     async function register(name, email, password) {
-        const data = await registerUser(name, email, password);
+        return registerUser(name, email, password);
+    }
+
+    // Confirms the email from the verification link's token. The server logs the user
+    // in on success, returning the same user/accessToken/refreshToken shape as login.
+    async function verifyEmail(token) {
+        const data = await verifyEmailRequest(token);
 
         setUser(data.user);
         setAccessToken(data.accessToken);
@@ -125,6 +131,7 @@ export function AuthProvider({ children }) {
         authFetch,
         login,
         register,
+        verifyEmail,
         logout,
     };
 

@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { registerUser, loginUser, refreshAccessToken } from "../controllers/auth.controller.js";
+import {
+    registerUser,
+    loginUser,
+    verifyEmail,
+    resendVerification,
+    refreshAccessToken,
+} from "../controllers/auth.controller.js";
 import rateLimit from 'express-rate-limit';
 
 const authLimiter = rateLimit({
@@ -8,10 +14,20 @@ const authLimiter = rateLimit({
     message: { message: "Too many requests, please try again later" }
 });
 
+// Each resend sends an email, so it's limited more tightly (the controller also enforces
+// a per-account cooldown).
+const resendLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { message: "Too many verification emails requested. Please try again later." }
+});
+
 const router = Router();
 
 router.post("/register", authLimiter, registerUser);
 router.post("/login", authLimiter, loginUser);
+router.post("/verify-email", authLimiter, verifyEmail);
+router.post("/resend-verification", resendLimiter, resendVerification);
 router.post("/refresh", refreshAccessToken);
 
 export default router;
