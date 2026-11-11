@@ -26,6 +26,21 @@ ALTER TABLE todos ADD COLUMN IF NOT EXISTS category VARCHAR(50) NOT NULL DEFAULT
 
 CREATE INDEX IF NOT EXISTS idx_todos_user_id ON todos(user_id);
 
+-- Reminders: "N days before the due date at a time of day", in the user's timezone.
+-- remind_at is the resulting moment, computed by the API on every create/update.
+-- reminder_sent_at is set once the reminder goes out, and cleared when remind_at changes.
+-- All NULL means no reminder.
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS reminder_days_before SMALLINT
+    CHECK (reminder_days_before BETWEEN 0 AND 7);
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS reminder_time TIME;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS reminder_timezone VARCHAR(64);
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS remind_at TIMESTAMPTZ;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
+
+-- The reminder scheduler only looks at reminders that haven't gone out yet.
+CREATE INDEX IF NOT EXISTS idx_todos_pending_reminders ON todos(remind_at)
+    WHERE remind_at IS NOT NULL AND reminder_sent_at IS NULL;
+
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

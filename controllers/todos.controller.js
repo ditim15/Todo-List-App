@@ -18,8 +18,70 @@ function parseTodoFields(body) {
         return { error: 'List name must be 50 characters or fewer' };
     }
 
-    return { priority, category, dueDate: body.due_date || null };
+    const dueDate = body.due_date || null;
+    const reminder = parseReminder(body, dueDate);
+    if (reminder.error) {
+        return { error: reminder.error };
+    }
+
+    return { priority, category, dueDate, reminder: reminder.value };
 }
+
+const REMINDER_MAX_DAYS_BEFORE = 7;
+const DEFAULT_REMINDER_TIME = '09:00';
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+
+function isValidTimeZone(timeZone) {
+    try {
+        new Intl.DateTimeFormat('en-US', { timeZone });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Reminder fields: reminder_days_before (0 = on the due date, up to 7), reminder_time
+// ('HH:MM', the user's local time, default 09:00) and reminder_timezone (IANA name,
+// e.g. 'America/New_York'). A null/omitted reminder_days_before means no reminder.
+function parseReminder(body, dueDate) {
+    const raw = body.reminder_days_before;
+    if (raw === undefined || raw === null || raw === '') {
+        return { value: null };
+    }
+
+    const daysBefore = Number(raw);
+    if (!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > REMINDER_MAX_DAYS_BEFORE) {
+        return { error: `Reminders can be set from the due date up to ${REMINDER_MAX_DAYS_BEFORE} days before` };
+    }
+    if (!dueDate) {
+        return { error: 'Set a due date to add a reminder' };
+    }
+
+    const time = body.reminder_time || DEFAULT_REMINDER_TIME;
+    if (typeof time !== 'string' || !TIME_PATTERN.test(time)) {
+        return { error: 'Reminder time must be in HH:MM format' };
+    }
+
+    const timezone = body.reminder_timezone || 'UTC';
+    if (typeof timezone !== 'string' || timezone.length > 64 || !isValidTimeZone(timezone)) {
+        return { error: 'Unknown reminder timezone' };
+    }
+
+    return { value: { daysBefore, time: time.slice(0, 5), timezone } };
+}
+
+// The moment a reminder should go out: (due date - N days) at the given local time in
+// the user's timezone. Postgres does the conversion so DST is handled correctly.
+async function computeRemindAt(dueDate, reminder) {
+    if (!reminder) return null;
+    const result = await pool.query(
+        'SELECT (($1::date - $2::int) + $3::time) AT TIME ZONE $4 AS remind_at',
+        [dueDate, reminder.daysBefore, reminder.time, reminder.timezone]
+    );
+    return result.rows[0].remind_at;
+}
+
+const REMINDER_PASSED_MESSAGE = 'That reminder time has already passed. Pick a later one.';
 
 // Reads the client's local date (?today=YYYY-MM-DD) so "due today"/"overdue" match the
 // user's calendar rather than the server's; null falls back to the DB's CURRENT_DATE.
@@ -171,11 +233,19 @@ const createTodo = async (req, res, next) => {
             return res.status(400).json({ message: fields.error });
         }
 
+        const remindAt = await computeRemindAt(fields.dueDate, fields.reminder);
+        if (remindAt && remindAt <= new Date()) {
+            return res.status(400).json({ message: REMINDER_PASSED_MESSAGE });
+        }
+        const reminder = fields.reminder ?? {};
+
         // COALESCE keeps the column default (false) when `completed` is omitted.
         const todo = await pool.query(
-            'INSERT INTO todos (user_id, title, description, completed, due_date, priority, category)'
-            + ' VALUES ($1, $2, $3, COALESCE($4, false), $5, $6, $7) RETURNING *',
-            [req.user.id, title.trim(), description, completed, fields.dueDate, fields.priority, fields.category]
+            'INSERT INTO todos (user_id, title, description, completed, due_date, priority, category,'
+            + ' reminder_days_before, reminder_time, reminder_timezone, remind_at)'
+            + ' VALUES ($1, $2, $3, COALESCE($4, false), $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+            [req.user.id, title.trim(), description, completed, fields.dueDate, fields.priority, fields.category,
+                reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null, remindAt]
         );
 
         res.status(201).json({
@@ -205,13 +275,39 @@ const updateTodo = async (req, res, next) => {
             return res.status(400).json({ message: fields.error });
         }
 
+        const existing = await pool.query(
+            'SELECT remind_at, reminder_sent_at FROM todos WHERE todo_id = $1 AND user_id = $2',
+            [req.params.id, req.user.id]
+        );
+        if (existing.rows.length === 0) {
+            return res.status(404).json({
+                message: "Todo not found"
+            });
+        }
+
+        // Only a changed reminder is checked against the clock, so saving other edits
+        // (e.g. ticking the task off) still works after a reminder has gone out. A
+        // changed reminder is re-armed by clearing reminder_sent_at.
+        const remindAt = await computeRemindAt(fields.dueDate, fields.reminder);
+        const previous = existing.rows[0];
+        const reminderChanged = (remindAt?.getTime() ?? null) !== (previous.remind_at?.getTime() ?? null);
+        if (reminderChanged && remindAt && remindAt <= new Date()) {
+            return res.status(400).json({ message: REMINDER_PASSED_MESSAGE });
+        }
+        const sentAt = reminderChanged ? null : previous.reminder_sent_at;
+        const reminder = fields.reminder ?? {};
+
         // COALESCE keeps the current completed state if the client leaves it out.
         const updated = await pool.query(
             'UPDATE todos SET title = $1, description = $2, completed = COALESCE($3, completed),'
-            + ' due_date = $4, priority = $5, category = $6, updated_at = NOW()'
-            + ' WHERE todo_id = $7 AND user_id = $8 RETURNING *',
+            + ' due_date = $4, priority = $5, category = $6,'
+            + ' reminder_days_before = $7, reminder_time = $8, reminder_timezone = $9,'
+            + ' remind_at = $10, reminder_sent_at = $11, updated_at = NOW()'
+            + ' WHERE todo_id = $12 AND user_id = $13 RETURNING *',
             [title.trim(), description || null, completed, fields.dueDate,
-                fields.priority, fields.category, req.params.id, req.user.id]
+                fields.priority, fields.category,
+                reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null,
+                remindAt, sentAt, req.params.id, req.user.id]
         );
 
         if (updated.rows.length === 0) {

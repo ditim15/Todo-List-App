@@ -19,6 +19,7 @@ app.use(cors({
 
 import authRouter from "./routes/auth.js";
 import todosRouter from "./routes/todos.js";
+import { startReminderScheduler } from "./notifications/reminders.js";
 
 app.use("/auth", authRouter);
 app.use("/todos", todosRouter);
@@ -34,6 +35,8 @@ const startServer = async () => {
 
         app.listen(process.env.PORT || 8000, () => {
             console.log(`Server is running on port ${process.env.PORT}`);
+            // Sends task reminders as they come due (see notifications/reminders.js).
+            startReminderScheduler();
         });
     } catch (err) {
         console.log("Error starting server: ", err);

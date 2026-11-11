@@ -62,10 +62,45 @@ All todos routes require an `Authorization: Bearer <accessToken>` header.
 |--------|----------------|---------------------------------------|
 | GET    | `/todos`       | List the authenticated user's todos (open first, soonest due first). Supports `?page=`, `?limit=`, `?category=` (one list), `?priority=` (comma-separated, e.g. `high,medium`), `?search=` (title contains, case-insensitive), and `?dueFrom=` / `?dueTo=` (`YYYY-MM-DD`, inclusive). |
 | GET    | `/todos/stats` | Dashboard summary: totals, `dueToday` / `overdue`, open-task priority counts, per-list progress, next due tasks. Pass `?today=YYYY-MM-DD` (client's local date). |
-| POST   | `/todos`       | Create a new todo. Optional: `due_date` (`YYYY-MM-DD`), `priority` (`low` / `medium` / `high`, default `medium`), `category` (list name, default `General`) |
+| POST   | `/todos`       | Create a new todo. Optional: `due_date` (`YYYY-MM-DD`), `priority` (`low` / `medium` / `high`, default `medium`), `category` (list name, default `General`), and a reminder (see below) |
 | PUT    | `/todos/:id`   | Update a todo (must be owned by the requesting user) |
 | PUT    | `/todos/lists/:name` | Rename a list: moves all of the user's todos in `:name` to the `name` given in the body (renaming to an existing list merges them) |
 | DELETE | `/todos/:id`   | Delete a todo (must be owned by the requesting user) |
+
+## Task Reminders
+
+A task with a due date can have an email reminder: "N days before the due date at a time of day", in the user's timezone. Send these fields on `POST /todos` and `PUT /todos/:id`:
+
+| Field | Description |
+|-------|-------------|
+| `reminder_days_before` | `0` (on the due date) to `7`. `null` or omitted = no reminder. Requires `due_date`. |
+| `reminder_time` | `HH:MM`, the user's local time. Default `09:00`. |
+| `reminder_timezone` | IANA timezone, e.g. `America/New_York`. Default `UTC`. |
+
+The API stores the resulting moment as `remind_at` and rejects a new or changed reminder whose time has already passed. While the server runs, it checks every minute for due reminders on open tasks and sends each one once (`reminder_sent_at` is set). Changing the reminder or due date re-arms it. Reminders missed by more than 6 hours (for example, while the server was down) are skipped.
+
+Delivery lives in `notifications/`. `reminders.js` builds the message and sends it to each channel in its `CHANNELS` list; email (`channels/email.js`) is the only one for now.
+
+### Email settings (`.env`)
+
+```
+EMAIL_TRANSPORT=console            # console (default) | ethereal | smtp
+EMAIL_FROM="Nudge <reminders@example.com>"
+APP_URL=http://localhost:5173      # used for the "Open Nudge" link
+
+# Only for EMAIL_TRANSPORT=smtp
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false                  # true for port 465
+SMTP_USER=...
+SMTP_PASS=...
+```
+
+- `console`: prints each email to the server log; nothing is sent.
+- `ethereal`: sends to a throwaway [Ethereal](https://ethereal.email) inbox and logs a link to view the email. Nothing reaches real inboxes.
+- `smtp`: real delivery. Don't use this until sign-up verifies email addresses; otherwise anyone could have reminders sent to an address they don't own.
+
+After pulling this change, re-run `db/init.sql` to add the reminder columns (it's safe to re-run).
 
 ## Auth Flow Notes
  
