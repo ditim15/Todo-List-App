@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import AccountMenu from '../components/account/AccountMenu';
@@ -6,6 +6,8 @@ import NudgeLogo from '../components/brand/NudgeLogo';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
 import { ReminderBadge, ReminderPicker, ReminderSelect } from '../components/tasks/reminders';
 import { DEFAULT_REMINDER_TIME, reminderMoment } from '../components/tasks/reminderUtils';
+import CalendarView from '../components/tasks/CalendarView';
+import { isSameMonth, localeFirstDayOfWeek, monthGrid, monthOf } from '../components/tasks/calendarUtils';
 import './static/Dashboard.css';
 
 const PRIORITIES = [
@@ -20,6 +22,28 @@ const TASK_PAGE_SIZE = 50;
 const COMPLETE_MOVE_DELAY_MS = 1500;
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+// The calendar asks for every task due in the visible weeks (at most 6), not a page.
+const CALENDAR_TASK_LIMIT = 1000;
+
+// Which task view (list or calendar) the user last picked, remembered per browser.
+const VIEW_STORAGE_KEY = 'nudge:task-view';
+
+function loadSavedView() {
+    try {
+        return localStorage.getItem(VIEW_STORAGE_KEY) === 'calendar' ? 'calendar' : 'list';
+    } catch {
+        return 'list';
+    }
+}
+
+function saveView(view) {
+    try {
+        localStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {
+        // Storage blocked (private mode etc.): the choice just isn't remembered.
+    }
+}
 
 const EMPTY_FILTERS = { search: '', priorities: [], dueFrom: '', dueTo: '' };
 
@@ -320,7 +344,8 @@ function PrioritySelect({ value, onChange }) {
 
 // Toolbar above the task list: title search, priority toggles and a due-date range.
 // Filters apply within the selected list.
-function TaskFilters({ filters, onChange, onClear }) {
+// `showDueRange` is off in the calendar, where the month itself is the date range.
+function TaskFilters({ filters, onChange, onClear, showDueRange = true }) {
     const update = (changes) => onChange({ ...filters, ...changes });
 
     function togglePriority(key) {
@@ -357,25 +382,27 @@ function TaskFilters({ filters, onChange, onClear }) {
                     );
                 })}
             </div>
-            <div className="filter-dates" role="group" aria-label="Due date range">
-                <span className="filter-dates-label">Due</span>
-                <input
-                    type="date"
-                    aria-label="Due from"
-                    value={filters.dueFrom}
-                    max={filters.dueTo || undefined}
-                    onChange={(e) => update({ dueFrom: e.target.value })}
-                />
-                <span className="filter-dates-sep" aria-hidden="true">–</span>
-                <input
-                    type="date"
-                    aria-label="Due to"
-                    value={filters.dueTo}
-                    min={filters.dueFrom || undefined}
-                    onChange={(e) => update({ dueTo: e.target.value })}
-                />
-            </div>
-            {hasActiveFilters(filters) && (
+            {showDueRange && (
+                <div className="filter-dates" role="group" aria-label="Due date range">
+                    <span className="filter-dates-label">Due</span>
+                    <input
+                        type="date"
+                        aria-label="Due from"
+                        value={filters.dueFrom}
+                        max={filters.dueTo || undefined}
+                        onChange={(e) => update({ dueFrom: e.target.value })}
+                    />
+                    <span className="filter-dates-sep" aria-hidden="true">–</span>
+                    <input
+                        type="date"
+                        aria-label="Due to"
+                        value={filters.dueTo}
+                        min={filters.dueFrom || undefined}
+                        onChange={(e) => update({ dueTo: e.target.value })}
+                    />
+                </div>
+            )}
+            {(showDueRange ? hasActiveFilters(filters) : hasActiveFilters({ ...filters, dueFrom: '', dueTo: '' })) && (
                 <button type="button" className="link-button filters-clear" onClick={onClear}>
                     Clear
                 </button>
@@ -384,12 +411,14 @@ function TaskFilters({ filters, onChange, onClear }) {
     );
 }
 
-// Compact inline form for adding a task to the current (or a new) list.
-function AddTaskForm({ defaultList, onCreate }) {
+// Compact inline form for adding a task to the current (or a new) list. In the
+// calendar, `defaultDueDate` is the selected day, and `onDueDateChange` moves the
+// selection when the user picks a different date here, so the two always match.
+function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCreate }) {
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState(defaultList ?? '');
     const [priority, setPriority] = useState('medium');
-    const [dueDate, setDueDate] = useState('');
+    const [dueDate, setDueDate] = useState(defaultDueDate);
     // Days before the due date (null = none). The time defaults to 9:00 AM here and
     // can be changed by editing the task.
     const [reminderDays, setReminderDays] = useState(null);
@@ -400,6 +429,17 @@ function AddTaskForm({ defaultList, onCreate }) {
     useEffect(() => {
         setCategory(defaultList ?? '');
     }, [defaultList]);
+
+    // Follow the selected calendar day. A reminder picked for another date may not fit,
+    // so it's cleared, unless the change came from this form's own date field (which
+    // already checked the reminder against the new date).
+    const dueDateRef = useRef(dueDate);
+    dueDateRef.current = dueDate;
+    useEffect(() => {
+        if (defaultDueDate === dueDateRef.current) return;
+        setDueDate(defaultDueDate);
+        setReminderDays(null);
+    }, [defaultDueDate]);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -417,7 +457,7 @@ function AddTaskForm({ defaultList, onCreate }) {
                 reminder_time: dueDate && reminderDays !== null ? DEFAULT_REMINDER_TIME : null,
             });
             setTitle('');
-            setDueDate('');
+            setDueDate(defaultDueDate);
             setReminderDays(null);
             setPriority('medium');
         } catch (err) {
@@ -458,6 +498,8 @@ function AddTaskForm({ defaultList, onCreate }) {
                     // Drop a reminder the new date makes impossible (or that has no date).
                     const moment = reminderMoment(next, reminderDays, DEFAULT_REMINDER_TIME);
                     if (!next || (moment && moment <= new Date())) setReminderDays(null);
+                    // Clearing the field doesn't move the calendar; there's no day to show.
+                    if (next) onDueDateChange?.(next);
                 }}
             />
             <ReminderSelect
@@ -653,6 +695,52 @@ function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCanc
     );
 }
 
+// Due-date range the calendar needs for `month`: every day in its visible weeks.
+function calendarRange(month, firstDayOfWeek) {
+    const weeks = monthGrid(month, firstDayOfWeek);
+    return { dueFrom: weeks[0][0], dueTo: weeks[weeks.length - 1][6] };
+}
+
+const VIEWS = [
+    { key: 'list', label: 'List' },
+    { key: 'calendar', label: 'Calendar' },
+];
+
+// List / Calendar switch in the task panel header.
+function ViewToggle({ view, onChange }) {
+    return (
+        <div className="view-toggle" role="group" aria-label="Task view">
+            {VIEWS.map((v) => (
+                <button
+                    key={v.key}
+                    type="button"
+                    className={`view-toggle-option${view === v.key ? ' is-active' : ''}`}
+                    aria-pressed={view === v.key}
+                    onClick={() => onChange(v.key)}
+                >
+                    <ViewIcon view={v.key} />
+                    {v.label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function ViewIcon({ view }) {
+    return (
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            {view === 'list' ? (
+                <path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
+            ) : (
+                <>
+                    <rect x="2" y="3" width="12" height="11" rx="2" />
+                    <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+                </>
+            )}
+        </svg>
+    );
+}
+
 // Authenticated landing page after login/register. Only reachable via ProtectedRoute.
 // Layout: top bar, greeting + stat tiles, then lists (left) / tasks (center) /
 // priority + upcoming (right).
@@ -673,6 +761,12 @@ function Dashboard() {
     // Ids of tasks just checked off that stay in the open list until their timer fires.
     const [settlingIds, setSettlingIds] = useState(() => new Set());
     const settleTimers = useRef(new Map());
+    // 'list' or 'calendar'. The calendar shows one month ('YYYY-MM-01') and lists the
+    // selected day's tasks under it.
+    const [view, setView] = useState(loadSavedView);
+    const [calendarMonth, setCalendarMonth] = useState(() => monthOf(localToday()));
+    const [selectedDay, setSelectedDay] = useState(localToday);
+    const firstDayOfWeek = useMemo(localeFirstDayOfWeek, []);
     // Only the most recent load may update state, so a slow earlier response (or the
     // StrictMode double-run) can't overwrite newer data.
     const latestRequest = useRef(0);
@@ -706,13 +800,15 @@ function Dashboard() {
             // Sequential on purpose: two concurrent requests with an expired access token
             // would both try to rotate the same refresh token, and the second would fail.
             const statsData = await getTodoStats(authFetch);
+            const range = view === 'calendar'
+                ? calendarRange(calendarMonth, firstDayOfWeek)
+                : { dueFrom: filters.dueFrom, dueTo: filters.dueTo };
             const todoData = await getTodos(authFetch, {
-                limit: TASK_PAGE_SIZE,
+                limit: view === 'calendar' ? CALENDAR_TASK_LIMIT : TASK_PAGE_SIZE,
                 category: selectedList ?? undefined,
                 priorities: filters.priorities,
                 search: debouncedSearch,
-                dueFrom: filters.dueFrom,
-                dueTo: filters.dueTo,
+                ...range,
             });
             if (requestId !== latestRequest.current) return;
 
@@ -740,7 +836,21 @@ function Dashboard() {
         loadDashboard();
         // authFetch is recreated every render, so it's deliberately not a dependency.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedList, debouncedSearch, priorityKey, filters.dueFrom, filters.dueTo]);
+    }, [selectedList, debouncedSearch, priorityKey, filters.dueFrom, filters.dueTo, view, calendarMonth]);
+
+    // Selects a calendar day, switching months if it's outside the one on screen (e.g. a
+    // date typed into the add-task form).
+    function selectCalendarDay(day) {
+        setSelectedDay(day);
+        setCalendarMonth(monthOf(day));
+        setEditingId(null);
+    }
+
+    function changeView(next) {
+        setView(next);
+        saveView(next);
+        setEditingId(null);
+    }
 
     async function handleCreate(fields) {
         await createTodo(authFetch, fields);
@@ -793,7 +903,12 @@ function Dashboard() {
 
     const today = localToday();
     const firstName = user?.name?.split(' ')[0];
-    const filtersActive = hasActiveFilters(filters);
+    const isCalendar = view === 'calendar';
+    // The calendar ignores the due-date range filter (the month is the range).
+    const filtersActive = hasActiveFilters(isCalendar ? { ...filters, dueFrom: '', dueTo: '' } : filters);
+    const monthTaskCount = isCalendar
+        ? todos.filter((t) => t.due_date && isSameMonth(t.due_date, calendarMonth)).length
+        : 0;
     const openTodos = todos.filter((t) => !t.completed || settlingIds.has(t.todo_id));
     const completedTodos = todos.filter((t) => t.completed && !settlingIds.has(t.todo_id));
 
@@ -867,18 +982,23 @@ function Dashboard() {
                         />
 
                         <section className="panel tasks-panel" aria-labelledby="tasks-heading">
-                            <div className="panel-header">
-                                <h2 id="tasks-heading">{selectedList ?? 'All tasks'}</h2>
-                                <span className="panel-meta">
-                                    {todoTotal > todos.length
-                                        ? `Showing ${todos.length} of ${todoTotal}`
-                                        : filtersActive
-                                            ? `${todoTotal} matching`
-                                            : pluralizeTasks(todoTotal)}
-                                </span>
+                            <div className="panel-header tasks-panel-header">
+                                <div className="tasks-panel-title">
+                                    <h2 id="tasks-heading">{selectedList ?? 'All tasks'}</h2>
+                                    <span className="panel-meta">
+                                        {isCalendar
+                                            ? `${pluralizeTasks(monthTaskCount)} ${filtersActive ? 'matching ' : ''}this month`
+                                            : todoTotal > todos.length
+                                                ? `Showing ${todos.length} of ${todoTotal}`
+                                                : filtersActive
+                                                    ? `${todoTotal} matching`
+                                                    : pluralizeTasks(todoTotal)}
+                                    </span>
+                                </div>
+                                <ViewToggle view={view} onChange={changeView} />
                             </div>
 
-                            <AddTaskForm defaultList={selectedList} onCreate={handleCreate} />
+                            {!isCalendar && <AddTaskForm defaultList={selectedList} onCreate={handleCreate} />}
                             <datalist id={LISTS_DATALIST_ID}>
                                 {stats.lists.map((list) => (
                                     <option key={list.name} value={list.name} />
@@ -890,10 +1010,32 @@ function Dashboard() {
                                     filters={filters}
                                     onChange={setFilters}
                                     onClear={() => setFilters(EMPTY_FILTERS)}
+                                    showDueRange={!isCalendar}
                                 />
                             )}
 
-                            {todos.length === 0 ? (
+                            {isCalendar ? (
+                                <div className="task-scroll">
+                                    <CalendarView
+                                        month={calendarMonth}
+                                        selectedDay={selectedDay}
+                                        today={today}
+                                        todos={todos}
+                                        firstDayOfWeek={firstDayOfWeek}
+                                        onMonthChange={setCalendarMonth}
+                                        onSelectDay={selectCalendarDay}
+                                        renderTask={renderTask}
+                                    >
+                                        <AddTaskForm
+                                            defaultList={selectedList}
+                                            defaultDueDate={selectedDay}
+                                            onDueDateChange={selectCalendarDay}
+                                            onCreate={handleCreate}
+                                        />
+                                    </CalendarView>
+                                    <p className="calendar-hint">Tasks without a due date only appear in List view.</p>
+                                </div>
+                            ) : todos.length === 0 ? (
                                 <div className="tasks-empty">
                                     {stats.total === 0 ? (
                                         <>

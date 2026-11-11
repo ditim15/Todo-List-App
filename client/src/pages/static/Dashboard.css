@@ -1076,3 +1076,62 @@
         flex: none;
     }
 }
+
+/* ---------- List / Calendar view toggle (task panel header) ---------- */
+.tasks-panel-header {
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.tasks-panel-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+}
+
+.view-toggle {
+    display: inline-flex;
+    padding: 2px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.view-toggle-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    background: transparent;
+    color: var(--ink-3);
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.82em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.view-toggle-option:hover {
+    color: var(--ink);
+}
+
+.view-toggle-option.is-active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+}
+
+.view-toggle-option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .view-toggle-option {
+        transition: none;
+    }
+}
