@@ -29,6 +29,8 @@
   color-scheme: light;
 
   --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Wordmark only (components/brand/NudgeLogo). Loaded in main.jsx. */
+  --brand-font: 'Fredoka Variable', 'Fredoka', ui-rounded, var(--sans);
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;

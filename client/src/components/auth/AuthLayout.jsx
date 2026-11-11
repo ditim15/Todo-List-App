@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle';
+import NudgeLogo from '../brand/NudgeLogo';
 import { CheckIcon } from '../landing/FeatureIcons';
 // Reuses the landing page's buttons, brand mark, eyebrow, check-list and app mocks.
 import '../../pages/static/Splash.css';
@@ -27,8 +28,7 @@ function AuthLayout({ aside, children }) {
             <header className="auth-nav">
                 <div className="auth-nav-inner">
                     <Link to="/" className="landing-brand">
-                        <span className="landing-logo" aria-hidden="true"><CheckIcon /></span>
-                        Nudge
+                        <NudgeLogo animate="intro" />
                     </Link>
                     <div className="auth-nav-actions">
                         <ThemeToggle />

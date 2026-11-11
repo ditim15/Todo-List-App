@@ -38,10 +38,15 @@
 }
 
 .topbar-brand {
-    font-weight: 700;
-    font-size: 1.05em;
-    color: var(--ink);
-    letter-spacing: -0.01em;
+    display: inline-flex;
+    font-size: 1.4em;
+    text-decoration: none;
+}
+
+.topbar-brand:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 6px;
 }
 
 .topbar-user {

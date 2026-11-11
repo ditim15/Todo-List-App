@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
+import NudgeLogo from '../components/brand/NudgeLogo';
 import HeroCarousel from '../components/landing/HeroCarousel';
 import { FiltersMock, ListsMock, PriorityMock } from '../components/landing/AppMocks';
 import {
@@ -103,8 +104,7 @@ function Splash() {
             <header className="landing-nav">
                 <div className="landing-nav-inner">
                     <Link to="/" className="landing-brand">
-                        <span className="landing-logo" aria-hidden="true"><CheckIcon /></span>
-                        Nudge
+                        <NudgeLogo animate="intro" />
                     </Link>
                     <nav className="landing-links" aria-label="Page sections">
                         <a href="#features">Features</a>

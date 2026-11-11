@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
+import NudgeLogo from '../components/brand/NudgeLogo';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
 import './static/Dashboard.css';
 
@@ -761,7 +762,9 @@ function Dashboard() {
     return (
         <div className="dash">
             <header className="topbar">
-                <span className="topbar-brand">Nudge</span>
+                <Link to="/" className="topbar-brand">
+                    <NudgeLogo animate="intro" />
+                </Link>
                 <div className="topbar-user">
                     {user?.name && <span className="topbar-name">{user.name}</span>}
                     <ThemeToggle />

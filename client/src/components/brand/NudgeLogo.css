@@ -1,0 +1,391 @@
+/* Nudge wordmark. Everything is in em, so the mark scales with font-size.
+
+   Layout: [arrow] Nudge [box]. An invisible in-flow copy of the word sets the size;
+   the "stage" sits on top, spanning from the arrow's resting spot to the box. In it:
+     - the word drawn twice in the same place: "todo" (normal) and "done" (grey and
+       struck through, like a completed task)
+     - the arrow, positioned by its tail (left) and length (width)
+   While the arrow travels, its head is the boundary between the two words: "done"
+   is revealed up to the head and "todo" from the head on. All four use the same
+   keyframe breakpoints and easing, so they stay in step.
+
+   Resting (static) state: arrow at left, normal word, box checked. */
+
+.nudge-logo {
+    --logo-arrow: 0.92em;
+    --logo-box: 0.8em;
+    --logo-gap: 0.2em;
+    --logo-line: 0.1em;
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--logo-gap);
+    padding-left: calc(var(--logo-arrow) + var(--logo-gap));
+    font-family: var(--brand-font);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.nudge-logo-word {
+    visibility: hidden;
+}
+
+/* ---------- Stage: the two words + arrow ---------- */
+.nudge-logo-stage {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: calc(var(--logo-box) + 0.06em);
+    pointer-events: none;
+}
+
+.nudge-logo-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding-left: calc(var(--logo-arrow) + var(--logo-gap));
+}
+
+.nudge-logo-text--done {
+    color: var(--ink-3);
+    text-decoration: line-through;
+    text-decoration-thickness: 0.07em;
+    clip-path: inset(0 100% 0 0);
+}
+
+.nudge-logo-arrow {
+    position: absolute;
+    top: 54%;
+    left: 0;
+    width: var(--logo-arrow);
+    height: 0;
+    z-index: 1;
+}
+
+.nudge-logo-shaft {
+    position: absolute;
+    left: 0;
+    right: 0.06em;
+    top: 0;
+    height: var(--logo-line);
+    border-radius: 999px;
+    background: var(--accent);
+    transform: translateY(-50%);
+}
+
+.nudge-logo-head {
+    position: absolute;
+    right: -0.02em;
+    top: 0;
+    width: 0.4em;
+    height: auto;
+    overflow: visible;
+    transform: translateY(-50%);
+    stroke: var(--accent);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------- Checkbox ---------- */
+.nudge-logo-box {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: var(--logo-box);
+    height: var(--logo-box);
+    box-sizing: border-box;
+    border: 0.085em solid var(--accent);
+    border-radius: 0.22em;
+    background: var(--accent);
+}
+
+.nudge-logo-box svg {
+    width: 100%;
+    height: 100%;
+    stroke: var(--on-accent);
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+}
+
+/* ---------- Animation ---------- */
+/* Timeline (percent of duration):
+   0-10   rest, box unchecked
+   10-56  arrow travels: tail moves 0 -> 30%, head moves to the box, so it slides
+          and stretches at once; letters behind the head turn grey and struck through
+   56-63  tail zips into the box and the arrow disappears; box presses in
+   60-74  box fills and the check draws on
+   74-90  the word fades from grey back to normal
+   82-100 arrow fades back in at its resting spot
+   loop only: 86-100 box clears so the next cycle starts unchecked */
+
+.nudge-logo--intro .nudge-logo-arrow,
+.nudge-logo--intro .nudge-logo-text,
+.nudge-logo--intro .nudge-logo-box,
+.nudge-logo--intro .nudge-logo-box svg {
+    animation-duration: 1.9s;
+    animation-delay: 0.25s;
+    animation-fill-mode: both;
+}
+
+.nudge-logo--loop .nudge-logo-arrow,
+.nudge-logo--loop .nudge-logo-text,
+.nudge-logo--loop .nudge-logo-box,
+.nudge-logo--loop .nudge-logo-box svg {
+    animation-duration: 2.2s;
+    animation-iteration-count: infinite;
+}
+
+.nudge-logo--intro .nudge-logo-arrow,
+.nudge-logo--loop .nudge-logo-arrow {
+    animation-name: nudge-arrow;
+}
+
+.nudge-logo--intro .nudge-logo-text--todo,
+.nudge-logo--loop .nudge-logo-text--todo {
+    animation-name: nudge-todo;
+}
+
+.nudge-logo--intro .nudge-logo-text--done,
+.nudge-logo--loop .nudge-logo-text--done {
+    animation-name: nudge-done;
+}
+
+.nudge-logo--intro .nudge-logo-box {
+    animation-name: nudge-box-intro;
+}
+
+.nudge-logo--loop .nudge-logo-box {
+    animation-name: nudge-box-loop;
+}
+
+.nudge-logo--intro .nudge-logo-box svg {
+    animation-name: nudge-check-intro;
+}
+
+.nudge-logo--loop .nudge-logo-box svg {
+    animation-name: nudge-check-loop;
+}
+
+/* Head position = left + width. At 56% the head reaches the box (left 30% + width 70%). */
+@keyframes nudge-arrow {
+    0%,
+    10% {
+        left: 0;
+        width: var(--logo-arrow);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    56% {
+        left: 30%;
+        width: 70%;
+        opacity: 1;
+        animation-timing-function: ease-in;
+    }
+    63% {
+        left: calc(100% - 0.3em);
+        width: 0.3em;
+        opacity: 0;
+    }
+    82% {
+        left: 0;
+        width: var(--logo-arrow);
+        opacity: 0;
+    }
+    100% {
+        left: 0;
+        width: var(--logo-arrow);
+        opacity: 1;
+    }
+}
+
+/* Visible from the arrow head onward; fades back in once the box is checked. */
+@keyframes nudge-todo {
+    0%,
+    10% {
+        clip-path: inset(0 0 0 var(--logo-arrow));
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    56%,
+    74% {
+        clip-path: inset(0 0 0 100%);
+        opacity: 1;
+    }
+    74.1% {
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+    90%,
+    100% {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+}
+
+/* Visible up to the arrow head; fades out as the normal word fades back in. */
+@keyframes nudge-done {
+    0%,
+    10% {
+        clip-path: inset(0 calc(100% - var(--logo-arrow)) 0 0);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    56%,
+    74% {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+    90% {
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+    90.1%,
+    100% {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+    }
+}
+
+@keyframes nudge-box-intro {
+    0%,
+    57% {
+        background-color: transparent;
+        border-color: var(--ink-3);
+        transform: none;
+    }
+    61% {
+        background-color: transparent;
+        border-color: var(--accent);
+        transform: scale(0.8);
+    }
+    68% {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.1);
+    }
+    76%,
+    100% {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        transform: none;
+    }
+}
+
+@keyframes nudge-box-loop {
+    0%,
+    57% {
+        background-color: transparent;
+        border-color: var(--ink-3);
+        transform: none;
+    }
+    61% {
+        background-color: transparent;
+        border-color: var(--accent);
+        transform: scale(0.8);
+    }
+    68% {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.1);
+    }
+    76%,
+    86% {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        transform: none;
+    }
+    100% {
+        background-color: transparent;
+        border-color: var(--ink-3);
+        transform: none;
+    }
+}
+
+@keyframes nudge-check-intro {
+    0%,
+    61% {
+        stroke-dashoffset: 1;
+        opacity: 0;
+    }
+    62% {
+        stroke-dashoffset: 1;
+        opacity: 1;
+    }
+    74%,
+    100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+}
+
+@keyframes nudge-check-loop {
+    0%,
+    61% {
+        stroke-dashoffset: 1;
+        opacity: 0;
+    }
+    62% {
+        stroke-dashoffset: 1;
+        opacity: 1;
+    }
+    74%,
+    86% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+    96% {
+        stroke-dashoffset: 0;
+        opacity: 0;
+    }
+    100% {
+        stroke-dashoffset: 1;
+        opacity: 0;
+    }
+}
+
+/* Reduced motion: the intro is skipped (static mark); the loader just pulses. */
+@media (prefers-reduced-motion: reduce) {
+    .nudge-logo--intro *,
+    .nudge-logo--loop * {
+        animation: none !important;
+    }
+
+    .nudge-logo--loop {
+        animation: nudge-pulse 1.6s ease-in-out infinite;
+    }
+}
+
+@keyframes nudge-pulse {
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* ---------- Loader ---------- */
+.nudge-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 100vh;
+    font-size: 40px;
+    background: var(--canvas);
+}
+
+.nudge-loader-label {
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink-3);
+}

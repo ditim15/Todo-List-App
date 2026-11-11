@@ -111,31 +111,18 @@ html:has(.landing) {
     padding: 0 24px;
 }
 
+/* Wraps the NudgeLogo wordmark (components/brand); font-size sets the logo's size. */
 .landing-brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    color: var(--ink);
-    font-weight: 700;
-    font-size: 1.1em;
+    font-size: 1.55em;
     text-decoration: none;
 }
 
-.landing-logo {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    background: var(--accent);
-    color: var(--on-accent);
-}
-
-.landing-logo svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2.6;
+.landing-brand:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 6px;
 }
 
 .landing-links {

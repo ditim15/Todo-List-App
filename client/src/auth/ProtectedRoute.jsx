@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { NudgeLoader } from '../components/brand/NudgeLogo';
 
 // Route guard: renders children only when authenticated, otherwise redirects to /login.
 // While the initial session-restore check (AuthContext) is still running, shows a loading
@@ -8,7 +9,7 @@ function ProtectedRoute({ children }) {
     const { isAuthenticated, isLoading } = useAuth();
 
     if (isLoading) {
-        return <p>Loading...</p>;
+        return <NudgeLoader />;
     }
 
     if (!isAuthenticated) {
