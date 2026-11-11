@@ -133,7 +133,10 @@
 }
 
 .stat-tiles {
-    display: flex;
+    /* Equal-width tiles, as wide as the widest one needs. */
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     gap: 12px;
 }
 
@@ -1134,4 +1137,73 @@
     .view-toggle-option {
         transition: none;
     }
+}
+
+/* ---------- Clickable stat tiles (jump to those tasks) ---------- */
+.stat-tile--button {
+    position: relative;
+    /* Room for the chevron so it never sits on the label. */
+    padding-right: 36px;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.stat-tile--button:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    background: var(--surface-hover);
+}
+
+.stat-tile--button:active {
+    transform: translateY(1px);
+}
+
+.stat-tile--button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.stat-tile--active,
+.stat-tile--active:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-tile--button {
+        transition: none;
+    }
+
+    .stat-tile--button:active {
+        transform: none;
+    }
+}
+
+/* Breathing room above the spot a stat tile scrolls to. */
+.tasks-panel,
+.completed-section {
+    scroll-margin-top: 12px;
+}
+
+/* Hints that a stat tile can be tapped (there's no hover on phones). */
+.stat-chevron {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    color: var(--ink-3);
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.stat-tile--button:hover .stat-chevron {
+    color: var(--accent);
+    transform: translateX(2px);
+}
+
+.stat-tile--active .stat-chevron {
+    color: var(--accent);
+    transform: rotate(90deg);
 }
