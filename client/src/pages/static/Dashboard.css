@@ -49,17 +49,6 @@
     border-radius: 6px;
 }
 
-.topbar-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.topbar-name {
-    color: var(--ink-2);
-    font-size: 0.9em;
-}
-
 .button-ghost {
     padding: 6px 12px;
     background: transparent;
@@ -370,21 +359,26 @@
     border-bottom: 1px solid var(--line);
 }
 
-.add-task-title {
+.add-task-title,
+.add-task button {
     grid-column: 1 / -1;
 }
 
-/* Medium panel: title row, then list / priority / date / button in one row. */
-@container tasks (min-width: 520px) {
+/* Medium panel: title row, then list / priority / date / reminder / button in one row. */
+@container tasks (min-width: 560px) {
     .add-task {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    }
+
+    .add-task button {
+        grid-column: auto;
     }
 }
 
 /* Wide panel: everything on one row. */
-@container tasks (min-width: 820px) {
+@container tasks (min-width: 900px) {
     .add-task {
-        grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)) auto;
+        grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)) auto;
     }
 
     .add-task-title {
@@ -686,6 +680,60 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+}
+
+/* ---------- Reminders (components/tasks/reminders.jsx) ---------- */
+.task-edit-reminder {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.reminder-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.reminder-picker-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.reminder-picker-inputs select {
+    flex: 1 1 180px;
+    max-width: 240px;
+}
+
+.reminder-picker-inputs input[type="time"] {
+    flex: 0 1 130px;
+}
+
+.reminder-note {
+    font-size: 0.8em;
+    color: var(--ink-3);
+}
+
+.reminder-note--error {
+    color: var(--critical-text);
+}
+
+.task-reminder {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.task-reminder svg {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+}
+
+.task-reminder--sent {
+    opacity: 0.75;
 }
 
 /* ---------- Completed section ---------- */
@@ -996,10 +1044,6 @@
 
     .topbar {
         padding: 0 16px;
-    }
-
-    .topbar-name {
-        display: none;
     }
 
     .stat-tiles {

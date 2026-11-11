@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import ThemeToggle from '../components/ThemeToggle';
+import AccountMenu from '../components/account/AccountMenu';
 import NudgeLogo from '../components/brand/NudgeLogo';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
+import { ReminderBadge, ReminderPicker, ReminderSelect } from '../components/tasks/reminders';
+import { DEFAULT_REMINDER_TIME, reminderMoment } from '../components/tasks/reminderUtils';
 import './static/Dashboard.css';
 
 const PRIORITIES = [
@@ -388,6 +390,9 @@ function AddTaskForm({ defaultList, onCreate }) {
     const [category, setCategory] = useState(defaultList ?? '');
     const [priority, setPriority] = useState('medium');
     const [dueDate, setDueDate] = useState('');
+    // Days before the due date (null = none). The time defaults to 9:00 AM here and
+    // can be changed by editing the task.
+    const [reminderDays, setReminderDays] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -408,9 +413,12 @@ function AddTaskForm({ defaultList, onCreate }) {
                 category: category.trim() || undefined,
                 priority,
                 due_date: dueDate || null,
+                reminder_days_before: dueDate ? reminderDays : null,
+                reminder_time: dueDate && reminderDays !== null ? DEFAULT_REMINDER_TIME : null,
             });
             setTitle('');
             setDueDate('');
+            setReminderDays(null);
             setPriority('medium');
         } catch (err) {
             setError(err.message);
@@ -444,7 +452,20 @@ function AddTaskForm({ defaultList, onCreate }) {
                 type="date"
                 aria-label="Due date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(e) => {
+                    const next = e.target.value;
+                    setDueDate(next);
+                    // Drop a reminder the new date makes impossible (or that has no date).
+                    const moment = reminderMoment(next, reminderDays, DEFAULT_REMINDER_TIME);
+                    if (!next || (moment && moment <= new Date())) setReminderDays(null);
+                }}
+            />
+            <ReminderSelect
+                compact
+                dueDate={dueDate}
+                days={reminderDays}
+                time={DEFAULT_REMINDER_TIME}
+                onChange={setReminderDays}
             />
             <button type="submit" disabled={isSaving || !title.trim()}>
                 {isSaving ? 'Adding...' : 'Add'}
@@ -461,13 +482,30 @@ function TaskEditForm({ todo, onSave, onCancel }) {
     const [category, setCategory] = useState(todo.category);
     const [priority, setPriority] = useState(todo.priority);
     const [dueDate, setDueDate] = useState(todo.due_date ?? '');
+    const [reminder, setReminder] = useState({
+        days: todo.reminder_days_before ?? null,
+        // Postgres returns TIME as 'HH:MM:SS'; the time input wants 'HH:MM'.
+        time: todo.reminder_time?.slice(0, 5) ?? DEFAULT_REMINDER_TIME,
+    });
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+
+    const activeReminder = dueDate && reminder.days !== null ? reminder : null;
+    // Only a new or changed reminder has to be in the future; an untouched one that
+    // already went out can stay as it is.
+    const originalMoment = reminderMoment(todo.due_date, todo.reminder_days_before, todo.reminder_time?.slice(0, 5));
+    const nextMoment = activeReminder ? reminderMoment(dueDate, reminder.days, reminder.time) : null;
+    const reminderChanged = (nextMoment?.getTime() ?? null) !== (originalMoment?.getTime() ?? null);
+    const reminderInPast = reminderChanged && nextMoment !== null && nextMoment <= new Date();
 
     async function handleSubmit(e) {
         e.preventDefault();
         if (!title.trim()) {
             setError('Title is required');
+            return;
+        }
+        if (reminderInPast) {
+            setError('That reminder time has already passed. Pick a later one.');
             return;
         }
 
@@ -480,6 +518,8 @@ function TaskEditForm({ todo, onSave, onCancel }) {
                 category: category.trim() || undefined,
                 priority,
                 due_date: dueDate || null,
+                reminder_days_before: activeReminder ? activeReminder.days : null,
+                reminder_time: activeReminder ? activeReminder.time : null,
             });
         } catch (err) {
             setError(err.message);
@@ -530,6 +570,19 @@ function TaskEditForm({ todo, onSave, onCancel }) {
                     <span>Due date</span>
                     <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                 </label>
+                <div className="task-edit-reminder">
+                    <label htmlFor="reminder-days">
+                        <span>Email reminder</span>
+                    </label>
+                    <ReminderPicker
+                        dueDate={dueDate}
+                        days={dueDate ? reminder.days : null}
+                        time={reminder.time}
+                        onChange={setReminder}
+                        sentAt={todo.reminder_sent_at}
+                        checkPast={reminderChanged}
+                    />
+                </div>
             </div>
             {error && <p className="form-error">{error}</p>}
             <div className="task-edit-actions">
@@ -583,6 +636,7 @@ function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCanc
                                     {todo.completed ? 'Done' : formatDueDate(todo.due_date, today)}
                                 </span>
                             )}
+                            <ReminderBadge todo={todo} />
                         </span>
                     </div>
                     <button
@@ -765,13 +819,7 @@ function Dashboard() {
                 <Link to="/" className="topbar-brand">
                     <NudgeLogo animate="intro" />
                 </Link>
-                <div className="topbar-user">
-                    {user?.name && <span className="topbar-name">{user.name}</span>}
-                    <ThemeToggle />
-                    <button type="button" className="button-ghost" onClick={handleLogout}>
-                        Log out
-                    </button>
-                </div>
+                <AccountMenu user={user} onLogout={handleLogout} />
             </header>
 
             <main className="dash-main">
