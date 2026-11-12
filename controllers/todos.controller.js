@@ -1,5 +1,5 @@
 import pool from '../db/pool.js';
-import { DATE_PATTERN, PRIORITIES, parseTodoFields } from '../utils/validation.js';
+import { DATE_PATTERN, PRIORITIES, parseTodoFields, validateTitle } from '../utils/validation.js';
 
 // The moment a reminder should go out: (due date - N days) at the given local time in
 // the user's timezone. Postgres does the conversion so DST is handled correctly.
@@ -51,12 +51,24 @@ function buildTodoFilters(userId, query) {
     return { where: conditions.join(' AND '), values };
 }
 
+// The calendar asks for up to 1000 tasks at once; nothing needs more.
+const MAX_PAGE_SIZE = 1000;
+const MAX_PAGE = 100000;
+
+// Whole number from a query string, at least 1 and at most `max`, or `fallback` if it
+// isn't one. Stops ?limit=100000000 dumping everything and ?page=-1 crashing the query.
+function parsePositiveInt(value, fallback, max) {
+    const number = parseInt(value, 10);
+    if (!Number.isInteger(number) || number < 1) return fallback;
+    return Math.min(number, max);
+}
+
 // Gets the authenticated user's todos. Optional filters: ?category=, ?priority=,
 // ?search=, ?dueFrom=, ?dueTo=. Open tasks come first, soonest due date first, then newest.
 const getTodos = async (req, res, next) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const page = parsePositiveInt(req.query.page, 1, MAX_PAGE);
+        const limit = parsePositiveInt(req.query.limit, 10, MAX_PAGE_SIZE);
         const offset = (page - 1) * limit;
         const { where, values } = buildTodoFilters(req.user.id, req.query);
 
@@ -149,12 +161,14 @@ const getTodoStats = async (req, res, next) => {
 const createTodo = async (req, res, next) => {
     try {
 
-        const { title, description, completed } = req.body;
+        const { title, completed } = req.body;
 
-        if (!title || title.trim() === "") {
-            return res.status(400).json({
-                message: "Title is required"
-            });
+        const titleError = validateTitle(title);
+        if (titleError) {
+            return res.status(400).json({ message: titleError });
+        }
+        if (completed !== undefined && completed !== null && typeof completed !== "boolean") {
+            return res.status(400).json({ message: "completed must be true or false" });
         }
 
         const fields = parseTodoFields(req.body);
@@ -173,7 +187,7 @@ const createTodo = async (req, res, next) => {
             'INSERT INTO todos (user_id, title, description, completed, due_date, priority, category,'
             + ' reminder_days_before, reminder_time, reminder_timezone, remind_at)'
             + ' VALUES ($1, $2, $3, COALESCE($4, false), $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-            [req.user.id, title.trim(), description, completed, fields.dueDate, fields.priority, fields.category,
+            [req.user.id, title.trim(), fields.description, completed, fields.dueDate, fields.priority, fields.category,
                 reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null, remindAt]
         );
 
@@ -191,12 +205,14 @@ const createTodo = async (req, res, next) => {
 const updateTodo = async (req, res, next) => {
     try {
 
-        const { title, description, completed } = req.body;
+        const { title, completed } = req.body;
 
-        if (!title || title.trim() === "") {
-            return res.status(400).json({
-                message: "Title is required"
-            });
+        const titleError = validateTitle(title);
+        if (titleError) {
+            return res.status(400).json({ message: titleError });
+        }
+        if (completed !== undefined && completed !== null && typeof completed !== "boolean") {
+            return res.status(400).json({ message: "completed must be true or false" });
         }
 
         const fields = parseTodoFields(req.body);
@@ -233,7 +249,7 @@ const updateTodo = async (req, res, next) => {
             + ' reminder_days_before = $7, reminder_time = $8, reminder_timezone = $9,'
             + ' remind_at = $10, reminder_sent_at = $11, updated_at = NOW()'
             + ' WHERE todo_id = $12 AND user_id = $13 RETURNING *',
-            [title.trim(), description || null, completed, fields.dueDate,
+            [title.trim(), fields.description, completed, fields.dueDate,
                 fields.priority, fields.category,
                 reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null,
                 remindAt, sentAt, req.params.id, req.user.id]

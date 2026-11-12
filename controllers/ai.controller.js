@@ -1,11 +1,8 @@
 import pool from '../db/pool.js';
 import { AiUnavailableError, isAiConfigured, runChat } from '../services/ai.js';
-import { DATE_PATTERN, isValidTimeZone, parseTodoFields } from '../utils/validation.js';
+import { DATE_PATTERN, DESCRIPTION_MAX_LENGTH, isValidTimeZone, parseTodoFields, validateTitle } from '../utils/validation.js';
 
 const MESSAGE_MAX_LENGTH = 2000;
-// Matches todos.title VARCHAR(255).
-const TITLE_MAX_LENGTH = 255;
-const DESCRIPTION_MAX_LENGTH = 1000;
 // How much of the conversation the model sees each turn, and how much is kept.
 const HISTORY_FOR_MODEL = 20;
 const MESSAGES_KEPT_PER_USER = 200;
@@ -16,26 +13,24 @@ const UNAVAILABLE_MESSAGE = 'The assistant is unavailable right now. You can sti
 // Validates a task draft (from the model, or the card the user edited) with the same
 // rules as POST /todos. Returns { error } or { draft } in the shape createTodo takes.
 export function toDraft(raw, timezone = 'UTC') {
-    const title = typeof raw.title === 'string' ? raw.title.trim() : '';
-    if (!title) {
-        return { error: 'Title is required' };
+    const titleError = validateTitle(raw.title);
+    if (titleError) {
+        return { error: titleError };
     }
-    if (title.length > TITLE_MAX_LENGTH) {
-        return { error: `Title must be ${TITLE_MAX_LENGTH} characters or fewer` };
-    }
-    const description = typeof raw.description === 'string' && raw.description.trim()
-        ? raw.description.trim().slice(0, DESCRIPTION_MAX_LENGTH)
+    // Overlong notes from the model are trimmed to fit rather than rejected.
+    const description = typeof raw.description === 'string'
+        ? raw.description.slice(0, DESCRIPTION_MAX_LENGTH)
         : null;
 
-    const fields = parseTodoFields({ ...raw, reminder_timezone: timezone });
+    const fields = parseTodoFields({ ...raw, description, reminder_timezone: timezone });
     if (fields.error) {
         return { error: fields.error };
     }
 
     return {
         draft: {
-            title,
-            description,
+            title: raw.title.trim(),
+            description: fields.description,
             due_date: fields.dueDate,
             priority: fields.priority,
             category: fields.category,

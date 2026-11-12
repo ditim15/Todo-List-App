@@ -14,6 +14,14 @@ const chatLimiter = rateLimit({
 
 const router = Router();
 
+// Message ids are positive integers (SERIAL); anything else can't match a message.
+router.param("id", (req, res, next, id) => {
+    if (!/^[1-9]\d{0,9}$/.test(id) || Number(id) > 2147483647) {
+        return res.status(404).json({ message: "Card not found" });
+    }
+    next();
+});
+
 router.get("/chat", getChat);
 router.post("/chat", chatLimiter, sendChat);
 router.delete("/chat", clearChat);

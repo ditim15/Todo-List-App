@@ -66,6 +66,21 @@ export const PRIORITIES = ['low', 'medium', 'high'];
 export const DEFAULT_CATEGORY = 'General';
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const CATEGORY_MAX_LENGTH = 50;
+// Matches todos.title VARCHAR(255). Checked here so a long title is a 400, not a
+// Postgres error.
+export const TITLE_MAX_LENGTH = 255;
+export const DESCRIPTION_MAX_LENGTH = 2000;
+
+// Returns an error message, or null when the title is usable.
+export function validateTitle(title) {
+    if (typeof title !== 'string' || title.trim() === '') {
+        return 'Title is required';
+    }
+    if (title.trim().length > TITLE_MAX_LENGTH) {
+        return `Title must be ${TITLE_MAX_LENGTH} characters or fewer`;
+    }
+    return null;
+}
 
 // Normalises the optional fields shared by create/update. Returns { error } when the
 // input is invalid so the caller can send a 400.
@@ -82,6 +97,18 @@ export function parseTodoFields(body) {
         return { error: `List name must be ${CATEGORY_MAX_LENGTH} characters or fewer` };
     }
 
+    // Optional notes: a blank one is stored as null.
+    let description = null;
+    if (body.description !== undefined && body.description !== null) {
+        if (typeof body.description !== 'string') {
+            return { error: 'Description must be text' };
+        }
+        if (body.description.length > DESCRIPTION_MAX_LENGTH) {
+            return { error: `Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer` };
+        }
+        description = body.description.trim() || null;
+    }
+
     const dueDate = body.due_date || null;
     if (dueDate !== null && !isValidDate(dueDate)) {
         return { error: 'Due date must be a real date in YYYY-MM-DD format' };
@@ -92,7 +119,7 @@ export function parseTodoFields(body) {
         return { error: reminder.error };
     }
 
-    return { priority, category, dueDate, reminder: reminder.value };
+    return { priority, category, description, dueDate, reminder: reminder.value };
 }
 
 // 'YYYY-MM-DD' that names a real calendar day (rejects e.g. 2026-02-30).
