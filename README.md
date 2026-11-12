@@ -25,13 +25,7 @@ The backend for **Nudge**, a gentle-reminder task app for students. A RESTful to
 ```
 npm install 
 ```
-2. Create a `.env`file in the project root:
-```
-PORT=4000
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/your_db_name?schema=public"
-JWT_SECRET=your_random_secret_here
-ANTHROPIC_API_KEY=sk-ant-...   # optional, enables the AI assistant (see below)
-```
+2. Copy `.env.example` to `.env` and fill it in. `DATABASE_URL` and `JWT_SECRET` are required (the server won't start without them); everything else has a default or is optional. Each setting is explained in the file.
 
 Generate a secret with:
 ```
@@ -148,3 +142,13 @@ How it works:
 - **Setup:** set `ANTHROPIC_API_KEY` in `.env`. It is only read on the server. Without it the server still starts (it logs that the assistant is off), the panel says it's off, and everything else works.
 - **Privacy:** chat messages, the student's list names, today's date and timezone are sent to Anthropic's API. When the assistant looks up tasks, the title, due date, list and priority of open tasks are sent too. Completed tasks, task notes, and the student's name and email are never sent.
 - **Eval:** `npm run eval:ai` runs 30 one-message chats from `scripts/ai-parse-cases.json` (fixed date and timezone, stubbed open tasks) and prints pass/fail per field: dates, lists, priorities, reminders, junk input, multiple tasks, and "discuss, don't add" cases. It makes real API calls, so it needs the key. `npm run eval:ai -- <id>` runs only matching cases.
+
+## Deployment Notes
+
+- Set every variable from `.env.example` in your host's environment settings. Use a new long random `JWT_SECRET` (not your development one) and a separate `ANTHROPIC_API_KEY` with a spend limit set in the Anthropic Console.
+- `APP_URL` (or `CLIENT_ORIGIN`) must be your frontend's real address, or the browser will block its requests to the API (CORS).
+- Behind a hosting proxy, set `TRUST_PROXY=1` so rate limits apply per visitor.
+- Hosted Postgres usually requires SSL: end `DATABASE_URL` with `?sslmode=require`.
+- Run `db/init.sql` against the production database before the first start, and again after pulling changes that add tables or columns.
+- `GET /health` returns `200` when the server can reach the database. Point your host's health check at it.
+- The reminder scheduler runs inside the API server, so the server must stay running (a host that puts idle apps to sleep will skip reminders). It's safe to run more than one instance: reminders are locked before sending.
