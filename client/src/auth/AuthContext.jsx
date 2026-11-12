@@ -3,9 +3,35 @@ import { loginUser, logoutUser, registerUser, refreshAccessToken, verifyEmail as
 
 const AuthContext = createContext(null);
 
+// Not a secret: just remembers that this browser had a session, so logged-out visitors
+// don't make a refresh request on every page load. The real credential is the httpOnly
+// refresh-token cookie, which scripts can't read.
+const SESSION_HINT_KEY = 'nudge:has-session';
+// Where older versions kept the refresh token itself. Removed on load.
+const LEGACY_REFRESH_TOKEN_KEY = 'refreshToken';
+
+function setSessionHint(hasSession) {
+    try {
+        if (hasSession) localStorage.setItem(SESSION_HINT_KEY, '1');
+        else localStorage.removeItem(SESSION_HINT_KEY);
+    } catch {
+        // Storage unavailable (private mode, blocked site data): the hint is optional.
+    }
+}
+
+function hasSessionHint() {
+    try {
+        return localStorage.getItem(SESSION_HINT_KEY) === '1';
+    } catch {
+        // Can't tell, so try the cookie anyway.
+        return true;
+    }
+}
+
 // Provides auth state (user, access token) and auth-related actions to the whole app.
-// Access tokens are kept in memory only; refresh tokens are persisted to localStorage
-// so a session can be restored across page reloads.
+// The access token lives in memory only. The refresh token is an httpOnly cookie set by
+// the server, so a session survives page reloads without any script being able to
+// read the token.
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [accessToken, setAccessToken] = useState(null);
@@ -13,37 +39,50 @@ export function AuthProvider({ children }) {
     // Guards against React StrictMode/dev double-invoking this effect, which would
     // otherwise fire two concurrent refresh requests on mount.
     const hasRun = useRef(false);
+    // The refresh in progress, if any. Refresh tokens are single-use, so concurrent
+    // callers must share one request instead of racing (the loser would be logged out).
+    const refreshPromiseRef = useRef(null);
+
+    function refreshSession() {
+        refreshPromiseRef.current ??= refreshAccessToken()
+            .then((data) => {
+                setUser(data.user);
+                setAccessToken(data.accessToken);
+                setSessionHint(true);
+                return data;
+            })
+            .finally(() => {
+                refreshPromiseRef.current = null;
+            });
+        return refreshPromiseRef.current;
+    }
+
+    function clearSession() {
+        setUser(null);
+        setAccessToken(null);
+        setSessionHint(false);
+    }
 
     useEffect(() => {
         if (hasRun.current) return;
         hasRun.current = true;
 
-        // On load, try to silently re-authenticate using a stored refresh token so the
-        // user doesn't have to log in again after a page refresh. Note: this only
-        // restores accessToken, not `user` — the user object is unavailable until a
-        // fresh login/register call.
-        async function restoreSession() {
-            const storedRefreshToken = localStorage.getItem('refreshToken');
-
-            if (!storedRefreshToken) {
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                const data = await refreshAccessToken(storedRefreshToken);
-                setUser(data.user);
-                setAccessToken(data.accessToken);
-                localStorage.setItem('refreshToken', data.refreshToken);
-            } catch (error) {
-                console.error('Refresh failed:', error.message);
-                localStorage.removeItem('refreshToken');
-            } finally {
-                setIsLoading(false);
-            }
+        try {
+            localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+        } catch {
+            // Nothing to clean up.
         }
 
-        restoreSession();
+        // On load, silently restore the session from the cookie so the user doesn't
+        // have to log in again after a page refresh.
+        if (!hasSessionHint()) {
+            setIsLoading(false);
+            return;
+        }
+        refreshSession()
+            .catch(() => clearSession())
+            .finally(() => setIsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     async function login(email, password) {
@@ -51,7 +90,7 @@ export function AuthProvider({ children }) {
 
         setUser(data.user);
         setAccessToken(data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
+        setSessionHint(true);
 
         return data;
     }
@@ -63,33 +102,28 @@ export function AuthProvider({ children }) {
     }
 
     // Confirms the email from the verification link's token. The server logs the user
-    // in on success, returning the same user/accessToken/refreshToken shape as login.
+    // in on success, returning the same user/accessToken shape as login.
     async function verifyEmail(token) {
         const data = await verifyEmailRequest(token);
 
         setUser(data.user);
         setAccessToken(data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
+        setSessionHint(true);
 
         return data;
     }
 
-    // Signs out here and revokes the refresh token on the server. The local sign-out
-    // happens either way: if the server can't be reached, the token still expires on
-    // its own after 7 days.
+    // Signs out here and revokes the refresh token on the server (which also clears its
+    // cookie). The local sign-out happens either way: if the server can't be reached,
+    // the token still expires on its own after 7 days.
     function logout() {
-        const storedRefreshToken = localStorage.getItem('refreshToken');
-        if (storedRefreshToken) {
-            logoutUser(storedRefreshToken).catch(() => {});
-        }
-        setUser(null);
-        setAccessToken(null);
-        localStorage.removeItem('refreshToken');
+        logoutUser().catch(() => {});
+        clearSession();
     }
 
     // Authenticated fetch wrapper for API calls that require a valid access token
-    // (e.g. the todos endpoints). On a 401, transparently refreshes the access token
-    // once using the stored refresh token and retries the request before giving up.
+    // (e.g. the todos endpoints). On a 401, refreshes the access token once from the
+    // cookie and retries the request before giving up.
     async function authFetch(endpoint, options = {}) {
         const makeRequest = (token) =>
             fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
@@ -104,19 +138,11 @@ export function AuthProvider({ children }) {
         let response = await makeRequest(accessToken);
 
         if (response.status === 401) {
-            const storedRefreshToken = localStorage.getItem('refreshToken');
-            if (!storedRefreshToken) {
-                logout();
-                throw new Error('Session expired. Please log in again.');
-            }
-
             try {
-                const data = await refreshAccessToken(storedRefreshToken);
-                setAccessToken(data.accessToken);
-                localStorage.setItem('refreshToken', data.refreshToken);
+                const data = await refreshSession();
                 response = await makeRequest(data.accessToken);
-            } catch (err) {
-                logout();
+            } catch {
+                clearSession();
                 throw new Error('Session expired. Please log in again.');
             }
         }
@@ -124,7 +150,9 @@ export function AuthProvider({ children }) {
         const responseData = await response.json();
 
         if (!response.ok) {
-            throw new Error(responseData.message || 'Something went wrong');
+            const error = new Error(responseData.message || 'Something went wrong');
+            error.status = response.status;
+            throw error;
         }
 
         return responseData;
@@ -140,6 +168,7 @@ export function AuthProvider({ children }) {
         register,
         verifyEmail,
         logout,
+        clearSession,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,6 +8,7 @@ import {
     logoutUser,
 } from "../controllers/auth.controller.js";
 import rateLimit from 'express-rate-limit';
+import { requireAppHeader } from "../middleware/requireAppHeader.js";
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -38,7 +39,8 @@ router.post("/register", authLimiter, registerUser);
 router.post("/login", authLimiter, loginUser);
 router.post("/verify-email", authLimiter, verifyEmail);
 router.post("/resend-verification", resendLimiter, resendVerification);
-router.post("/refresh", sessionLimiter, refreshAccessToken);
-router.post("/logout", sessionLimiter, logoutUser);
+// These read the refresh-token cookie, so they need the CSRF header too.
+router.post("/refresh", sessionLimiter, requireAppHeader, refreshAccessToken);
+router.post("/logout", sessionLimiter, requireAppHeader, logoutUser);
 
 export default router;

@@ -11,24 +11,49 @@ import {
 import { sendVerificationEmail } from "../notifications/authEmails.js";
 
 const NAME_MAX_LENGTH = 100;
-// Minimum gap between verification emails to the same account.
+// Minimum gap between verification or password-reset emails to the same account.
 const RESEND_COOLDOWN_SECONDS = 60;
 
-// Issues a new access token + refresh token pair for a user.
-async function createSession(userId) {
-    const accessToken = jwt.sign(
-        { id: userId },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-    );
+// ---------- Sessions ----------
+// The access token (1 hour) goes in the response body and lives in the client's memory.
+// The refresh token (7 days, matching refresh_tokens.expires_at) goes in an httpOnly
+// cookie, so scripts on the page can never read it. The cookie is only sent to /auth.
+const REFRESH_COOKIE = 'nudge_refresh';
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+// SameSite=Lax works when the site and API share a domain (nudge.app and
+// api.nudge.app, or localhost in development). If they're on unrelated domains, set
+// COOKIE_SAMESITE=none, which browsers only accept on HTTPS (Secure) cookies.
+function refreshCookieOptions() {
+    const sameSite = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase();
+    return {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' || sameSite === 'none',
+        sameSite,
+        path: '/auth',
+    };
+}
+
+function clearRefreshCookie(res) {
+    res.clearCookie(REFRESH_COOKIE, refreshCookieOptions());
+}
+
+// Starts a session: stores a new refresh token, sets its cookie, and returns the
+// access token for the response body.
+async function startSession(res, userId) {
     const refreshToken = generateRefreshToken();
     await pool.query(
         'INSERT INTO refresh_tokens (user_id, token_hash) VALUES ($1, $2)',
         [userId, hashToken(refreshToken)]
     );
+    res.cookie(REFRESH_COOKIE, refreshToken, { ...refreshCookieOptions(), maxAge: REFRESH_TTL_MS });
 
-    return { accessToken, refreshToken };
+    return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+}
+
+// Ends every session the user has (password reset, account deletion).
+async function revokeAllSessions(userId) {
+    await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
 }
 
 // Creates a fresh verification link for the user (older links stop working) and emails
@@ -164,7 +189,7 @@ const loginUser = async (req, res, next) => {
             });
         }
 
-        const session = await createSession(user.id);
+        const accessToken = await startSession(res, user.id);
 
         res.status(200).json({
             message: "User logged in successfully",
@@ -173,7 +198,7 @@ const loginUser = async (req, res, next) => {
                 name: user.name,
                 email: user.email
             },
-            ...session
+            accessToken
         });
 
     } catch (err) {
@@ -211,12 +236,12 @@ const verifyEmail = async (req, res, next) => {
         );
         await pool.query('DELETE FROM email_verification_tokens WHERE user_id = $1', [userId]);
 
-        const session = await createSession(userId);
+        const accessToken = await startSession(res, userId);
 
         res.status(200).json({
             message: "Email verified",
             user: verified.rows[0],
-            ...session
+            accessToken
         });
     } catch (err) {
         next(err);
@@ -262,73 +287,55 @@ const resendVerification = async (req, res, next) => {
     }
 };
 
+// Swaps the refresh-token cookie for a new one plus a new access token (rotation: each
+// refresh token works once). Also returns the user, so the client can restore it after
+// a page reload.
 const refreshAccessToken = async (req, res, next) => {
     try {
-        const { refreshToken } = req.body;
-
+        const refreshToken = req.cookies?.[REFRESH_COOKIE];
         if (!refreshToken) {
-            return res.status(400).json({
-                message: "Refresh token is required"
-            });
+            return res.status(401).json({ message: "Not logged in" });
         }
 
-        const tokenHash = hashToken(refreshToken);
-
-        const result = await pool.query(
-            'SELECT * FROM refresh_tokens WHERE token_hash = $1', [tokenHash]
+        // Deleting as part of the lookup makes the token single-use, even if two
+        // requests race with it.
+        const consumed = await pool.query(
+            'DELETE FROM refresh_tokens WHERE token_hash = $1 RETURNING user_id, expires_at',
+            [hashToken(refreshToken)]
         );
+        const storedToken = consumed.rows[0];
 
-        if (result.rows.length === 0) {
+        if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
+            clearRefreshCookie(res);
             return res.status(401).json({
-                message: "Invalid refresh token"
+                message: storedToken ? "Your session has expired. Please log in again." : "Invalid refresh token"
             });
         }
 
-        const storedToken = result.rows[0];
-
-        if (new Date(storedToken.expires_at) < new Date()) {
-            return res.status(401).json({
-                message: "Refresh token has expired"
-            });
-        }
-
-        await pool.query(
-            'DELETE FROM refresh_tokens WHERE id = $1', [storedToken.id]
-        );
-
-        const session = await createSession(storedToken.user_id);
-
-        // Include the user so the client can restore it (e.g. for the dashboard greeting)
-        // after a page reload, when only the refresh token survives.
         const userResult = await pool.query(
             'SELECT id, name, email FROM users WHERE id = $1', [storedToken.user_id]
         );
+        const accessToken = await startSession(res, storedToken.user_id);
 
         res.status(200).json({
             message: "Access token refreshed successfully",
             user: userResult.rows[0],
-            ...session
+            accessToken
         });
-
     } catch (err) {
         next(err);
     }
+};
 
-}
-
+// Revokes this browser's refresh token and clears its cookie. Succeeds even when
+// there's no session, so the client can always call it.
 const logoutUser = async (req, res, next) => {
     try {
-        const { refreshToken } = req.body;
-        if (!refreshToken) {
-            return res.status(400).json({
-                message: "Refresh token is required"
-            });
+        const refreshToken = req.cookies?.[REFRESH_COOKIE];
+        if (refreshToken) {
+            await pool.query('DELETE FROM refresh_tokens WHERE token_hash = $1', [hashToken(refreshToken)]);
         }
-        const tokenHash = hashToken(refreshToken);
-
-        await pool.query(
-            'DELETE FROM refresh_tokens WHERE token_hash = $1', [tokenHash]
-        );
+        clearRefreshCookie(res);
 
         res.status(200).json({
             message: "User logged out successfully"
@@ -336,7 +343,7 @@ const logoutUser = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}
+};
 
 export {
     registerUser,

@@ -10,20 +10,14 @@ export function loginUser(email, password) {
     });
 }
 
-export function refreshAccessToken(refreshToken) {
-    return apiRequest('/auth/refresh', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-    });
+// Uses the httpOnly refresh-token cookie (the browser sends it; scripts can't read it).
+export function refreshAccessToken() {
+    return apiRequest('/auth/refresh', { method: 'POST' });
 }
 
-// Revokes the refresh token on the server, so it can't be used again even if it was
-// copied from this browser.
-export function logoutUser(refreshToken) {
-    return apiRequest('/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-    });
+// Revokes this browser's refresh token on the server and clears its cookie.
+export function logoutUser() {
+    return apiRequest('/auth/logout', { method: 'POST' });
 }
 
 // Exchanges the token from the emailed link for a verified account + session.

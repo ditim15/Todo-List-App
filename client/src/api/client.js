@@ -3,11 +3,17 @@ const API_URL = import.meta.env.VITE_API_URL;
 // Base fetch wrapper used by all unauthenticated API calls (login/register/refresh).
 // Sets JSON headers, parses the JSON body, and throws on non-2xx responses so callers
 // can just await and catch.
+//
+// `credentials: 'include'` sends and accepts the httpOnly refresh-token cookie, which
+// the server sets on login and reads on /auth/refresh. X-Requested-With is the CSRF
+// header those cookie routes require (see middleware/requireAppHeader.js).
 export async function apiRequest(endpoint, options = {} ) {
     const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'nudge',
             ...options.headers,
         },
     });
