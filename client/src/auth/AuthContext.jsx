@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { loginUser, registerUser, refreshAccessToken, verifyEmail as verifyEmailRequest } from "../api/auth";
+import { loginUser, logoutUser, registerUser, refreshAccessToken, verifyEmail as verifyEmailRequest } from "../api/auth";
 
 const AuthContext = createContext(null);
 
@@ -74,7 +74,14 @@ export function AuthProvider({ children }) {
         return data;
     }
 
+    // Signs out here and revokes the refresh token on the server. The local sign-out
+    // happens either way: if the server can't be reached, the token still expires on
+    // its own after 7 days.
     function logout() {
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (storedRefreshToken) {
+            logoutUser(storedRefreshToken).catch(() => {});
+        }
         setUser(null);
         setAccessToken(null);
         localStorage.removeItem('refreshToken');

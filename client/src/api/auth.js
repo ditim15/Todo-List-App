@@ -17,6 +17,15 @@ export function refreshAccessToken(refreshToken) {
     });
 }
 
+// Revokes the refresh token on the server, so it can't be used again even if it was
+// copied from this browser.
+export function logoutUser(refreshToken) {
+    return apiRequest('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+    });
+}
+
 // Exchanges the token from the emailed link for a verified account + session.
 export function verifyEmail(token) {
     return apiRequest('/auth/verify-email', {
