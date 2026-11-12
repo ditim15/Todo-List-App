@@ -12,8 +12,11 @@ The backend for **Nudge**, a gentle-reminder task app for students. A RESTful to
 - User registration and login
 - Passwords hashed with bcrypt before storage
 - Short-lived JWT access tokens (1 hour)
-- Refresh tokens with rotation, each use invalidates the old token and issues a new one
+- Refresh tokens with rotation, each use invalidates the old token and issues a new one, kept in an httpOnly cookie that page scripts can't read
 - Logout endpoint that revokes a refresh token
+- Password reset by email, and account deletion that removes all of a user's data
+- Privacy policy page (`/privacy`)
+- Automated API tests and a GitHub Actions CI workflow
 - Full CRUD for todos, scoped to the user
 - Ownership enforcement - users only have access to their own todos to update/delete
 - Pagination for todos (shows total todos and total pages)
@@ -45,11 +48,14 @@ Server runs on `http://localhost:4000` by default
 | Method | Route              | Description                                  | Auth required |
 |--------|---------------------|-----------------------------------------------|----------------|
 | POST   | `/auth/register`    | Create an unverified user and email a verification link (does not log in) | No |
-| POST   | `/auth/login`        | Log in, returns access + refresh token. Unverified accounts get `403` with `code: "EMAIL_NOT_VERIFIED"` | No |
-| POST   | `/auth/verify-email` | Confirm an email with the link's `token`; marks the account verified and returns access + refresh token | No |
+| POST   | `/auth/login`        | Log in. Returns the user and an access token, and sets the refresh-token cookie. Unverified accounts get `403` with `code: "EMAIL_NOT_VERIFIED"` | No |
+| POST   | `/auth/verify-email` | Confirm an email with the link's `token`; marks the account verified and logs in (same response as login) | No |
 | POST   | `/auth/resend-verification` | Email a new verification link to `email` (same response whether or not it's registered; 60s cooldown per account) | No |
-| POST   | `/auth/refresh`      | Exchange a refresh token for a new access token (rotates the refresh token) | No |
-| POST   | `/auth/logout`       | Revoke a refresh token                        | No             |
+| POST   | `/auth/refresh`      | Swap the refresh-token cookie for a new access token (rotates the cookie). Needs `X-Requested-With: nudge` | Cookie |
+| POST   | `/auth/logout`       | Revoke this browser's refresh token and clear the cookie. Needs `X-Requested-With: nudge` | Cookie |
+| POST   | `/auth/forgot-password` | Email a password reset link to `email` (same response whether or not it's registered; 60s cooldown per account) | No |
+| POST   | `/auth/reset-password` | Set a new `password` using the emailed link's `token`. Logs out every session | No |
+| DELETE | `/auth/account`      | Permanently delete the signed-in account and all of its data. Body: `{ password }` | Yes |
 
 ### Todos
 
@@ -123,10 +129,31 @@ After pulling this change, re-run `db/init.sql`.
 
 ## Auth Flow Notes
  
-- Access tokens expire after 1 hour. When a request to a protected route returns `401`, the client should call `/auth/refresh` with its stored refresh token to get a new access token, rather than forcing the user to log in again.
-- Refresh tokens are rotated on every use — using a refresh token invalidates it and issues a new one. The old token cannot be reused.
-- Refresh tokens expire after 7 days.
-- Only the hash of a refresh token is stored in the database; the raw token is never persisted.
+- Access tokens expire after 1 hour and live only in the client's memory. When a protected route returns `401`, the client calls `/auth/refresh` to get a new one instead of making the user log in again.
+- The refresh token is an `httpOnly` cookie (`nudge_refresh`, path `/auth`, `SameSite=Lax`, `Secure` in production), so scripts on the page can never read it. Requests that use it must be made with `credentials: 'include'` and the `X-Requested-With: nudge` header, which blocks other sites from triggering them (CSRF).
+- If the frontend and API are on unrelated domains (not `nudge.app` + `api.nudge.app`), set `COOKIE_SAMESITE=none`. Prefer one shared domain: some browsers block cross-site cookies.
+- Refresh tokens are rotated on every use. Using one invalidates it and issues a new one, and the old token can't be reused.
+- Refresh tokens expire after 7 days. Resetting the password or deleting the account ends every session.
+- Only the hash of a refresh token, reset token or verification token is stored in the database; the raw token is never persisted.
+
+## Password Reset and Account Deletion
+
+- **Forgot password** (`/forgot-password`) emails a one-time link to `/reset-password?token=...`, valid for 1 hour. The response is the same whether or not the email has an account.
+- Setting a new password logs out every session and confirms the email address (opening the link proves the user owns it).
+- **Account settings** (`/account`, from the account menu) can delete the account after re-entering the password. Todos, reminders, chat history and tokens are deleted with the user (`ON DELETE CASCADE`).
+- After pulling this change, re-run `db/init.sql` to add the `password_reset_tokens` table.
+
+## Tests
+
+```
+npm test
+```
+
+Runs the API tests in `tests/` with Node's built-in test runner and `supertest`. They cover auth and cookies, password reset, account deletion, todos (CRUD, ownership, validation), and the assistant's routes. They never call the AI model; that's what `npm run eval:ai` is for.
+
+The tests use a separate database: `TEST_DATABASE_URL`, or your `DATABASE_URL` with `_test` added to the name (`todo_api` → `todo_api_test`), created automatically if it's missing. The test database is wiped between tests, so the tests refuse to run unless its name ends in `_test`. Your development data is never touched.
+
+On GitHub, `.github/workflows/ci.yml` runs the tests against a fresh Postgres, plus the frontend's lint and build, on every push and pull request.
 ## AI Assistant
 
 On the dashboard, the button in the bottom-right corner opens a chat with the assistant. It can:
@@ -152,3 +179,5 @@ How it works:
 - Run `db/init.sql` against the production database before the first start, and again after pulling changes that add tables or columns.
 - `GET /health` returns `200` when the server can reach the database. Point your host's health check at it.
 - The reminder scheduler runs inside the API server, so the server must stay running (a host that puts idle apps to sleep will skip reminders). It's safe to run more than one instance: reminders are locked before sending.
+- Set `NODE_ENV=production` so the login cookie is `Secure` (HTTPS only).
+- Before launch, replace the placeholder contact email in `client/src/pages/Privacy.jsx` and check that the policy still matches what the app does.
