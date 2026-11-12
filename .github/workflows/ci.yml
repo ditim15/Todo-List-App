@@ -1,0 +1,57 @@
+# Runs on every push and pull request: the API test suite against a throwaway Postgres,
+# then the frontend's lint and production build. A red check means something broke.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: nudge
+          POSTGRES_PASSWORD: nudge
+          POSTGRES_DB: nudge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nudge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Only for this throwaway CI database and test-only tokens; not real secrets.
+      TEST_DATABASE_URL: postgresql://nudge:nudge@localhost:5432/nudge_test
+      JWT_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  client:
+    name: Frontend lint and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_API_URL: https://api.example.com
