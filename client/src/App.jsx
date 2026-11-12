@@ -9,6 +9,10 @@ import CheckEmail from './pages/CheckEmail';
 import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Account from './pages/Account';
+import Privacy from './pages/Privacy';
 
 // Top-level route table for the app.
 function App() {
@@ -27,6 +31,15 @@ function App() {
                         {/* Email verification: "check your inbox" after sign-up, and the emailed link's target. */}
                         <Route path="/check-email" element={<CheckEmail />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
+                        {/* Password reset: request a link, then the emailed link's target. */}
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="/privacy" element={<Privacy />} />
+                        <Route path="/account" element={
+                            <ProtectedRoute>
+                                <Account />
+                            </ProtectedRoute>
+                        }/>
                         {/* Catch-all for unmatched routes. */}
                         <Route path="*" element={<NotFound />} />
                         {/* Dashboard requires an authenticated session; ProtectedRoute redirects to /login otherwise. */}

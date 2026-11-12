@@ -2,6 +2,7 @@
 // can talk through how to approach a task and propose tasks as cards. The user adds a
 // card with the normal create call; the assistant never saves anything itself.
 import { useEffect, useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { clearChat, getChat, sendChat, updateDraft } from '../../api/ai';
 import { createTodo } from '../../api/todos';
@@ -265,7 +266,8 @@ export default function Assistant({ onTaskAdded, listsDatalistId }) {
                                     ))}
                                 </div>
                                 <p className="assistant-privacy">
-                                    Messages, your list names and your open tasks are sent to Anthropic&apos;s API to answer.
+                                    Messages, your list names and your open tasks are sent to Anthropic&apos;s API to answer.{' '}
+                                    <Link to="/privacy">Privacy Policy</Link>
                                 </p>
                             </div>
                         )}

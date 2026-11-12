@@ -8,7 +8,7 @@ import {
     normalizeEmail,
     validatePassword,
 } from "../utils/validation.js";
-import { sendVerificationEmail } from "../notifications/authEmails.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../notifications/authEmails.js";
 
 const NAME_MAX_LENGTH = 100;
 // Minimum gap between verification or password-reset emails to the same account.
@@ -345,11 +345,133 @@ const logoutUser = async (req, res, next) => {
     }
 };
 
+// ---------- Password reset ----------
+
+// Emails a password reset link. Always gives the same answer (even during the resend
+// cooldown), so it can't be used to discover which emails have accounts.
+const forgotPassword = async (req, res, next) => {
+    try {
+        const email = normalizeEmail(req.body.email);
+        if (!isValidEmailFormat(email)) {
+            return res.status(400).json({ message: "Please enter a valid email address" });
+        }
+        const genericResponse = {
+            message: "If an account uses that email, we've sent a link to reset the password. It expires in 1 hour."
+        };
+
+        const result = await pool.query(
+            'SELECT u.id, u.name, u.email,'
+            + ' (SELECT MAX(created_at) FROM password_reset_tokens t WHERE t.user_id = u.id) AS last_sent'
+            + ' FROM users u WHERE u.email = $1',
+            [email]
+        );
+        const user = result.rows[0];
+        const secondsSinceLast = user?.last_sent ? (Date.now() - new Date(user.last_sent).getTime()) / 1000 : Infinity;
+        if (!user || secondsSinceLast < RESEND_COOLDOWN_SECONDS) {
+            return res.status(200).json(genericResponse);
+        }
+
+        // A new link replaces any earlier one.
+        const token = generateRefreshToken();
+        await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
+        await pool.query(
+            'INSERT INTO password_reset_tokens (user_id, token_hash) VALUES ($1, $2)',
+            [user.id, hashToken(token)]
+        );
+
+        try {
+            await sendPasswordResetEmail({ name: user.name, email: user.email, token });
+        } catch (err) {
+            // Same answer either way, so a failure doesn't reveal the account exists.
+            console.error(`[auth] Failed to send password reset email to user ${user.id}:`, err.message);
+        }
+        res.status(200).json(genericResponse);
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Sets a new password from the emailed link's token. Logs the user out everywhere
+// (someone else may have had the old password), and confirms the email address, since
+// opening the link proves the user owns it.
+const resetPassword = async (req, res, next) => {
+    try {
+        const { token, password } = req.body;
+        if (typeof token !== 'string' || token.length === 0) {
+            return res.status(400).json({ message: "Reset token is required" });
+        }
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            return res.status(400).json({ message: passwordError });
+        }
+
+        // Deleting as part of the lookup makes the link single-use.
+        const consumed = await pool.query(
+            'DELETE FROM password_reset_tokens WHERE token_hash = $1 RETURNING user_id, expires_at',
+            [hashToken(token)]
+        );
+        if (consumed.rows.length === 0 || new Date(consumed.rows[0].expires_at) < new Date()) {
+            return res.status(400).json({
+                message: "This reset link is invalid or has expired. Request a new one.",
+                code: "INVALID_RESET_TOKEN"
+            });
+        }
+
+        const userId = consumed.rows[0].user_id;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await pool.query(
+            'UPDATE users SET password = $1, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $2',
+            [hashedPassword, userId]
+        );
+        await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
+        await revokeAllSessions(userId);
+        clearRefreshCookie(res);
+
+        res.status(200).json({ message: "Your password has been changed. Log in with your new password." });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// ---------- Account deletion ----------
+
+// DELETE /auth/account { password }: permanently deletes the signed-in user. The
+// password is asked for again so a session left open on a shared computer can't
+// delete the account. Todos, chat history and tokens go with it (ON DELETE CASCADE).
+const deleteAccount = async (req, res, next) => {
+    try {
+        const { password } = req.body ?? {};
+        if (typeof password !== 'string' || password.length === 0) {
+            return res.status(400).json({ message: "Enter your password to delete your account" });
+        }
+
+        const result = await pool.query('SELECT id, password FROM users WHERE id = $1', [req.user.id]);
+        const user = result.rows[0];
+        if (!user) {
+            clearRefreshCookie(res);
+            return res.status(404).json({ message: "Account not found" });
+        }
+        if (!(await bcrypt.compare(password, user.password))) {
+            return res.status(403).json({ message: "That password isn't right" });
+        }
+
+        await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+        clearRefreshCookie(res);
+
+        res.status(200).json({ message: "Your account and all of its data have been deleted." });
+    } catch (err) {
+        next(err);
+    }
+};
+
 export {
     registerUser,
     loginUser,
     verifyEmail,
     resendVerification,
     refreshAccessToken,
-    logoutUser
+    logoutUser,
+    forgotPassword,
+    resetPassword,
+    deleteAccount
 }

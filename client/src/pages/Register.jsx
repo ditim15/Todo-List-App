@@ -125,6 +125,11 @@ function Register() {
                     </button>
                 </form>
 
+                <p className="auth-consent">
+                    By creating an account, you agree to how we handle your data in our{' '}
+                    <Link to="/privacy">Privacy Policy</Link>.
+                </p>
+
                 <p className="auth-footer">
                     Already have an account? <Link to='/login'>Log In</Link>
                 </p>

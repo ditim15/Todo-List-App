@@ -374,3 +374,115 @@ a {
 .auth-footer a:hover {
   text-decoration: underline;
 }
+
+/* "Forgot your password?" under the login password field. */
+.auth-forgot {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+/* "By creating an account you agree to..." under the register button. */
+.auth-consent {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ---------- Account settings ---------- */
+.account-page {
+  width: min(560px, 100%);
+}
+
+.account-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.account-section h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.account-section p {
+  margin: 0 0 8px;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+.account-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.account-details dt {
+  color: var(--ink-3);
+}
+
+.account-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-danger {
+  border-top-color: var(--critical);
+}
+
+.auth-form button.danger-button {
+  background: var(--critical);
+  color: #fff;
+}
+
+.auth-form button.danger-button:hover:not(:disabled) {
+  background: var(--critical-text);
+}
+
+/* ---------- Privacy policy ---------- */
+.legal {
+  width: min(720px, 100%);
+  line-height: 1.6;
+}
+
+.legal h1 {
+  margin-bottom: 4px;
+}
+
+.legal h2 {
+  margin: 28px 0 8px;
+  font-size: 1.1rem;
+}
+
+.legal p,
+.legal li {
+  color: var(--ink-2);
+}
+
+.legal ul {
+  padding-left: 20px;
+}
+
+.legal-updated {
+  margin-top: 0;
+  font-size: 0.85rem;
+  color: var(--ink-3);
+}
+
+.auth-form .account-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.auth-form .account-confirm input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  accent-color: var(--critical);
+}

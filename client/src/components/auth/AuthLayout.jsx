@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext';
 import ThemeToggle from '../ThemeToggle';
 import NudgeLogo from '../brand/NudgeLogo';
 import { CheckIcon } from '../landing/FeatureIcons';
@@ -20,6 +21,7 @@ export function AuthBullet({ children }) {
 // `aside` is an optional marketing panel shown beside the card on wide screens.
 function AuthLayout({ aside, children }) {
     const { pathname } = useLocation();
+    const { isAuthenticated } = useAuth();
     const onLogin = pathname === '/login';
     const onRegister = pathname === '/register';
 
@@ -44,8 +46,10 @@ function AuthLayout({ aside, children }) {
                                 <Link to="/login" className="btn btn-ghost btn-sm">Log in</Link>
                             </>
                         )}
-                        {!onLogin && !onRegister && (
-                            <Link to="/login" className="btn btn-ghost btn-sm">Log in</Link>
+                        {/* Shared pages (privacy, account, not found) can be opened while signed in. */}
+                        {!onLogin && !onRegister && (isAuthenticated
+                            ? <Link to="/dashboard" className="btn btn-ghost btn-sm">Dashboard</Link>
+                            : <Link to="/login" className="btn btn-ghost btn-sm">Log in</Link>
                         )}
                     </div>
                 </div>
@@ -63,6 +67,7 @@ function AuthLayout({ aside, children }) {
                         <Link to="/">Home</Link>
                         <Link to="/login">Log in</Link>
                         <Link to="/register">Sign up</Link>
+                        <Link to="/privacy">Privacy</Link>
                     </nav>
                 </div>
             </footer>

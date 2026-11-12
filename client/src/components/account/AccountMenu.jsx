@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../theme/ThemeContext';
 import './AccountMenu.css';
 
@@ -19,6 +20,15 @@ function MoonIcon() {
     );
 }
 
+function SettingsIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+    );
+}
+
 function LogoutIcon() {
     return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -33,6 +43,7 @@ function LogoutIcon() {
 function AccountMenu({ user, onLogout }) {
     const [open, setOpen] = useState(false);
     const { theme, toggleTheme } = useTheme();
+    const navigate = useNavigate();
     const rootRef = useRef(null);
     const buttonRef = useRef(null);
     const menuRef = useRef(null);
@@ -158,6 +169,21 @@ function AccountMenu({ user, onLogout }) {
                                 <MoonIcon />
                                 <span>Dark mode</span>
                                 <span className={`account-switch${isDark ? ' is-on' : ''}`} aria-hidden="true" />
+                            </button>
+                        </li>
+                        <li role="none">
+                            <button
+                                type="button"
+                                className="account-item"
+                                role="menuitem"
+                                tabIndex={-1}
+                                onClick={() => {
+                                    close();
+                                    navigate('/account');
+                                }}
+                            >
+                                <SettingsIcon />
+                                <span>Account settings</span>
                             </button>
                         </li>
                         <li role="separator" className="account-separator" />

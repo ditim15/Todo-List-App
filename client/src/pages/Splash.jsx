@@ -285,6 +285,7 @@ function Splash() {
                         <a href="#how-it-works">How it works</a>
                         <Link to="/login">Log in</Link>
                         <Link to="/register">Sign up</Link>
+                        <Link to="/privacy">Privacy</Link>
                     </nav>
                 </div>
             </footer>

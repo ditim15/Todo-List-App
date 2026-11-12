@@ -69,6 +69,10 @@ function Login() {
                         required
                     />
 
+                    <p className="auth-forgot">
+                        <Link to="/forgot-password">Forgot your password?</Link>
+                    </p>
+
                     {error && <p className="auth-error">{error}</p>}
 
                     <button type="submit" disabled={isLoading}>
