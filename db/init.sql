@@ -70,3 +70,17 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id ON email_verification_tokens(user_id);
+-- AI assistant chat: one ongoing conversation per user, cleared from the chat panel.
+-- `drafts` holds the task cards an assistant message proposed, each with a `status`
+-- ('pending' | 'added' | 'dismissed'). The assistant never creates todos itself; the
+-- user adds a card through POST /todos. The API keeps each user's latest 200 messages.
+CREATE TABLE IF NOT EXISTS ai_messages (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(10) NOT NULL CHECK (role IN ('user', 'assistant')),
+    content TEXT NOT NULL,
+    drafts JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_messages_user_id ON ai_messages(user_id, id);

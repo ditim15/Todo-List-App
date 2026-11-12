@@ -424,6 +424,18 @@
     cursor: not-allowed;
 }
 
+/* Reminder select + its time field share one grid cell, wrapping when it's narrow. */
+.add-task-reminder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.add-task-reminder > * {
+    flex: 1 1 110px;
+}
+
 .form-error {
     grid-column: 1 / -1;
     color: var(--critical-text);

@@ -30,6 +30,7 @@ npm install
 PORT=4000
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/your_db_name?schema=public"
 JWT_SECRET=your_random_secret_here
+ANTHROPIC_API_KEY=sk-ant-...   # optional, enables the AI assistant (see below)
 ```
 
 Generate a secret with:
@@ -68,6 +69,17 @@ All todos routes require an `Authorization: Bearer <accessToken>` header.
 | PUT    | `/todos/:id`   | Update a todo (must be owned by the requesting user) |
 | PUT    | `/todos/lists/:name` | Rename a list: moves all of the user's todos in `:name` to the `name` given in the body (renaming to an existing list merges them) |
 | DELETE | `/todos/:id`   | Delete a todo (must be owned by the requesting user) |
+
+### AI
+
+Requires an `Authorization: Bearer <accessToken>` header. Sending messages is limited to 20 per 10 minutes per user.
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET    | `/ai/chat` | The saved conversation (`messages`, oldest first) and `available` (false when no API key is set) |
+| POST   | `/ai/chat` | Send `{ message, today, timezone }`. Returns the stored user and assistant messages; the assistant's may carry task cards in `drafts`. Nothing is saved to todos. See [AI Assistant](#ai-assistant). |
+| DELETE | `/ai/chat` | Clear the conversation |
+| PATCH  | `/ai/chat/messages/:id/drafts/:index` | Mark a card `added` or `dismissed` (optionally with the fields as saved). Adding the task itself is `POST /todos`. |
 
 ## Task Reminders
 
@@ -121,3 +133,18 @@ After pulling this change, re-run `db/init.sql`.
 - Refresh tokens are rotated on every use — using a refresh token invalidates it and issues a new one. The old token cannot be reused.
 - Refresh tokens expire after 7 days.
 - Only the hash of a refresh token is stored in the database; the raw token is never persisted.
+## AI Assistant
+
+On the dashboard, the button in the bottom-right corner opens a chat with the assistant. It can:
+
+- **Add tasks.** "chem quiz friday and math 201 problem set monday, remind me the day before at 8pm" gets you one card per task, with title, due date, list, priority and reminder filled in. Cards are editable, and a task is only saved when the student presses **Add task** (through the normal `POST /todos`). The assistant never writes tasks itself.
+- **Talk through a task.** "How should I approach my history essay?" looks up that task and replies with a short plan (steps, timing before the due date). It offers to turn the steps into tasks, and proposes them only if the student says yes.
+
+How it works:
+
+- **Model:** Claude Haiku 5.5 (`claude-haiku-5-5`) through `@anthropic-ai/sdk`, with a small tool loop (at most 4 calls per message). The model has two tools: `propose_task` (validated with the same `parseTodoFields` as `POST /todos`, then shown as a card) and `list_open_tasks` (read-only). The prompt includes today's date, a calendar of the next three weeks (so "friday" or "next mon" resolve correctly), and the student's list names. Code: `services/ai.js`, `controllers/ai.controller.js`, `client/src/components/assistant/`.
+- **History:** one ongoing conversation per user in the `ai_messages` table, kept to each user's latest 200 messages. "Clear chat" deletes it. The model sees the last 20 messages. After pulling this change, re-run `db/init.sql`.
+- **Errors:** `400` bad input, `429` rate limit, `503` assistant unavailable (no key, timeout, network or API outage). A failed message isn't saved; its text goes back into the input. The task form works whether or not the assistant does.
+- **Setup:** set `ANTHROPIC_API_KEY` in `.env`. It is only read on the server. Without it the server still starts (it logs that the assistant is off), the panel says it's off, and everything else works.
+- **Privacy:** chat messages, the student's list names, today's date and timezone are sent to Anthropic's API. When the assistant looks up tasks, the title, due date, list and priority of open tasks are sent too. Completed tasks, task notes, and the student's name and email are never sent.
+- **Eval:** `npm run eval:ai` runs 30 one-message chats from `scripts/ai-parse-cases.json` (fixed date and timezone, stubbed open tasks) and prints pass/fail per field: dates, lists, priorities, reminders, junk input, multiple tasks, and "discuss, don't add" cases. It makes real API calls, so it needs the key. `npm run eval:ai -- <id>` runs only matching cases.

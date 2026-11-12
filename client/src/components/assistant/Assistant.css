@@ -1,0 +1,552 @@
+/* ---------- Assistant: corner button + chat panel ---------- */
+
+.assistant-toggle {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 50%;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.assistant-toggle:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.assistant-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.assistant-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+.assistant-panel {
+    position: fixed;
+    right: 20px;
+    bottom: 84px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    width: 400px;
+    height: min(620px, calc(100dvh - 108px));
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+/* Full screen: covers the page. Sizes are explicit (not auto) so the switch can
+   animate. */
+.assistant-panel--expanded {
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Keep long lines readable on wide screens by centring a column. */
+.assistant-panel--expanded .assistant-messages,
+.assistant-panel--expanded .assistant-compose {
+    padding-inline: max(16px, calc((100% - 760px) / 2));
+}
+
+/* Phones: the panel fills the width, keeping a 16px gutter. */
+@media (max-width: 480px) {
+    .assistant-toggle {
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .assistant-panel {
+        left: 16px;
+        right: 16px;
+        bottom: 80px;
+        width: auto;
+        height: calc(100dvh - 96px);
+    }
+
+    .assistant-panel--expanded {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 100dvh;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .assistant-panel {
+        animation: assistant-in 0.18s ease-out;
+        transition: width 0.22s ease, height 0.22s ease, right 0.22s ease, bottom 0.22s ease,
+            left 0.22s ease, border-radius 0.22s ease;
+    }
+}
+
+@keyframes assistant-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+}
+
+.assistant-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px 12px 16px;
+    border-bottom: 1px solid var(--line);
+}
+
+.assistant-header h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.assistant-header-icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 50%;
+}
+
+.assistant-header-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.assistant-clear {
+    font-size: 0.85em;
+}
+
+.assistant-icon-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: none;
+    color: var(--ink-2);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.assistant-icon-button:hover {
+    background: var(--surface-hover);
+    color: var(--ink);
+}
+
+.assistant-icon-button:focus-visible {
+    outline: 2px solid var(--accent);
+}
+
+.assistant-icon-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ---------- Messages ---------- */
+
+.assistant-messages {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.assistant-message {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 88%;
+}
+
+.assistant-message--user {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+
+.assistant-message--assistant {
+    align-self: flex-start;
+    width: 88%;
+}
+
+.assistant-bubble {
+    padding: 9px 12px;
+    border-radius: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.assistant-message--user .assistant-bubble {
+    background: var(--accent);
+    color: var(--on-accent);
+    border-bottom-right-radius: 4px;
+}
+
+.assistant-message--assistant .assistant-bubble {
+    align-self: flex-start;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 4px;
+    white-space: normal;
+}
+
+.assistant-bubble p,
+.assistant-bubble ul,
+.assistant-bubble ol {
+    margin: 0;
+}
+
+/* Spacing between paragraphs and lists in a reply. Scoped to those elements so it
+   doesn't push the typing dots (spans) out of line. */
+.assistant-bubble > :is(p, ul, ol) + :is(p, ul, ol) {
+    margin-top: 8px;
+}
+
+.assistant-bubble ul,
+.assistant-bubble ol {
+    padding-left: 20px;
+}
+
+.assistant-bubble li + li {
+    margin-top: 4px;
+}
+
+/* ---------- Motion ---------- */
+
+/* New messages (and the typing bubble) fade and slide in. A reply's task cards follow
+   just after its text. History that was already there doesn't animate. */
+@media (prefers-reduced-motion: no-preference) {
+    .assistant-message--new {
+        animation: assistant-message-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .assistant-message--new .assistant-card {
+        animation: assistant-message-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation-delay: 0.08s;
+    }
+
+    .assistant-message--new .assistant-card + .assistant-card {
+        animation-delay: 0.16s;
+    }
+
+    .assistant-message--user.assistant-message--new {
+        transform-origin: bottom right;
+    }
+
+    .assistant-message--assistant.assistant-message--new {
+        transform-origin: bottom left;
+    }
+}
+
+/* Reduced motion: a plain, quick fade. */
+@media (prefers-reduced-motion: reduce) {
+    .assistant-message--new,
+    .assistant-message--new .assistant-card {
+        animation: assistant-fade-in 0.2s ease both;
+    }
+}
+
+@keyframes assistant-message-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+}
+
+@keyframes assistant-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+/* Typing indicator: three dots on one baseline, bouncing in turn. */
+.assistant-typing {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 36px;
+    padding: 0 14px;
+    box-sizing: border-box;
+}
+
+.assistant-typing span {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    background: var(--ink-3);
+    border-radius: 50%;
+    animation: assistant-dot-bounce 1.2s infinite ease-in-out both;
+}
+
+.assistant-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.assistant-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes assistant-dot-bounce {
+    0%, 60%, 100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-4px);
+    }
+}
+
+/* Reduced motion: the dots pulse in place instead of bouncing, so there's still a
+   sign the assistant is working. */
+@media (prefers-reduced-motion: reduce) {
+    .assistant-typing span {
+        animation-name: assistant-dot-pulse;
+    }
+}
+
+@keyframes assistant-dot-pulse {
+    0%, 60%, 100% { opacity: 0.35; }
+    30% { opacity: 1; }
+}
+
+.assistant-status {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.assistant-status--error {
+    color: var(--critical-text);
+}
+
+.assistant-empty {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--ink-2);
+}
+
+.assistant-empty p {
+    margin: 0;
+}
+
+.assistant-suggestions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.assistant-suggestions button {
+    padding: 7px 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: none;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.9em;
+    text-align: left;
+    cursor: pointer;
+}
+
+.assistant-suggestions button:hover {
+    background: var(--track);
+}
+
+.assistant-privacy {
+    font-size: 0.8em;
+    color: var(--ink-3);
+}
+
+/* ---------- Task cards ---------- */
+
+.assistant-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+}
+
+.assistant-card input,
+.assistant-card select {
+    width: 100%;
+    min-width: 0;
+    height: 32px;
+    padding: 0 8px;
+    background: var(--canvas);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.9em;
+    box-sizing: border-box;
+}
+
+.assistant-card input:focus,
+.assistant-card select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.assistant-card .assistant-card-title {
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.assistant-card-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.assistant-card-notes,
+.assistant-card-note,
+.assistant-card-error {
+    margin: 0;
+    font-size: 0.85em;
+}
+
+.assistant-card-notes,
+.assistant-card-note {
+    color: var(--ink-2);
+}
+
+.assistant-card-error {
+    color: var(--critical-text);
+}
+
+.assistant-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.assistant-card-add {
+    height: 32px;
+    padding: 0 14px;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.assistant-card-add:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.assistant-card-add:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.assistant-card--done {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 10px;
+    font-size: 0.9em;
+    border-left-color: var(--line);
+}
+
+.assistant-card--done svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+}
+
+.assistant-card--muted {
+    color: var(--ink-3);
+}
+
+/* ---------- Composer ---------- */
+
+.assistant-compose {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.assistant-compose textarea {
+    flex: 1;
+    min-width: 0;
+    min-height: 38px;
+    max-height: 120px;
+    padding: 9px 10px;
+    background: var(--canvas);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font: inherit;
+    line-height: 1.35;
+    resize: none;
+    field-sizing: content;
+    box-sizing: border-box;
+}
+
+.assistant-compose textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.assistant-compose button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.assistant-compose button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.assistant-compose button svg {
+    width: 18px;
+    height: 18px;
+}

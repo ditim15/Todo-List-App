@@ -58,3 +58,89 @@ export async function domainAcceptsMail(email) {
         return true;
     }
 }
+
+// ---------- Todo fields ----------
+// Shared by POST/PUT /todos and the AI quick-add draft (controllers/ai.controller.js),
+// so a draft is held to exactly the same rules as a task the user types in.
+export const PRIORITIES = ['low', 'medium', 'high'];
+export const DEFAULT_CATEGORY = 'General';
+export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+export const CATEGORY_MAX_LENGTH = 50;
+
+// Normalises the optional fields shared by create/update. Returns { error } when the
+// input is invalid so the caller can send a 400.
+export function parseTodoFields(body) {
+    const priority = body.priority ?? 'medium';
+    if (!PRIORITIES.includes(priority)) {
+        return { error: `Priority must be one of: ${PRIORITIES.join(', ')}` };
+    }
+
+    const category = typeof body.category === 'string' && body.category.trim() !== ''
+        ? body.category.trim()
+        : DEFAULT_CATEGORY;
+    if (category.length > CATEGORY_MAX_LENGTH) {
+        return { error: `List name must be ${CATEGORY_MAX_LENGTH} characters or fewer` };
+    }
+
+    const dueDate = body.due_date || null;
+    if (dueDate !== null && !isValidDate(dueDate)) {
+        return { error: 'Due date must be a real date in YYYY-MM-DD format' };
+    }
+
+    const reminder = parseReminder(body, dueDate);
+    if (reminder.error) {
+        return { error: reminder.error };
+    }
+
+    return { priority, category, dueDate, reminder: reminder.value };
+}
+
+// 'YYYY-MM-DD' that names a real calendar day (rejects e.g. 2026-02-30).
+function isValidDate(value) {
+    if (typeof value !== 'string' || !DATE_PATTERN.test(value)) return false;
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+const REMINDER_MAX_DAYS_BEFORE = 7;
+const DEFAULT_REMINDER_TIME = '09:00';
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+
+export function isValidTimeZone(timeZone) {
+    try {
+        new Intl.DateTimeFormat('en-US', { timeZone });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Reminder fields: reminder_days_before (0 = on the due date, up to 7), reminder_time
+// ('HH:MM', the user's local time, default 09:00) and reminder_timezone (IANA name,
+// e.g. 'America/New_York'). A null/omitted reminder_days_before means no reminder.
+function parseReminder(body, dueDate) {
+    const raw = body.reminder_days_before;
+    if (raw === undefined || raw === null || raw === '') {
+        return { value: null };
+    }
+
+    const daysBefore = Number(raw);
+    if (!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > REMINDER_MAX_DAYS_BEFORE) {
+        return { error: `Reminders can be set from the due date up to ${REMINDER_MAX_DAYS_BEFORE} days before` };
+    }
+    if (!dueDate) {
+        return { error: 'Set a due date to add a reminder' };
+    }
+
+    const time = body.reminder_time || DEFAULT_REMINDER_TIME;
+    if (typeof time !== 'string' || !TIME_PATTERN.test(time)) {
+        return { error: 'Reminder time must be in HH:MM format' };
+    }
+
+    const timezone = body.reminder_timezone || 'UTC';
+    if (typeof timezone !== 'string' || timezone.length > 64 || !isValidTimeZone(timezone)) {
+        return { error: 'Unknown reminder timezone' };
+    }
+
+    return { value: { daysBefore, time: time.slice(0, 5), timezone } };
+}

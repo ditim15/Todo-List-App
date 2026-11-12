@@ -1,74 +1,5 @@
 import pool from '../db/pool.js';
-
-const PRIORITIES = ['low', 'medium', 'high'];
-const DEFAULT_CATEGORY = 'General';
-
-// Normalises the optional fields shared by create/update. Returns { error } when the
-// input is invalid so the caller can send a 400.
-function parseTodoFields(body) {
-    const priority = body.priority ?? 'medium';
-    if (!PRIORITIES.includes(priority)) {
-        return { error: `Priority must be one of: ${PRIORITIES.join(', ')}` };
-    }
-
-    const category = typeof body.category === 'string' && body.category.trim() !== ''
-        ? body.category.trim()
-        : DEFAULT_CATEGORY;
-    if (category.length > 50) {
-        return { error: 'List name must be 50 characters or fewer' };
-    }
-
-    const dueDate = body.due_date || null;
-    const reminder = parseReminder(body, dueDate);
-    if (reminder.error) {
-        return { error: reminder.error };
-    }
-
-    return { priority, category, dueDate, reminder: reminder.value };
-}
-
-const REMINDER_MAX_DAYS_BEFORE = 7;
-const DEFAULT_REMINDER_TIME = '09:00';
-const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
-
-function isValidTimeZone(timeZone) {
-    try {
-        new Intl.DateTimeFormat('en-US', { timeZone });
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-// Reminder fields: reminder_days_before (0 = on the due date, up to 7), reminder_time
-// ('HH:MM', the user's local time, default 09:00) and reminder_timezone (IANA name,
-// e.g. 'America/New_York'). A null/omitted reminder_days_before means no reminder.
-function parseReminder(body, dueDate) {
-    const raw = body.reminder_days_before;
-    if (raw === undefined || raw === null || raw === '') {
-        return { value: null };
-    }
-
-    const daysBefore = Number(raw);
-    if (!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > REMINDER_MAX_DAYS_BEFORE) {
-        return { error: `Reminders can be set from the due date up to ${REMINDER_MAX_DAYS_BEFORE} days before` };
-    }
-    if (!dueDate) {
-        return { error: 'Set a due date to add a reminder' };
-    }
-
-    const time = body.reminder_time || DEFAULT_REMINDER_TIME;
-    if (typeof time !== 'string' || !TIME_PATTERN.test(time)) {
-        return { error: 'Reminder time must be in HH:MM format' };
-    }
-
-    const timezone = body.reminder_timezone || 'UTC';
-    if (typeof timezone !== 'string' || timezone.length > 64 || !isValidTimeZone(timezone)) {
-        return { error: 'Unknown reminder timezone' };
-    }
-
-    return { value: { daysBefore, time: time.slice(0, 5), timezone } };
-}
+import { DATE_PATTERN, PRIORITIES, parseTodoFields } from '../utils/validation.js';
 
 // The moment a reminder should go out: (due date - N days) at the given local time in
 // the user's timezone. Postgres does the conversion so DST is handled correctly.
@@ -88,8 +19,6 @@ const REMINDER_PASSED_MESSAGE = 'That reminder time has already passed. Pick a l
 function parseToday(value) {
     return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
-
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 // Builds the WHERE clause for getTodos from the optional query filters. Values are
 // always passed as parameters, never interpolated into the SQL.

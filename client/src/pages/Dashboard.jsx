@@ -7,14 +7,10 @@ import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo 
 import { ReminderBadge, ReminderPicker, ReminderSelect } from '../components/tasks/reminders';
 import { DEFAULT_REMINDER_TIME, reminderMoment } from '../components/tasks/reminderUtils';
 import CalendarView from '../components/tasks/CalendarView';
+import { PRIORITIES, PrioritySelect } from '../components/tasks/PrioritySelect';
+import Assistant from '../components/assistant/Assistant';
 import { addDays, isSameMonth, localeFirstDayOfWeek, monthGrid, monthOf } from '../components/tasks/calendarUtils';
 import './static/Dashboard.css';
-
-const PRIORITIES = [
-    { key: 'high', label: 'High' },
-    { key: 'medium', label: 'Medium' },
-    { key: 'low', label: 'Low' },
-];
 
 const TASK_PAGE_SIZE = 50;
 
@@ -349,18 +345,6 @@ function UpcomingPanel({ upcoming, today }) {
 // Shared suggestions for every "List" input (the add form and edit forms).
 const LISTS_DATALIST_ID = 'dashboard-lists';
 
-function PrioritySelect({ value, onChange }) {
-    return (
-        <select aria-label="Priority" value={value} onChange={(e) => onChange(e.target.value)}>
-            {PRIORITIES.map((p) => (
-                <option key={p.key} value={p.key}>
-                    {p.label}
-                </option>
-            ))}
-        </select>
-    );
-}
-
 // Toolbar above the task list: title search, priority toggles and a due-date range.
 // Filters apply within the selected list.
 // `showDueRange` is off in the calendar, where the month itself is the date range.
@@ -438,9 +422,10 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
     const [category, setCategory] = useState(defaultList ?? '');
     const [priority, setPriority] = useState('medium');
     const [dueDate, setDueDate] = useState(defaultDueDate);
-    // Days before the due date (null = none). The time defaults to 9:00 AM here and
-    // can be changed by editing the task.
+    // Days before the due date (null = none). The time defaults to 9:00 AM; a time
+    // field appears next to the reminder once one is picked.
     const [reminderDays, setReminderDays] = useState(null);
+    const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -473,11 +458,12 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
                 priority,
                 due_date: dueDate || null,
                 reminder_days_before: dueDate ? reminderDays : null,
-                reminder_time: dueDate && reminderDays !== null ? DEFAULT_REMINDER_TIME : null,
+                reminder_time: dueDate && reminderDays !== null ? reminderTime : null,
             });
             setTitle('');
             setDueDate(defaultDueDate);
             setReminderDays(null);
+            setReminderTime(DEFAULT_REMINDER_TIME);
             setPriority('medium');
         } catch (err) {
             setError(err.message);
@@ -515,19 +501,30 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
                     const next = e.target.value;
                     setDueDate(next);
                     // Drop a reminder the new date makes impossible (or that has no date).
-                    const moment = reminderMoment(next, reminderDays, DEFAULT_REMINDER_TIME);
+                    const moment = reminderMoment(next, reminderDays, reminderTime);
                     if (!next || (moment && moment <= new Date())) setReminderDays(null);
                     // Clearing the field doesn't move the calendar; there's no day to show.
                     if (next) onDueDateChange?.(next);
                 }}
             />
-            <ReminderSelect
-                compact
-                dueDate={dueDate}
-                days={reminderDays}
-                time={DEFAULT_REMINDER_TIME}
-                onChange={setReminderDays}
-            />
+            <div className="add-task-reminder">
+                <ReminderSelect
+                    compact
+                    dueDate={dueDate}
+                    days={reminderDays}
+                    time={reminderTime}
+                    onChange={setReminderDays}
+                />
+                {dueDate && reminderDays !== null && (
+                    <input
+                        type="time"
+                        aria-label="Reminder time"
+                        value={reminderTime}
+                        required
+                        onChange={(e) => setReminderTime(e.target.value || DEFAULT_REMINDER_TIME)}
+                    />
+                )}
+            </div>
             <button type="submit" disabled={isSaving || !title.trim()}>
                 {isSaving ? 'Adding...' : 'Add'}
             </button>
@@ -1093,7 +1090,7 @@ function Dashboard() {
                                 <ViewToggle view={view} onChange={changeView} />
                             </div>
 
-                            {!isCalendar && <AddTaskForm defaultList={selectedList} onCreate={handleCreate} />}
+                            {!isCalendar && <AddTaskForm defaultList={selectedList} onCreate={handleCreate}/>}
                             <datalist id={LISTS_DATALIST_ID}>
                                 {stats.lists.map((list) => (
                                     <option key={list.name} value={list.name} />
@@ -1195,6 +1192,7 @@ function Dashboard() {
                     </div>
                 )}
             </main>
+            <Assistant onTaskAdded={loadDashboard} listsDatalistId={LISTS_DATALIST_ID} />
         </div>
     );
 }

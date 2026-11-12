@@ -24,6 +24,13 @@ export function ReminderSelect({ dueDate, days, onChange, id, time = null, compa
         ? reminderMoment(dueDate, optionDays, time) <= new Date()
         : isDayPast(dueDate, optionDays);
 
+    // A value outside the presets (e.g. 5 days, from the assistant or the API) still gets an
+    // option, so the select never shows "No reminder" for a task that has one.
+    const options = days === null || days === undefined || REMINDER_OPTIONS.some((o) => o.days === days)
+        ? REMINDER_OPTIONS
+        : [...REMINDER_OPTIONS, { days, label: `${days} days before`, short: `${days} days before` }]
+            .sort((a, b) => a.days - b.days);
+
     return (
         <select
             id={id}
@@ -34,7 +41,7 @@ export function ReminderSelect({ dueDate, days, onChange, id, time = null, compa
             onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
         >
             <option value="">{compact && !dueDate ? 'Reminder' : 'No reminder'}</option>
-            {REMINDER_OPTIONS.map((option) => (
+            {options.map((option) => (
                 <option key={option.days} value={option.days} disabled={Boolean(dueDate) && isUnavailable(option.days)}>
                     {compact ? option.short : option.label}
                 </option>
