@@ -48,12 +48,30 @@ async function startSession(res, userId) {
     );
     res.cookie(REFRESH_COOKIE, refreshToken, { ...refreshCookieOptions(), maxAge: REFRESH_TTL_MS });
 
-    return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const user = await pool.query('SELECT token_version FROM users WHERE id = $1', [userId]);
+    return signAccessToken(userId, user.rows[0].token_version);
 }
 
-// Ends every session the user has (password reset, account deletion).
+// `tv` is the user's token_version when the token was issued. middleware/authenticate.js
+// rejects tokens whose tv no longer matches, so bumping it ends sessions immediately.
+function signAccessToken(userId, tokenVersion) {
+    return jwt.sign({ id: userId, tv: tokenVersion }, process.env.JWT_SECRET, { expiresIn: '1h' });
+}
+
+// Ends every session the user has (password reset): deletes the refresh tokens, and
+// bumps token_version so access tokens already handed out stop working too.
 async function revokeAllSessions(userId) {
     await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+    await pool.query('UPDATE users SET token_version = token_version + 1 WHERE id = $1', [userId]);
+}
+
+// Compared against when the email isn't registered, so a login for an unknown address
+// takes as long as a wrong password and response times don't reveal which emails have
+// accounts. Hashed on first use so it doesn't slow down startup.
+let dummyHashPromise = null;
+function dummyPasswordHash() {
+    dummyHashPromise ??= bcrypt.hash('not-a-real-password', 10);
+    return dummyHashPromise;
 }
 
 // Creates a fresh verification link for the user (older links stop working) and emails
@@ -107,20 +125,34 @@ const registerUser = async (req, res, next) => {
         }
 
         const existingUser = await pool.query(
-            "SELECT id, email_verified_at FROM users WHERE email = $1", [email]
+            'SELECT u.id, u.email_verified_at,'
+            + ' (SELECT MAX(created_at) FROM email_verification_tokens t WHERE t.user_id = u.id) AS last_sent'
+            + ' FROM users u WHERE u.email = $1',
+            [email]
         );
 
         const hashedPassword = await bcrypt.hash(password, 10);
         let user;
+        let sendEmail = true;
 
         if (existingUser.rows.length > 0) {
-            if (existingUser.rows[0].email_verified_at) {
+            const existing = existingUser.rows[0];
+            if (existing.email_verified_at) {
                 return res.status(409).json({
                     message: "An account with this email already exists"
                 });
             }
-            // Never verified: nobody has proven they own this address, so let the new
-            // sign-up take it over (e.g. someone who lost the first email).
+            // Never verified: nobody has proven they own this address, so the new
+            // sign-up's name and password replace the old ones (e.g. someone who lost
+            // the first email or mistyped their password). This is safe because
+            // verifying requires the password (see verifyEmail): whoever re-registers
+            // can't verify without the inbox, and the inbox owner can't be tricked into
+            // verifying with a password they don't know.
+            //
+            // The email itself respects the resend cooldown, so repeated sign-ups can't
+            // flood someone's inbox. An earlier link still works with the new password.
+            const lastSent = existing.last_sent ? new Date(existing.last_sent).getTime() : 0;
+            sendEmail = (Date.now() - lastSent) / 1000 >= RESEND_COOLDOWN_SECONDS;
             const updated = await pool.query(
                 'UPDATE users SET name = $1, password = $2 WHERE id = $3 RETURNING id, name, email',
                 [name, hashedPassword, existingUser.rows[0].id]
@@ -134,7 +166,7 @@ const registerUser = async (req, res, next) => {
             user = created.rows[0];
         }
 
-        const emailSent = await issueVerificationEmail(user);
+        const emailSent = sendEmail ? await issueVerificationEmail(user) : true;
 
         res.status(201).json({
             message: emailSent
@@ -166,16 +198,10 @@ const loginUser = async (req, res, next) => {
             'SELECT * FROM users WHERE email = $1', [email]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(401).json({
-                message: "Invalid email or password"
-            });
-        }
-
         const user = result.rows[0];
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+        const isMatch = await bcrypt.compare(String(password), user?.password ?? await dummyPasswordHash());
+        if (!user || !isMatch) {
             return res.status(401).json({
                 message: "Invalid email or password"
             });
@@ -206,26 +232,58 @@ const loginUser = async (req, res, next) => {
     }
 };
 
-// Confirms an email address from the emailed link's token, then logs the user in.
+// Confirms an email address from the emailed link's token plus the account's password,
+// then logs the user in.
+//
+// The password is required because, until an address is verified, anyone can sign up
+// with it and choose the password (see registerUser). Without this check, someone
+// could register a student's email with a password of their own, and the student,
+// clicking the link they received, would verify an account the other person can log
+// into. Requiring the password means the account is only verified by someone who holds
+// the inbox AND knows the password. Anyone who doesn't know it uses "forgot password",
+// which also proves the inbox and lets them choose a new one.
 const verifyEmail = async (req, res, next) => {
     try {
-        const { token } = req.body;
+        const { token, password } = req.body ?? {};
         if (typeof token !== 'string' || token.length === 0) {
             return res.status(400).json({ message: "Verification token is required" });
         }
+        if (typeof password !== 'string' || password.length === 0) {
+            return res.status(400).json({ message: "Enter your password to confirm your email" });
+        }
 
-        // Deleting the token as part of the lookup makes it single-use, even if the
-        // link is opened twice at the same moment.
-        const consumed = await pool.query(
-            'DELETE FROM email_verification_tokens WHERE token_hash = $1 RETURNING user_id, expires_at',
-            [hashToken(token)]
+        const invalidLink = {
+            message: "This verification link is invalid or has expired.",
+            code: "INVALID_VERIFICATION_TOKEN"
+        };
+        const tokenHash = hashToken(token);
+
+        const found = await pool.query(
+            'SELECT t.user_id, u.password FROM email_verification_tokens t'
+            + ' JOIN users u ON u.id = t.user_id'
+            + ' WHERE t.token_hash = $1 AND t.expires_at > NOW()',
+            [tokenHash]
         );
+        if (found.rows.length === 0) {
+            return res.status(400).json(invalidLink);
+        }
 
-        if (consumed.rows.length === 0 || new Date(consumed.rows[0].expires_at) < new Date()) {
-            return res.status(400).json({
-                message: "This verification link is invalid or has expired.",
-                code: "INVALID_VERIFICATION_TOKEN"
+        // A wrong password leaves the link usable, so the user can retry or reset.
+        if (!(await bcrypt.compare(password, found.rows[0].password))) {
+            return res.status(401).json({
+                message: "That isn't the password this account was created with. If you don't remember it, reset your password.",
+                code: "VERIFY_PASSWORD_MISMATCH"
             });
+        }
+
+        // Deleting the token as part of the claim makes it single-use, even if the
+        // link is submitted twice at the same moment.
+        const consumed = await pool.query(
+            'DELETE FROM email_verification_tokens WHERE token_hash = $1 RETURNING user_id',
+            [tokenHash]
+        );
+        if (consumed.rows.length === 0) {
+            return res.status(400).json(invalidLink);
         }
 
         const userId = consumed.rows[0].user_id;
@@ -299,13 +357,15 @@ const refreshAccessToken = async (req, res, next) => {
 
         // Deleting as part of the lookup makes the token single-use, even if two
         // requests race with it.
+        // Expiry is checked in SQL: expires_at has no timezone, so comparing it in JS
+        // would be off by the difference between the API's and the database's clocks.
         const consumed = await pool.query(
-            'DELETE FROM refresh_tokens WHERE token_hash = $1 RETURNING user_id, expires_at',
+            'DELETE FROM refresh_tokens WHERE token_hash = $1 RETURNING user_id, expires_at <= NOW() AS expired',
             [hashToken(refreshToken)]
         );
         const storedToken = consumed.rows[0];
 
-        if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
+        if (!storedToken || storedToken.expired) {
             clearRefreshCookie(res);
             return res.status(401).json({
                 message: storedToken ? "Your session has expired. Please log in again." : "Invalid refresh token"

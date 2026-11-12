@@ -49,7 +49,7 @@ Server runs on `http://localhost:4000` by default
 |--------|---------------------|-----------------------------------------------|----------------|
 | POST   | `/auth/register`    | Create an unverified user and email a verification link (does not log in) | No |
 | POST   | `/auth/login`        | Log in. Returns the user and an access token, and sets the refresh-token cookie. Unverified accounts get `403` with `code: "EMAIL_NOT_VERIFIED"` | No |
-| POST   | `/auth/verify-email` | Confirm an email with the link's `token`; marks the account verified and logs in (same response as login) | No |
+| POST   | `/auth/verify-email` | Confirm an email with the link's `token` and the account's `password`; marks the account verified and logs in (same response as login). A wrong password gets `401` with `code: "VERIFY_PASSWORD_MISMATCH"` and leaves the link usable | No |
 | POST   | `/auth/resend-verification` | Email a new verification link to `email` (same response whether or not it's registered; 60s cooldown per account) | No |
 | POST   | `/auth/refresh`      | Swap the refresh-token cookie for a new access token (rotates the cookie). Needs `X-Requested-With: nudge` | Cookie |
 | POST   | `/auth/logout`       | Revoke this browser's refresh token and clear the cookie. Needs `X-Requested-With: nudge` | Cookie |
@@ -120,7 +120,7 @@ After pulling this change, re-run `db/init.sql` to add the reminder columns (it'
 
 - **Passwords** need at least 8 characters, an uppercase letter, a number and a symbol (max 72, bcrypt's limit). Rules live in `utils/validation.js`, mirrored for the live checklist in `client/src/auth/passwordRules.js`.
 - **Email addresses** must be well-formed, and their domain must publish mail servers (MX records), which catches typos like `gmial.con`.
-- **Verification:** registering emails a one-time link (`APP_URL/verify-email?token=...`, valid 24 hours). Users can't log in until they click it, and opening it logs them in. Only a hash of the token is stored. Reminders are only sent to verified addresses.
+- **Verification:** registering emails a one-time link (`APP_URL/verify-email?token=...`, valid 24 hours). Users can't log in until they open it and enter their password, which also logs them in. The password is required because anyone can sign up with an address before it's verified (a new sign-up replaces an unverified account's name and password). Without it, someone could register a student's email with their own password and get the student to verify an account they can log into. A student who doesn't know the password uses "forgot password", which also verifies the address. Repeated sign-ups respect the 60s email cooldown. Only a hash of the token is stored. Reminders are only sent to verified addresses.
 - Accounts that existed before verification was added are treated as verified.
 - In `EMAIL_TRANSPORT=console` mode, the verification link is printed in the server log, so you can test sign-ups without a mail provider.
 - With verification in place, `EMAIL_TRANSPORT=smtp` is now safe to turn on for real delivery.
@@ -133,7 +133,8 @@ After pulling this change, re-run `db/init.sql`.
 - The refresh token is an `httpOnly` cookie (`nudge_refresh`, path `/auth`, `SameSite=Lax`, `Secure` in production), so scripts on the page can never read it. Requests that use it must be made with `credentials: 'include'` and the `X-Requested-With: nudge` header, which blocks other sites from triggering them (CSRF).
 - If the frontend and API are on unrelated domains (not `nudge.app` + `api.nudge.app`), set `COOKIE_SAMESITE=none`. Prefer one shared domain: some browsers block cross-site cookies.
 - Refresh tokens are rotated on every use. Using one invalidates it and issues a new one, and the old token can't be reused.
-- Refresh tokens expire after 7 days. Resetting the password or deleting the account ends every session.
+- Refresh tokens expire after 7 days. Resetting the password or deleting the account ends every session at once: refresh tokens are deleted, and each access token carries the user's `token_version` (checked on every request), which a reset increments.
+- After pulling this change, re-run `db/init.sql` to add the `users.token_version` column. Protected routes return 500 until it exists.
 - Only the hash of a refresh token, reset token or verification token is stored in the database; the raw token is never persisted.
 
 ## Password Reset and Account Deletion
@@ -179,5 +180,5 @@ How it works:
 - Run `db/init.sql` against the production database before the first start, and again after pulling changes that add tables or columns.
 - `GET /health` returns `200` when the server can reach the database. Point your host's health check at it.
 - The reminder scheduler runs inside the API server, so the server must stay running (a host that puts idle apps to sleep will skip reminders). It's safe to run more than one instance: reminders are locked before sending.
-- Set `NODE_ENV=production` so the login cookie is `Secure` (HTTPS only).
+- Set `NODE_ENV=production` so the login cookie is `Secure` (HTTPS only). In production the server also refuses to start unless `EMAIL_TRANSPORT=smtp` (console mode would print reset and verification links to the log) and `JWT_SECRET` is at least 32 characters.
 - Before launch, replace the placeholder contact email in `client/src/pages/Privacy.jsx` and check that the policy still matches what the app does.

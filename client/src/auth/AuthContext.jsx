@@ -101,10 +101,11 @@ export function AuthProvider({ children }) {
         return registerUser(name, email, password);
     }
 
-    // Confirms the email from the verification link's token. The server logs the user
-    // in on success, returning the same user/accessToken shape as login.
-    async function verifyEmail(token) {
-        const data = await verifyEmailRequest(token);
+    // Confirms the email from the verification link's token and the account's password.
+    // The server logs the user in on success, returning the same user/accessToken shape
+    // as login.
+    async function verifyEmail(token, password) {
+        const data = await verifyEmailRequest(token, password);
 
         setUser(data.user);
         setAccessToken(data.accessToken);

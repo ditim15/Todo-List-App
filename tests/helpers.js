@@ -94,9 +94,10 @@ export async function createUser({ name = 'Test Student', email, password = PASS
     return result.rows[0];
 }
 
-// A valid access token for `user`, for routes behind `authenticate`.
-export function accessTokenFor(user) {
-    return jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+// A valid access token for `user`, for routes behind `authenticate`. New users start at
+// token_version 0.
+export function accessTokenFor(user, tokenVersion = 0) {
+    return jwt.sign({ id: user.id, tv: tokenVersion }, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
 // The refresh-token cookie ("nudge_refresh=...") from a response, or null.

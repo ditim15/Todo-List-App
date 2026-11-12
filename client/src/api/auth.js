@@ -20,11 +20,13 @@ export function logoutUser() {
     return apiRequest('/auth/logout', { method: 'POST' });
 }
 
-// Exchanges the token from the emailed link for a verified account + session.
-export function verifyEmail(token) {
+// Exchanges the token from the emailed link, plus the account's password, for a
+// verified account + session. The password is required so that someone else who signed
+// up with this address can't get the inbox owner to verify an account they control.
+export function verifyEmail(token, password) {
     return apiRequest('/auth/verify-email', {
         method: 'POST',
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, password }),
     });
 }
 

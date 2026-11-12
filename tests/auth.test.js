@@ -78,6 +78,15 @@ describe('refresh and logout', () => {
         assert.equal(reused.status, 401);
     });
 
+    test('an expired refresh token is rejected', async () => {
+        const user = await createUser();
+        const cookie = refreshCookieFrom(await login(user.email));
+        await pool.query("UPDATE refresh_tokens SET expires_at = NOW() - INTERVAL '1 minute'");
+        const res = await request(app).post('/auth/refresh').set(CSRF).set('Cookie', cookie);
+        assert.equal(res.status, 401);
+        assert.match(res.body.message, /expired/);
+    });
+
     test('refresh without a cookie is a 401', async () => {
         const res = await request(app).post('/auth/refresh').set(CSRF);
         assert.equal(res.status, 401);
@@ -136,5 +145,8 @@ describe('delete account', () => {
 
         const refresh = await request(app).post('/auth/refresh').set(CSRF).set('Cookie', cookie);
         assert.equal(refresh.status, 401);
+
+        const access = await request(app).get('/todos').set('Authorization', `Bearer ${token}`);
+        assert.equal(access.status, 401, "the deleted account's access token stops working");
     });
 });

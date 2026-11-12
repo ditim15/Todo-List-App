@@ -42,7 +42,10 @@ describe('forgot password', () => {
 describe('reset password', () => {
     test('changes the password, logs out every session, and the link works once', async () => {
         const user = await createUser();
-        const oldSession = refreshCookieFrom(await login(user.email, PASSWORD));
+        const oldLogin = await login(user.email, PASSWORD);
+        const oldSession = refreshCookieFrom(oldLogin);
+        const oldAccessToken = oldLogin.body.accessToken;
+        assert.equal((await request(app).get('/todos').set('Authorization', `Bearer ${oldAccessToken}`)).status, 200);
         await forgot(user.email);
         const token = tokenFromLastEmail();
         assert.ok(token, 'the email contains a reset link');
@@ -56,6 +59,8 @@ describe('reset password', () => {
         const refresh = await request(app).post('/auth/refresh')
             .set('X-Requested-With', 'nudge').set('Cookie', oldSession);
         assert.equal(refresh.status, 401, 'sessions from before the reset are revoked');
+        const oldAccess = await request(app).get('/todos').set('Authorization', `Bearer ${oldAccessToken}`);
+        assert.equal(oldAccess.status, 401, 'access tokens from before the reset stop working at once');
 
         const reused = await reset(token, 'An0ther-pass!');
         assert.equal(reused.status, 400);

@@ -6,6 +6,10 @@ on:
   push:
   pull_request:
 
+# The jobs only read the code, so the workflow's token gets no write access.
+permissions:
+  contents: read
+
 jobs:
   api:
     name: API tests

@@ -96,3 +96,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+
+-- Copied into every access token (as `tv`). Bumping it (on password reset) makes every
+-- access token already issued stop working at once, instead of up to an hour later.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
