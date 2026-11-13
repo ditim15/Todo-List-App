@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
 
-// Before launch: replace with an inbox you actually read, and update LAST_UPDATED
+// Forwarded to the owner's inbox by Cloudflare Email Routing. Update LAST_UPDATED
 // whenever this page changes.
-const CONTACT_EMAIL = 'privacy@example.com';
-const LAST_UPDATED = 'November 11, 2026';
+const CONTACT_EMAIL = 'privacy@doneyet.app';
+const LAST_UPDATED = 'November 12, 2026';
 
 // Plain-language privacy policy. It describes what this codebase actually does; if a
 // feature changes what's collected or who it's shared with, update this page too.

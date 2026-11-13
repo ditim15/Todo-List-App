@@ -1,5 +1,5 @@
 import pool from '../db/pool.js';
-import { sendEmail } from './channels/email.js';
+import { describeEmailError, sendEmail } from './channels/email.js';
 
 // Task reminders: builds the message and hands it to each delivery channel. Email is
 // the only channel for now; to add another (SMS, push...), write a channel module with
@@ -104,7 +104,7 @@ export async function processDueReminders() {
         try {
             await deliver(user, row);
         } catch (err) {
-            console.error(`[reminders] Failed to send reminder for todo ${row.todo_id}:`, err.message);
+            console.error(`[reminders] Failed to send reminder for todo ${row.todo_id}:`, describeEmailError(err));
             await pool.query('UPDATE todos SET reminder_sent_at = NULL WHERE todo_id = $1', [row.todo_id]);
         }
     }

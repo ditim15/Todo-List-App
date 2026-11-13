@@ -9,6 +9,7 @@ import {
     validatePassword,
 } from "../utils/validation.js";
 import { sendPasswordResetEmail, sendSignupAttemptEmail, sendVerificationEmail } from "../notifications/authEmails.js";
+import { describeEmailError } from "../notifications/channels/email.js";
 
 const NAME_MAX_LENGTH = 100;
 // Minimum gap between verification or password-reset emails to the same account.
@@ -88,7 +89,7 @@ async function issueVerificationEmail(user) {
         await sendVerificationEmail({ name: user.name, email: user.email, token });
         return true;
     } catch (err) {
-        console.error(`[auth] Failed to send verification email to user ${user.id}:`, err.message);
+        console.error(`[auth] Failed to send verification email to user ${user.id}:`, describeEmailError(err));
         return false;
     }
 }
@@ -187,7 +188,7 @@ async function sendSignupAttempt(user) {
     try {
         await sendSignupAttemptEmail({ name: user.name, email: user.email, token });
     } catch (err) {
-        console.error(`[auth] Failed to send sign-up attempt email to user ${user.id}:`, err.message);
+        console.error(`[auth] Failed to send sign-up attempt email to user ${user.id}:`, describeEmailError(err));
     }
 }
 
@@ -511,7 +512,7 @@ const forgotPassword = async (req, res, next) => {
             await sendPasswordResetEmail({ name: user.name, email: user.email, token });
         } catch (err) {
             // Same answer either way, so a failure doesn't reveal the account exists.
-            console.error(`[auth] Failed to send password reset email to user ${user.id}:`, err.message);
+            console.error(`[auth] Failed to send password reset email to user ${user.id}:`, describeEmailError(err));
         }
         res.status(200).json(genericResponse);
     } catch (err) {

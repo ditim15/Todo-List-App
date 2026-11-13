@@ -20,6 +20,28 @@ export const sentEmails = [];
 
 let transporterPromise = null;
 
+const SMTP_TIMEOUT_MS = 10_000;
+
+// A one-line description of a failed send for the server log. Connection failures
+// often have an empty `message` (e.g. Node's AggregateError when every address of the
+// host timed out), so this adds the error code, the SMTP command that failed and the
+// server's reply. Never includes credentials.
+export function describeEmailError(err) {
+    const parts = [err?.message || err?.name || 'Unknown error'];
+    if (err?.code) parts.push(`code=${err.code}`);
+    if (err?.command) parts.push(`command=${err.command}`);
+    if (err?.responseCode) parts.push(`responseCode=${err.responseCode}`);
+    if (err?.response) parts.push(`response=${JSON.stringify(err.response)}`);
+    if (Array.isArray(err?.errors)) {
+        parts.push(`causes=[${err.errors.map((e) => `${e.code || ''} ${e.message || ''}`.trim()).join('; ')}]`);
+    }
+    if ((err?.code === 'ETIMEDOUT' || err?.code === 'ECONNREFUSED' || err?.code === 'ESOCKET' || err?.code === 'ECONNECTION')
+        && process.env.SMTP_HOST) {
+        parts.push(`(could not reach ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}; check SMTP_HOST/SMTP_PORT, or whether your network blocks that port)`);
+    }
+    return parts.join(' ');
+}
+
 async function createTransporter() {
     const mode = (process.env.EMAIL_TRANSPORT || 'console').toLowerCase();
 
@@ -33,6 +55,11 @@ async function createTransporter() {
                 auth: process.env.SMTP_USER
                     ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
                     : undefined,
+                // Fail within seconds if the server can't be reached, instead of
+                // nodemailer's multi-minute defaults (sign-up waits on the send).
+                connectionTimeout: SMTP_TIMEOUT_MS,
+                greetingTimeout: SMTP_TIMEOUT_MS,
+                socketTimeout: SMTP_TIMEOUT_MS,
             }),
         };
     }
