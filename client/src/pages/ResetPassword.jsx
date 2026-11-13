@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
 import PasswordChecklist from '../components/auth/PasswordChecklist';
+import { CheckCircleIcon, LinkBrokenIcon } from '../components/auth/AuthIcons';
 import { PASSWORD_MAX_LENGTH, passwordMeetsRules } from '../auth/passwordRules';
 import { resetPassword } from '../api/auth';
 
@@ -38,11 +39,12 @@ function ResetPassword() {
         return (
             <AuthLayout>
                 <div className="auth-card auth-card--centered">
+                    <span className="auth-icon"><CheckCircleIcon /></span>
                     <h1>Password changed</h1>
                     <p className="auth-subtitle">
                         You've been logged out everywhere. Log in with your new password.
                     </p>
-                    <Link to="/login" className="btn btn-primary">Log in</Link>
+                    <Link to="/login" className="btn btn-primary auth-action">Log in</Link>
                 </div>
             </AuthLayout>
         );
@@ -52,9 +54,13 @@ function ResetPassword() {
         return (
             <AuthLayout>
                 <div className="auth-card auth-card--centered">
+                    <span className="auth-icon"><LinkBrokenIcon /></span>
                     <h1>Link didn't work</h1>
                     <p className="auth-subtitle">{error}</p>
-                    <Link to="/forgot-password" className="btn btn-primary">Get a new link</Link>
+                    <Link to="/forgot-password" className="btn btn-primary auth-action">Get a new link</Link>
+                    <p className="auth-footer">
+                        Remembered it? <Link to="/login">Log in</Link>
+                    </p>
                 </div>
             </AuthLayout>
         );

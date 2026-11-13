@@ -1,15 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
 import ResendVerification from '../components/auth/ResendVerification';
-
-function MailIcon() {
-    return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
-        </svg>
-    );
-}
+import { MailIcon } from '../components/auth/AuthIcons';
 
 // Shown after registering: tells the user to click the link we emailed them.
 // The address comes from Register via router state; if the page is opened directly,
