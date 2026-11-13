@@ -16,7 +16,7 @@ function Privacy() {
                 <p className="legal-updated">Last updated {LAST_UPDATED}</p>
 
                 <p>
-                    Nudge is a task and reminder app for students. This page explains what we collect,
+                    DoneYet? is a task and reminder app for students. This page explains what we collect,
                     why, who it's shared with, and how to delete it.
                 </p>
 
@@ -78,7 +78,7 @@ function Privacy() {
 
                 <h2>Children</h2>
                 <p>
-                    Nudge isn&apos;t intended for children under 13, and we don&apos;t knowingly collect their data. If you
+                    DoneYet? isn&apos;t intended for children under 13, and we don&apos;t knowingly collect their data. If you
                     think a child under 13 has an account, contact us and we&apos;ll delete it.
                 </p>
 

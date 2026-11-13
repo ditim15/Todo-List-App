@@ -55,7 +55,7 @@ function HeroCarousel() {
         <section
             className="carousel"
             aria-roledescription="carousel"
-            aria-label="What Nudge does for students"
+            aria-label="What DoneYet? does for students"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onFocus={() => setIsFocused(true)}

@@ -48,7 +48,7 @@ function Login() {
         >
             <div className="auth-card">
                 <h1>Log In</h1>
-                <p className="auth-subtitle">Welcome back to Nudge. Pick up where you left off.</p>
+                <p className="auth-subtitle">Welcome back. Log in to your DoneYet? account to pick up where you left off.</p>
                 <form onSubmit={handleSubmit} className="auth-form">
                     <label htmlFor="email">Email</label>
                     <input

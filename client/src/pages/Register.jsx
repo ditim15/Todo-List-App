@@ -65,7 +65,7 @@ function Register() {
             }
         >
             <div className="auth-card">
-                <h1>Create your Nudge account</h1>
+                <h1>Create your DoneYet? account</h1>
                 <p className="auth-subtitle">Start organizing your day in under a minute.</p>
                 <form onSubmit={handleSubmit} className="auth-form">
                     <label htmlFor="name">Name</label>

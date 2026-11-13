@@ -21,8 +21,8 @@ const RESEND_COOLDOWN_SECONDS = 60;
 const REFRESH_COOKIE = 'nudge_refresh';
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// SameSite=Lax works when the site and API share a domain (nudge.app and
-// api.nudge.app, or localhost in development). If they're on unrelated domains, set
+// SameSite=Lax works when the site and API share a domain (doneyet.app and
+// api.doneyet.app, or localhost in development). If they're on unrelated domains, set
 // COOKIE_SAMESITE=none, which browsers only accept on HTTPS (Secure) cookies.
 function refreshCookieOptions() {
     const sameSite = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase();

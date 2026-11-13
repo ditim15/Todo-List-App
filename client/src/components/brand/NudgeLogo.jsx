@@ -1,6 +1,6 @@
 import './NudgeLogo.css';
 
-// Nudge wordmark: an arrow, the word, and a checkbox.
+// DoneYet? wordmark: an arrow, the word, and a checkbox.
 //
 // animate:
 //   'none'  - static mark (arrow at rest, box checked). Default.
@@ -14,14 +14,14 @@ function NudgeLogo({ animate = 'none', className = '' }) {
     const mode = animate === 'loop' ? 'loop' : animate === 'intro' ? 'intro' : 'static';
 
     return (
-        <span className={`nudge-logo nudge-logo--${mode} ${className}`.trim()} role="img" aria-label="Nudge">
+        <span className={`nudge-logo nudge-logo--${mode} ${className}`.trim()} role="img" aria-label="DoneYet?">
             {/* Invisible copy that reserves the word's space in the layout. */}
-            <span className="nudge-logo-word" aria-hidden="true">Nudge</span>
+            <span className="nudge-logo-word" aria-hidden="true">DoneYet?</span>
             {/* The visible word is drawn twice over the same spot: normal ("todo") and
                 greyed + struck through ("done"). The arrow's head is the boundary. */}
             <span className="nudge-logo-stage" aria-hidden="true">
-                <span className="nudge-logo-text nudge-logo-text--todo">Nudge</span>
-                <span className="nudge-logo-text nudge-logo-text--done">Nudge</span>
+                <span className="nudge-logo-text nudge-logo-text--todo">DoneYet?</span>
+                <span className="nudge-logo-text nudge-logo-text--done">DoneYet?</span>
                 <span className="nudge-logo-arrow">
                     <span className="nudge-logo-shaft" />
                     <svg className="nudge-logo-head" viewBox="0 0 10 14" fill="none">

@@ -57,7 +57,7 @@ export function buildReminderMessage(user, todo) {
         meta,
         todo.description ? `\n${todo.description}` : null,
         '',
-        `Open Nudge: ${dashboardUrl}`,
+        `Open DoneYet?: ${dashboardUrl}`,
     ].filter((line) => line !== null).join('\n');
 
     const html = `
@@ -66,7 +66,7 @@ export function buildReminderMessage(user, todo) {
   <p>A gentle nudge: <strong>${escapeHtml(todo.title)}</strong> is due ${escapeHtml(due)}.</p>
   <p style="color:#545b69;font-size:14px">${escapeHtml(meta)}</p>
   ${todo.description ? `<p style="color:#545b69;white-space:pre-line">${escapeHtml(todo.description)}</p>` : ''}
-  <p><a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Open Nudge</a></p>
+  <p><a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Open DoneYet?</a></p>
 </div>`.trim();
 
     return { subject, text, html };

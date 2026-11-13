@@ -1,4 +1,4 @@
-// The Nudge assistant: a chat that can talk a student through how to approach a task
+// The DoneYet? assistant: a chat that can talk a student through how to approach a task
 // and propose new tasks.
 //
 // The model never touches the database. It has two tools:
@@ -129,7 +129,7 @@ function upcomingCalendar(today) {
 
 function buildSystemPrompt({ today, timezone, lists }) {
     const listNames = lists.slice(0, MAX_LISTS_IN_PROMPT);
-    return `You are the assistant inside Nudge, a to-do app for students. You help with two things:
+    return `You are the assistant inside DoneYet?, a to-do app for students. You help with two things:
 1. Adding tasks. When the student asks you to add or remember something, or their message simply reads like a task ("chem quiz friday"), call propose_task, once per task. The student sees each one as a card and presses Add to save it, so never say a task has been added or saved: say you've put it below for them to check. If they ask for several tasks, propose each one.
 2. Talking through how to approach a task: breaking it into steps, what to do first, rough time estimates, how to fit it in before the due date. Be concrete and brief: a short intro sentence and a few bullet points is usually right. Ask one clarifying question if you really need to. You may offer to turn the steps into tasks, but only call propose_task for them if the student says yes.
 

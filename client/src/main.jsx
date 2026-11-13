@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Self-hosted brand font for the Nudge wordmark (see --brand-font in index.css).
+// Self-hosted brand font for the DoneYet? wordmark (see --brand-font in index.css).
 import '@fontsource-variable/fredoka/wght.css'
 import './index.css'
 import App from './App.jsx'

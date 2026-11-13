@@ -36,7 +36,7 @@ function AuthLayout({ aside, children }) {
                         <ThemeToggle />
                         {onLogin && (
                             <>
-                                <span className="auth-nav-hint">New to Nudge?</span>
+                                <span className="auth-nav-hint">New to DoneYet?</span>
                                 <Link to="/register" className="btn btn-ghost btn-sm">Sign up</Link>
                             </>
                         )}
@@ -62,7 +62,7 @@ function AuthLayout({ aside, children }) {
 
             <footer className="landing-footer">
                 <div className="landing-footer-inner">
-                    <span>© {new Date().getFullYear()} Nudge · Gentle reminders for busy students</span>
+                    <span>© {new Date().getFullYear()} DoneYet? · Gentle reminders for busy students</span>
                     <nav aria-label="Footer">
                         <Link to="/">Home</Link>
                         <Link to="/login">Log in</Link>

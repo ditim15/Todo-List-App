@@ -1,6 +1,6 @@
-/* Nudge wordmark. Everything is in em, so the mark scales with font-size.
+/* DoneYet? wordmark. Everything is in em, so the mark scales with font-size.
 
-   Layout: [arrow] Nudge [box]. An invisible in-flow copy of the word sets the size;
+   Layout: [arrow] DoneYet? [box]. An invisible in-flow copy of the word sets the size;
    the "stage" sits on top, spanning from the arrow's resting spot to the box. In it:
      - the word drawn twice in the same place: "todo" (normal) and "done" (grey and
        struck through, like a completed task)

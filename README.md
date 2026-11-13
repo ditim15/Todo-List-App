@@ -1,5 +1,5 @@
-# Nudge API
-The backend for **Nudge**, a gentle-reminder task app for students. A RESTful todo API with JWT-based authentication, built as a learning project to understand backend fundamentals.
+# DoneYet? API
+The backend for **DoneYet?**, a gentle-reminder task app for students. A RESTful todo API with JWT-based authentication, built as a learning project to understand backend fundamentals.
 
 ## Tech Stack
 - **Runtime**: Node.js v24
@@ -99,8 +99,8 @@ Delivery lives in `notifications/`. `reminders.js` builds the message and sends 
 
 ```
 EMAIL_TRANSPORT=console            # console (default) | ethereal | smtp
-EMAIL_FROM="Nudge <reminders@example.com>"
-APP_URL=http://localhost:5173      # used for the "Open Nudge" link
+EMAIL_FROM="DoneYet? <reminders@example.com>"
+APP_URL=http://localhost:5173      # used for the "Open DoneYet?" link
 
 # Only for EMAIL_TRANSPORT=smtp
 SMTP_HOST=smtp.example.com
@@ -132,7 +132,7 @@ After pulling this change, re-run `db/init.sql`.
  
 - Access tokens expire after 1 hour and live only in the client's memory. When a protected route returns `401`, the client calls `/auth/refresh` to get a new one instead of making the user log in again.
 - The refresh token is an `httpOnly` cookie (`nudge_refresh`, path `/auth`, `SameSite=Lax`, `Secure` in production), so scripts on the page can never read it. Requests that use it must be made with `credentials: 'include'` and the `X-Requested-With: nudge` header, which blocks other sites from triggering them (CSRF).
-- If the frontend and API are on unrelated domains (not `nudge.app` + `api.nudge.app`), set `COOKIE_SAMESITE=none`. Prefer one shared domain: some browsers block cross-site cookies.
+- If the frontend and API are on unrelated domains (not `doneyet.app` + `api.doneyet.app`), set `COOKIE_SAMESITE=none`. Prefer one shared domain: some browsers block cross-site cookies.
 - Refresh tokens are rotated on every use. Using one invalidates it and issues a new one, and the old token can't be reused.
 - Refresh tokens expire after 7 days. Resetting the password or deleting the account ends every session at once: refresh tokens are deleted, and each access token carries the user's `token_version` (checked on every request), which a reset increments.
 - **Login lockout:** besides the per-IP limit, failed logins are counted per email address. After 10 failures in 15 minutes, logins for that address get `429` with `code: "ACCOUNT_LOCKED"` (even with the right password) until the 15 minutes pass. Unknown addresses lock the same way, so a lock doesn't reveal whether an account exists. A password reset lifts it.

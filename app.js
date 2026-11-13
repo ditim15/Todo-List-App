@@ -28,7 +28,7 @@ if (process.env.TRUST_PROXY) {
 }
 
 // Where the frontend is served from. CLIENT_ORIGIN can list several, comma-separated
-// (e.g. "https://nudge.app,https://www.nudge.app").
+// (e.g. "https://doneyet.app,https://www.doneyet.app").
 export const allowedOrigins = (process.env.CLIENT_ORIGIN || process.env.APP_URL || 'http://localhost:5173')
     .split(',')
     .map((origin) => origin.trim().replace(/\/$/, ''))

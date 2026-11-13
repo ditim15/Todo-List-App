@@ -10,7 +10,7 @@ import nodemailer from 'nodemailer';
 //   EMAIL_TRANSPORT=smtp      real delivery via SMTP_HOST, SMTP_PORT, SMTP_USER,
 //                             SMTP_PASS, SMTP_SECURE ('true' for port 465)
 //
-// EMAIL_FROM sets the sender (default "Nudge <reminders@nudge.local>").
+// EMAIL_FROM sets the sender (default "DoneYet? <reminders@doneyet.local>").
 //
 // Reminders only go to verified addresses; verification emails go to whatever address
 // someone signs up with (that's how ownership gets proven).
@@ -72,7 +72,7 @@ function getTransporter() {
 // Sends one message: { to, subject, text, html }.
 export async function sendEmail({ to, subject, text, html }) {
     const { mode, transporter } = await getTransporter();
-    const from = process.env.EMAIL_FROM || 'Nudge <reminders@nudge.local>';
+    const from = process.env.EMAIL_FROM || 'DoneYet? <reminders@doneyet.local>';
     const info = await transporter.sendMail({ from, to, subject, text, html });
 
     if (mode === 'memory') {

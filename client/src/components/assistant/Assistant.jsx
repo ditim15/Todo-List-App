@@ -1,4 +1,4 @@
-// The Nudge assistant: a button in the bottom-right corner that opens a chat panel. It
+// The DoneYet? assistant: a button in the bottom-right corner that opens a chat panel. It
 // can talk through how to approach a task and propose tasks as cards. The user adds a
 // card with the normal create call; the assistant never saves anything itself.
 import { useEffect, useId, useRef, useState } from 'react';

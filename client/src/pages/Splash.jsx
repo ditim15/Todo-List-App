@@ -20,7 +20,7 @@ const FEATURES = [
     {
         Icon: CalendarIcon,
         title: 'Deadlines up front',
-        text: "Nudge greets you with what's due today and what's overdue, so nothing sneaks up on you.",
+        text: "DoneYet? greets you with what's due today and what's overdue, so nothing sneaks up on you.",
     },
     {
         Icon: ListsIcon,
@@ -52,7 +52,7 @@ const FEATURES = [
 const STEPS = [
     { title: 'Make a list for each class', text: 'Start with your courses, then add anything else on your plate.' },
     { title: 'Add work as it is assigned', text: 'Give each task a due date and a priority straight from the syllabus.' },
-    { title: 'Let Nudge keep you on track', text: 'Check things off, watch your progress fill up, and see what needs you next.' },
+    { title: 'Let DoneYet? keep you on track', text: 'Check things off, watch your progress fill up, and see what needs you next.' },
 ];
 
 function Bullet({ children }) {
@@ -133,7 +133,7 @@ function Splash() {
                                 Your semester, <span className="hero-highlight">finally under control.</span>
                             </h1>
                             <p className="hero-lead">
-                                Nudge keeps every assignment, exam and deadline in one calm place, sorted by
+                                DoneYet? keeps every assignment, exam and deadline in one calm place, sorted by
                                 class and priority, with a gentle reminder of what to work on next.
                             </p>
                             <div className="hero-ctas">
@@ -158,7 +158,7 @@ function Splash() {
                             <span className="eyebrow">Features</span>
                             <h2>Built for how students actually work</h2>
                             <p>
-                                Lectures, labs, group projects and a job on the side. Nudge gives each its place
+                                Lectures, labs, group projects and a job on the side. DoneYet? gives each its place
                                 without making you manage a complicated system.
                             </p>
                         </div>
@@ -279,7 +279,7 @@ function Splash() {
 
             <footer className="landing-footer">
                 <div className="landing-footer-inner">
-                    <span>© {new Date().getFullYear()} Nudge · Gentle reminders for busy students</span>
+                    <span>© {new Date().getFullYear()} DoneYet? · Gentle reminders for busy students</span>
                     <nav aria-label="Footer">
                         <a href="#features">Features</a>
                         <a href="#how-it-works">How it works</a>
