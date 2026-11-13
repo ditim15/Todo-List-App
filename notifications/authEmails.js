@@ -41,6 +41,39 @@ export async function sendVerificationEmail({ name, email, token }) {
     await sendEmail({ to: email, subject, text, html });
 }
 
+// Sent when someone signs up with the address of an account that was never confirmed.
+// The account isn't changed; this gives the inbox owner a one-time link to choose a
+// password, which also confirms the address (it's a /reset-password link).
+export async function sendSignupAttemptEmail({ name, email, token }) {
+    const link = `${appUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+    const firstName = (name || '').split(' ')[0] || 'there';
+
+    const subject = 'Finish setting up your Nudge account';
+    const text = [
+        `Hi ${firstName},`,
+        '',
+        "Someone (hopefully you) just tried to sign up for Nudge with this email, but there's already an account for it that was never confirmed.",
+        '',
+        'To finish setting it up, choose a password here. This also confirms your email:',
+        '',
+        link,
+        '',
+        "This link expires in 1 hour and works once. If you didn't try to sign up, you can ignore this email: nobody can use the account without access to this inbox.",
+    ].join('\n');
+
+    const html = `
+<div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;max-width:480px;color:#14161b">
+  <p>Hi ${escapeHtml(firstName)},</p>
+  <p>Someone (hopefully you) just tried to sign up for Nudge with this email, but there's already an account for it that was never confirmed.</p>
+  <p>To finish setting it up, choose a password. This also confirms your email.</p>
+  <p><a href="${escapeHtml(link)}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Choose a password</a></p>
+  <p style="color:#545b69;font-size:14px">Or paste this link into your browser:<br><span style="word-break:break-all">${escapeHtml(link)}</span></p>
+  <p style="color:#545b69;font-size:14px">This link expires in 1 hour and works once. If you didn't try to sign up, you can ignore this email: nobody can use the account without access to this inbox.</p>
+</div>`.trim();
+
+    await sendEmail({ to: email, subject, text, html });
+}
+
 // Sends the "reset your password" message with a one-time link to /reset-password.
 export async function sendPasswordResetEmail({ name, email, token }) {
     const link = `${appUrl()}/reset-password?token=${encodeURIComponent(token)}`;

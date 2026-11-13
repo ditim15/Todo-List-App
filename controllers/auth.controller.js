@@ -8,7 +8,7 @@ import {
     normalizeEmail,
     validatePassword,
 } from "../utils/validation.js";
-import { sendPasswordResetEmail, sendVerificationEmail } from "../notifications/authEmails.js";
+import { sendPasswordResetEmail, sendSignupAttemptEmail, sendVerificationEmail } from "../notifications/authEmails.js";
 
 const NAME_MAX_LENGTH = 100;
 // Minimum gap between verification or password-reset emails to the same account.
@@ -125,15 +125,14 @@ const registerUser = async (req, res, next) => {
         }
 
         const existingUser = await pool.query(
-            'SELECT u.id, u.email_verified_at,'
-            + ' (SELECT MAX(created_at) FROM email_verification_tokens t WHERE t.user_id = u.id) AS last_sent'
+            'SELECT u.id, u.name, u.email, u.email_verified_at,'
+            + ' (SELECT MAX(created_at) FROM password_reset_tokens t WHERE t.user_id = u.id) AS last_reset_sent'
             + ' FROM users u WHERE u.email = $1',
             [email]
         );
 
+        // Hashed on every path, so response times don't reveal which branch ran.
         const hashedPassword = await bcrypt.hash(password, 10);
-        let user;
-        let sendEmail = true;
 
         if (existingUser.rows.length > 0) {
             const existing = existingUser.rows[0];
@@ -142,43 +141,105 @@ const registerUser = async (req, res, next) => {
                     message: "An account with this email already exists"
                 });
             }
-            // Never verified: nobody has proven they own this address, so the new
-            // sign-up's name and password replace the old ones (e.g. someone who lost
-            // the first email or mistyped their password). This is safe because
-            // verifying requires the password (see verifyEmail): whoever re-registers
-            // can't verify without the inbox, and the inbox owner can't be tricked into
-            // verifying with a password they don't know.
-            //
-            // The email itself respects the resend cooldown, so repeated sign-ups can't
-            // flood someone's inbox. An earlier link still works with the new password.
-            const lastSent = existing.last_sent ? new Date(existing.last_sent).getTime() : 0;
-            sendEmail = (Date.now() - lastSent) / 1000 >= RESEND_COOLDOWN_SECONDS;
-            const updated = await pool.query(
-                'UPDATE users SET name = $1, password = $2 WHERE id = $3 RETURNING id, name, email',
-                [name, hashedPassword, existingUser.rows[0].id]
-            );
-            user = updated.rows[0];
-        } else {
-            const created = await pool.query(
-                'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
-                [name, email, hashedPassword]
-            );
-            user = created.rows[0];
+            // An unverified account already uses this address. Nothing about it changes
+            // (name and password stay as they are), so a stranger signing up with
+            // someone's email can't lock them out or alter their account. Instead the
+            // inbox gets a link to choose a password, which also confirms the address:
+            // that covers a student who lost the first email or forgot what they typed.
+            // The answer is the same as a fresh sign-up, so it doesn't reveal that the
+            // address was already registered.
+            await sendSignupAttempt(existing);
+            return res.status(201).json(signupResponse(existing.email, true));
         }
 
-        const emailSent = sendEmail ? await issueVerificationEmail(user) : true;
+        const created = await pool.query(
+            'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
+            [name, email, hashedPassword]
+        );
+        const user = created.rows[0];
 
-        res.status(201).json({
-            message: emailSent
-                ? "Account created. Check your email to verify your address."
-                : "Account created, but we couldn't send the verification email. Try resending it.",
-            email: user.email,
-            emailSent
-        });
+        const emailSent = await issueVerificationEmail(user);
+
+        res.status(201).json(signupResponse(user.email, emailSent));
     } catch (err) {
         next(err);
     }
 };
+
+function signupResponse(email, emailSent) {
+    return {
+        message: emailSent
+            ? "Account created. Check your email to verify your address."
+            : "Account created, but we couldn't send the verification email. Try resending it.",
+        email,
+        emailSent
+    };
+}
+
+// Someone signed up with the address of an existing unverified account: email its
+// inbox a link to choose a password (a password reset link, which also verifies the
+// address). Respects the reset cooldown, so repeated sign-ups can't flood the inbox.
+async function sendSignupAttempt(user) {
+    const lastSent = user.last_reset_sent ? new Date(user.last_reset_sent).getTime() : 0;
+    if ((Date.now() - lastSent) / 1000 < RESEND_COOLDOWN_SECONDS) return;
+
+    const token = await createPasswordResetToken(user.id);
+    try {
+        await sendSignupAttemptEmail({ name: user.name, email: user.email, token });
+    } catch (err) {
+        console.error(`[auth] Failed to send sign-up attempt email to user ${user.id}:`, err.message);
+    }
+}
+
+// Creates a password reset link for the user, replacing any earlier one. Returns the
+// raw token for the email; only its hash is stored.
+async function createPasswordResetToken(userId) {
+    const token = generateRefreshToken();
+    await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
+    await pool.query(
+        'INSERT INTO password_reset_tokens (user_id, token_hash) VALUES ($1, $2)',
+        [userId, hashToken(token)]
+    );
+    return token;
+}
+
+// ---------- Login lockout ----------
+// The per-IP limit in routes/auth.js doesn't stop someone guessing one account's
+// password from many IPs, so failures are also counted per email address (stored in
+// the database, so the count holds across restarts and server instances). After
+// MAX_FAILED_LOGINS failures within the window, logins for that address are refused
+// until the window ends. Unknown addresses are counted the same way, so a lockout
+// doesn't reveal whether an account exists. A password reset lifts the lock.
+const MAX_FAILED_LOGINS = 10;
+const LOCKOUT_WINDOW_MINUTES = 15;
+
+// Minutes until the address can try again, or 0 if it isn't locked.
+async function lockedMinutesLeft(email) {
+    const result = await pool.query(
+        'SELECT CEIL(EXTRACT(EPOCH FROM (window_started_at + make_interval(mins => $2) - NOW())) / 60)::int AS minutes_left'
+        + ' FROM login_failures WHERE email = $1 AND failures >= $3'
+        + ' AND window_started_at > NOW() - make_interval(mins => $2)',
+        [email, LOCKOUT_WINDOW_MINUTES, MAX_FAILED_LOGINS]
+    );
+    return result.rows[0]?.minutes_left ?? 0;
+}
+
+// Counts a failed login. A failure after the window has passed starts a new window.
+async function recordFailedLogin(email) {
+    await pool.query(
+        'INSERT INTO login_failures (email, failures, window_started_at) VALUES ($1, 1, NOW())'
+        + ' ON CONFLICT (email) DO UPDATE SET'
+        + '   failures = CASE WHEN login_failures.window_started_at > NOW() - make_interval(mins => $2)'
+        + '     THEN login_failures.failures + 1 ELSE 1 END,'
+        + '   window_started_at = CASE WHEN login_failures.window_started_at > NOW() - make_interval(mins => $2)'
+        + '     THEN login_failures.window_started_at ELSE NOW() END',
+        [email, LOCKOUT_WINDOW_MINUTES]
+    );
+}
+
+async function clearFailedLogins(email) {
+    await pool.query('DELETE FROM login_failures WHERE email = $1', [email]);
+}
 
 // Logs in an existing user. Unverified accounts get a 403 with code
 // EMAIL_NOT_VERIFIED (only after the password checks out, so this doesn't reveal which
@@ -194,6 +255,16 @@ const loginUser = async (req, res, next) => {
             });
         }
 
+        // Checked before the password, so a locked address can't keep guessing (a right
+        // password is refused too while the lock lasts).
+        const minutesLeft = await lockedMinutesLeft(email);
+        if (minutesLeft > 0) {
+            return res.status(429).json({
+                message: `Too many failed attempts for this account. Try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'}, or reset your password.`,
+                code: "ACCOUNT_LOCKED"
+            });
+        }
+
         const result = await pool.query(
             'SELECT * FROM users WHERE email = $1', [email]
         );
@@ -202,10 +273,12 @@ const loginUser = async (req, res, next) => {
 
         const isMatch = await bcrypt.compare(String(password), user?.password ?? await dummyPasswordHash());
         if (!user || !isMatch) {
+            await recordFailedLogin(email);
             return res.status(401).json({
                 message: "Invalid email or password"
             });
         }
+        await clearFailedLogins(email);
 
         if (!user.email_verified_at) {
             return res.status(403).json({
@@ -236,10 +309,10 @@ const loginUser = async (req, res, next) => {
 // then logs the user in.
 //
 // The password is required because, until an address is verified, anyone can sign up
-// with it and choose the password (see registerUser). Without this check, someone
-// could register a student's email with a password of their own, and the student,
-// clicking the link they received, would verify an account the other person can log
-// into. Requiring the password means the account is only verified by someone who holds
+// with it and choose the password. Without this check, someone could register a
+// student's email with a password of their own before the student does, and the
+// student, clicking the link they received, would verify an account the other person
+// can log into. Requiring the password means the account is only verified by someone who holds
 // the inbox AND knows the password. Anyone who doesn't know it uses "forgot password",
 // which also proves the inbox and lets them choose a new one.
 const verifyEmail = async (req, res, next) => {
@@ -432,12 +505,7 @@ const forgotPassword = async (req, res, next) => {
         }
 
         // A new link replaces any earlier one.
-        const token = generateRefreshToken();
-        await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
-        await pool.query(
-            'INSERT INTO password_reset_tokens (user_id, token_hash) VALUES ($1, $2)',
-            [user.id, hashToken(token)]
-        );
+        const token = await createPasswordResetToken(user.id);
 
         try {
             await sendPasswordResetEmail({ name: user.name, email: user.email, token });
@@ -479,12 +547,14 @@ const resetPassword = async (req, res, next) => {
 
         const userId = consumed.rows[0].user_id;
         const hashedPassword = await bcrypt.hash(password, 10);
-        await pool.query(
-            'UPDATE users SET password = $1, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $2',
+        const updated = await pool.query(
+            'UPDATE users SET password = $1, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $2 RETURNING email',
             [hashedPassword, userId]
         );
         await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
         await revokeAllSessions(userId);
+        // The owner just proved the inbox, so lift any login lockout on the address.
+        await clearFailedLogins(updated.rows[0].email);
         clearRefreshCookie(res);
 
         res.status(200).json({ message: "Your password has been changed. Log in with your new password." });

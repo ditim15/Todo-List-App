@@ -73,31 +73,31 @@ describe('verify email', () => {
 
 // Someone who knows a student's email signs up with it using a password of their own,
 // hoping the student will verify the account and they can then log into it.
+// The token from the "choose a password" link in the most recent email.
+function resetTokenFromLastEmail() {
+    const match = sentEmails.at(-1)?.text.match(/reset-password\?token=([^\s]+)/);
+    return match && decodeURIComponent(match[1]);
+}
+
+async function storedAccount() {
+    const result = await pool.query('SELECT name, password FROM users WHERE email = $1', [EMAIL]);
+    return result.rows[0];
+}
+
 describe('sign-up with an address someone else is using', () => {
-    test('re-registering after the student signs up does not give the other person the account', async () => {
+    test('re-registering after the student signs up changes nothing', async () => {
         await register(PASSWORD);
         const studentsLink = verificationTokenFromLastEmail();
+        const before = await storedAccount();
 
-        // The other person re-registers the unverified address with their password.
-        assert.equal((await register(ATTACKER_PASSWORD, 'Not Sam')).status, 201);
+        // The other person re-registers the unverified address with their password and
+        // gets the same answer as any sign-up.
+        const again = await register(ATTACKER_PASSWORD, 'Not Sam');
+        assert.equal(again.status, 201);
+        assert.deepEqual(await storedAccount(), before, 'name and password are untouched');
 
-        // The student clicks the link with their own password: it no longer matches, so
-        // nothing is verified.
-        const res = await verify(studentsLink, PASSWORD);
-        assert.equal(res.status, 401);
-        assert.equal(res.body.code, 'VERIFY_PASSWORD_MISMATCH');
-        assert.equal(await isVerified(), false);
-
-        // The other person still can't log in: the address isn't verified.
-        assert.equal((await login(ATTACKER_PASSWORD)).body.code, 'EMAIL_NOT_VERIFIED');
-
-        // The student resets the password, which proves the inbox and verifies it.
-        await request(app).post('/auth/forgot-password').send({ email: EMAIL });
-        const resetToken = sentEmails.at(-1).text.match(/reset-password\?token=([^\s]+)/)[1];
-        const reset = await request(app).post('/auth/reset-password')
-            .send({ token: decodeURIComponent(resetToken), password: PASSWORD });
-        assert.equal(reset.status, 200);
-
+        // The student's link still works with their own password.
+        assert.equal((await verify(studentsLink, PASSWORD)).status, 200);
         assert.equal((await login(PASSWORD)).status, 200);
         assert.equal((await login(ATTACKER_PASSWORD)).status, 401);
     });
@@ -111,9 +111,15 @@ describe('sign-up with an address someone else is using', () => {
         assert.equal((await verify(link, PASSWORD)).status, 401);
         assert.equal(await isVerified(), false);
 
-        // The student signs up themselves, which sets their password, and verifies.
-        await register(PASSWORD);
-        assert.equal((await verify(link, PASSWORD)).status, 200);
+        // The student signs up: the account isn't changed, but their inbox gets a link
+        // to choose a password, which also confirms the address.
+        assert.equal((await register(PASSWORD)).status, 201);
+        assert.equal(sentEmails.at(-1).to, EMAIL);
+        assert.match(sentEmails.at(-1).subject, /Finish setting up/);
+        const reset = await request(app).post('/auth/reset-password')
+            .send({ token: resetTokenFromLastEmail(), password: PASSWORD });
+        assert.equal(reset.status, 200);
+        assert.ok(await isVerified());
 
         assert.equal((await login(PASSWORD)).status, 200);
         assert.equal((await login(ATTACKER_PASSWORD)).status, 401);
@@ -123,7 +129,8 @@ describe('sign-up with an address someone else is using', () => {
         await register(PASSWORD);
         await register(ATTACKER_PASSWORD);
         await register(ATTACKER_PASSWORD);
-        assert.equal(sentEmails.length, 1, 'only one email inside the cooldown');
+        await register(ATTACKER_PASSWORD);
+        assert.equal(sentEmails.length, 2, 'one verification email, then one "finish setting up" email inside the cooldown');
     });
 
     test('a verified address cannot be re-registered', async () => {

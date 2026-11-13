@@ -154,8 +154,10 @@ Rules for propose_task:
 //            with the student's new message.
 //   validateDraft(input) -> { draft } | { error }: checks a propose_task call.
 //   listOpenTasks(search) -> [{ title, due_date, category, priority }]
+//   onUsage(usage): called with each API response's token usage, for metering spend
+//            (services/aiBudget.js). Awaited, so spend is recorded before moving on.
 // Returns { text, drafts } where drafts are the validated task cards to show.
-export async function runChat({ history, today, timezone, lists = [], validateDraft, listOpenTasks }) {
+export async function runChat({ history, today, timezone, lists = [], validateDraft, listOpenTasks, onUsage }) {
     const anthropic = getClient();
     const system = buildSystemPrompt({ today, timezone, lists });
     const messages = history.map((m) => ({ role: m.role, content: m.content }));
@@ -164,6 +166,7 @@ export async function runChat({ history, today, timezone, lists = [], validateDr
 
     for (let step = 0; step < MAX_STEPS; step++) {
         const response = await callModel(anthropic, { system, messages });
+        if (onUsage) await onUsage(response.usage);
 
         if (response.stop_reason === 'refusal') {
             return { text: "Sorry, I can't help with that one.", drafts };

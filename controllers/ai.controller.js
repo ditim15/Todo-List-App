@@ -1,5 +1,13 @@
 import pool from '../db/pool.js';
 import { AiUnavailableError, isAiConfigured, runChat } from '../services/ai.js';
+import {
+    claimUserMessage,
+    dailyBudgetUsd,
+    recordUsage,
+    releaseUserMessage,
+    spentTodayUsd,
+    userDailyMessageLimit,
+} from '../services/aiBudget.js';
 import { DATE_PATTERN, DESCRIPTION_MAX_LENGTH, isValidTimeZone, parseTodoFields, validateTitle } from '../utils/validation.js';
 
 const MESSAGE_MAX_LENGTH = 2000;
@@ -9,6 +17,7 @@ const MESSAGES_KEPT_PER_USER = 200;
 const OPEN_TASKS_LIMIT = 50;
 const DRAFT_STATUSES = ['pending', 'added', 'dismissed'];
 const UNAVAILABLE_MESSAGE = 'The assistant is unavailable right now. You can still add tasks with the form.';
+const BUDGET_REACHED_MESSAGE = "The assistant is resting until tomorrow. You can still add tasks with the form.";
 
 // Validates a task draft (from the model, or the card the user edited) with the same
 // rules as POST /todos. Returns { error } or { draft } in the shape createTodo takes.
@@ -107,11 +116,30 @@ const getChat = async (req, res, next) => {
 // Both messages are stored only once the assistant has answered, so a failed turn
 // leaves the conversation as it was.
 const sendChat = async (req, res, next) => {
+    // Set once a message is reserved against the user's daily limit; a turn that fails
+    // gives it back.
+    let claimed = false;
     try {
         const input = parseChatBody(req.body ?? {});
         if (input.error) {
             return res.status(400).json({ message: input.error });
         }
+
+        // Spending caps (services/aiBudget.js), checked before any model call.
+        if (!isAiConfigured()) {
+            return res.status(503).json({ message: UNAVAILABLE_MESSAGE });
+        }
+        if ((await spentTodayUsd()) >= dailyBudgetUsd()) {
+            console.warn('[ai] daily budget reached; assistant paused until tomorrow (UTC)');
+            return res.status(503).json({ message: BUDGET_REACHED_MESSAGE, code: 'AI_DAILY_BUDGET' });
+        }
+        if (!(await claimUserMessage(req.user.id))) {
+            return res.status(429).json({
+                message: `You've used today's ${userDailyMessageLimit()} assistant messages. They reset tomorrow; you can still add tasks with the form.`,
+                code: 'AI_USER_DAILY_LIMIT'
+            });
+        }
+        claimed = true;
 
         const [recent, lists] = await Promise.all([
             pool.query(
@@ -133,7 +161,11 @@ const sendChat = async (req, res, next) => {
             lists: lists.rows.map((row) => row.category),
             validateDraft: (raw) => toDraft(raw, input.timezone),
             listOpenTasks: (search) => findOpenTasks(req.user.id, search),
+            onUsage: recordUsage,
         });
+        // The reply exists and its cost is recorded, so the message stays counted even
+        // if saving it below fails.
+        claimed = false;
 
         const drafts = reply.drafts.map((draft) => ({ ...draft, status: 'pending' }));
         const saved = await pool.query(
@@ -152,6 +184,11 @@ const sendChat = async (req, res, next) => {
 
         res.status(201).json({ messages: saved.rows.sort((a, b) => a.id - b.id) });
     } catch (err) {
+        if (claimed) {
+            await releaseUserMessage(req.user.id).catch((releaseErr) => {
+                console.error('[ai] could not give back a failed message:', releaseErr.message);
+            });
+        }
         if (err instanceof AiUnavailableError) {
             console.warn(`[ai] unavailable: ${err.message}`);
             return res.status(503).json({ message: UNAVAILABLE_MESSAGE });

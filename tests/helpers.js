@@ -73,7 +73,8 @@ export { app, pool, sentEmails };
 // Empties every table. Call it in beforeEach so tests don't depend on each other.
 export async function resetDatabase() {
     await pool.query(
-        'TRUNCATE users, todos, refresh_tokens, email_verification_tokens, password_reset_tokens, ai_messages'
+        'TRUNCATE users, todos, refresh_tokens, email_verification_tokens, password_reset_tokens, ai_messages,'
+        + ' login_failures, ai_usage, ai_spend_daily'
         + ' RESTART IDENTITY CASCADE'
     );
     sentEmails.length = 0;

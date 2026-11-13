@@ -100,3 +100,29 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_t
 -- Copied into every access token (as `tv`). Bumping it (on password reset) makes every
 -- access token already issued stop working at once, instead of up to an hour later.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
+
+-- Failed logins per email address (registered or not), for the per-account lockout in
+-- controllers/auth.controller.js. A row is cleared on a successful login or a password
+-- reset; stale rows just start a new window on the next failure.
+CREATE TABLE IF NOT EXISTS login_failures (
+    email VARCHAR(100) PRIMARY KEY,
+    failures INTEGER NOT NULL,
+    window_started_at TIMESTAMPTZ NOT NULL
+);
+
+-- Assistant usage, to cap what the AI can cost. ai_usage counts each user's messages
+-- per (UTC) day for the per-user limit. ai_spend_daily totals the tokens every request
+-- used that day for the app-wide budget; it has no user column, so deleting an account
+-- doesn't erase the day's spend.
+CREATE TABLE IF NOT EXISTS ai_usage (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day DATE NOT NULL,
+    messages INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS ai_spend_daily (
+    day DATE PRIMARY KEY,
+    input_tokens BIGINT NOT NULL DEFAULT 0,
+    output_tokens BIGINT NOT NULL DEFAULT 0
+);
