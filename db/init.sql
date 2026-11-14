@@ -126,3 +126,54 @@ CREATE TABLE IF NOT EXISTS ai_spend_daily (
     input_tokens BIGINT NOT NULL DEFAULT 0,
     output_tokens BIGINT NOT NULL DEFAULT 0
 );
+
+-- ---------- Notes ----------
+-- Folders nest (parent_id) up to a few levels deep (enforced by the API). A folder with
+-- a todo_id is that task's notes folder: one per task, created when the task is
+-- "imported" into Notes. Deleting the task keeps the folder as an ordinary one.
+-- Deleting a folder deletes everything inside it.
+CREATE TABLE IF NOT EXISTS note_folders (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INT REFERENCES note_folders(id) ON DELETE CASCADE,
+    todo_id INT REFERENCES todos(todo_id) ON DELETE SET NULL,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_folders_user_id ON note_folders(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_note_folders_todo_id ON note_folders(todo_id) WHERE todo_id IS NOT NULL;
+
+-- A note's body is the editor's document (Tiptap JSON). content_text is its plain text,
+-- kept for previews. folder_id NULL means the note sits at the top level.
+CREATE TABLE IF NOT EXISTS notes (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    folder_id INT REFERENCES note_folders(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL DEFAULT 'Untitled note',
+    content JSONB NOT NULL DEFAULT '{"type":"doc","content":[]}',
+    content_text TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notes_folder_id ON notes(folder_id);
+
+-- Images and PDFs added to a note, stored in the database (capped per file and per
+-- user by the API). They're served through short-lived signed links, so <img> tags
+-- work without the access token.
+CREATE TABLE IF NOT EXISTS note_attachments (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    note_id INT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    size_bytes INT NOT NULL,
+    data BYTEA NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_attachments_note_id ON note_attachments(note_id);
+CREATE INDEX IF NOT EXISTS idx_note_attachments_user_id ON note_attachments(user_id);

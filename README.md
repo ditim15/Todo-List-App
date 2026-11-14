@@ -81,6 +81,34 @@ Requires an `Authorization: Bearer <accessToken>` header. Sending messages is li
 | DELETE | `/ai/chat` | Clear the conversation |
 | PATCH  | `/ai/chat/messages/:id/drafts/:index` | Mark a card `added` or `dismissed` (optionally with the fields as saved). Adding the task itself is `POST /todos`. |
 
+### Notes
+
+Require an `Authorization: Bearer <accessToken>` header, except the signed file link. See [Notes](#notes-1).
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET    | `/notes/tree` | All of the user's folders (with their linked task, if any) and notes (titles and previews, no bodies) |
+| GET    | `/notes/recent` | The latest edited notes (`?limit=`, default 5) and the total count, for the dashboard panel |
+| POST   | `/notes/folders` | Create a folder: `{ name, parent_id? }`. Nesting is capped at 5 levels. |
+| PUT    | `/notes/folders/:id` | Rename and/or move: `{ name?, parent_id? }` (`null` = top level; can't move inside itself) |
+| DELETE | `/notes/folders/:id` | Delete a folder with its subfolders, notes and attachments |
+| POST   | `/notes/task-folders` | "Import" a task: `{ todo_id }`. Returns its notes folder, creating it the first time. `GET /todos` reports it as `notes_folder_id`. |
+| POST   | `/notes` | Create a note: `{ folder_id?, title? }` |
+| GET    | `/notes/:id` | A note with its document (`content`, Tiptap JSON) and attachments, with fresh signed links |
+| PUT    | `/notes/:id` | Save any of `{ title, content, folder_id }`. Documents are capped at 1 MB. |
+| DELETE | `/notes/:id` | Delete a note and its attachments |
+| POST   | `/notes/:id/attachments` | Upload one file as the raw body: `Content-Type` is the file's type, `X-Filename` its URL-encoded name. PNG, JPEG, GIF, WebP and PDF only, checked against the file's bytes; 10 MB each, 200 MB per user. |
+| DELETE | `/notes/attachments/:id` | Delete an attachment |
+| GET    | `/notes/attachments/:id/file?exp=&sig=` | Serve a file from a signed link (no token; links last up to 6 hours) |
+
+## Notes
+
+- **What it is:** folders and subfolders (up to 5 levels), rich-text notes (headings, lists, checklists, quotes, code, links), images shown inline and PDFs as attachment chips. Paste or drop files straight into a note. Notes save automatically as you type.
+- **Task folders:** adding a task to Notes (the notes button on a task, or "Add task" on the Notes page) gives it a folder that shows the task's due date, priority and status, with "Plan the timeline" and "Topics to cover" starter notes. Deleting the task keeps the folder as an ordinary one.
+- **Files:** stored in Postgres (`note_attachments`). The app shows them through short-lived signed links because `<img>` tags can't send the access token. Files a note no longer uses are deleted when it's saved, once they're a day old (so undo can still bring them back).
+- **Front end:** `client/src/pages/Notes.jsx` (loaded only when opened, since it carries the editor), `client/src/components/notes/` (editor, extensions, dashboard panel).
+- After pulling this change, re-run `db/init.sql` to add the `note_folders`, `notes` and `note_attachments` tables. The task list (`GET /todos`) returns 500 until they exist.
+
 ## Task Reminders
 
 A task with a due date can have an email reminder: "N days before the due date at a time of day", in the user's timezone. Send these fields on `POST /todos` and `PUT /todos/:id`:

@@ -1,0 +1,115 @@
+/* Top bar for the signed-in app (components/AppTopbar), shared by Dashboard and Notes. */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 56px;
+    /* Lines up with the page content once it hits its max width (--app-max). */
+    padding: 0 max(24px, calc((100% - var(--app-max)) / 2 + 24px));
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+    font-family: var(--font-text);
+}
+
+.topbar-start {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+.topbar-brand {
+    display: inline-flex;
+    font-size: 27px;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.topbar-brand:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+}
+
+/* Tasks / Notes: the current section gets an accent underline. */
+.topbar-tabs {
+    display: flex;
+    align-self: stretch;
+    gap: 4px;
+}
+
+.topbar-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    color: var(--ink-2);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.topbar-tab:hover {
+    color: var(--ink);
+}
+
+.topbar-tab.active {
+    color: var(--ink);
+}
+
+.topbar-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: -1px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+.topbar-tab:focus-visible {
+    outline: none;
+    box-shadow: inset var(--focus-ring);
+    border-radius: 6px;
+}
+
+/* Theme button + account menu, spaced like the landing page's nav actions. */
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+    .topbar {
+        padding: 0 16px;
+    }
+
+    .topbar-start {
+        gap: 8px;
+    }
+
+    .topbar-brand {
+        font-size: 21px;
+    }
+
+    .topbar-tab {
+        padding: 0 6px;
+    }
+
+    .topbar-tab.active::after {
+        left: 6px;
+        right: 6px;
+    }
+}
+
+@media (max-width: 400px) {
+    /* The logo's arrow and box take room the tabs need on the narrowest phones. */
+    .topbar-brand {
+        font-size: 18px;
+    }
+}

@@ -73,7 +73,9 @@ const getTodos = async (req, res, next) => {
         const { where, values } = buildTodoFilters(req.user.id, req.query);
 
         const result = await pool.query(
-            `SELECT * FROM todos WHERE ${where}`
+            // notes_folder_id: the task's notes folder, if it has been added to Notes.
+            'SELECT todos.*, (SELECT f.id FROM note_folders f WHERE f.todo_id = todos.todo_id) AS notes_folder_id'
+            + ` FROM todos WHERE ${where}`
             + ' ORDER BY completed, due_date NULLS LAST, created_at DESC, todo_id DESC'
             + ` LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
             [...values, limit, offset]

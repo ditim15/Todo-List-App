@@ -11,6 +11,7 @@ import authRouter from "./routes/auth.js";
 import todosRouter from "./routes/todos.js";
 import aiRouter from "./routes/ai.js";
 import contactRouter from "./routes/contact.js";
+import notesRouter from "./routes/notes.js";
 import { authenticate } from "./middleware/authenticate.js";
 
 dotenv.config({
@@ -36,7 +37,11 @@ export const allowedOrigins = (process.env.CLIENT_ORIGIN || process.env.APP_URL 
     .filter(Boolean);
 
 app.use(helmet());
-app.use(express.json());
+// JSON bodies are capped at 100 KB, except notes: a note's document (the editor's
+// JSON) can be bigger, so /notes allows up to 1.5 MB (the controller caps it at 1 MB).
+const jsonBody = express.json();
+const notesJsonBody = express.json({ limit: '1500kb' });
+app.use((req, res, next) => (req.path.startsWith('/notes') ? notesJsonBody : jsonBody)(req, res, next));
 app.use(cookieParser());
 app.use(cors({
     origin: allowedOrigins,
@@ -57,6 +62,8 @@ app.use("/auth", authRouter);
 app.use("/todos", todosRouter);
 // AI assistant chat. It only proposes tasks; they are still saved through POST /todos.
 app.use("/ai", authenticate, aiRouter);
+// Notes: folders, rich-text notes, task folders and attachments (routes/notes.js).
+app.use("/notes", notesRouter);
 // Contact form; emails the support inbox (SUPPORT_EMAIL). Open to signed-out visitors.
 app.use("/contact", contactRouter);
 

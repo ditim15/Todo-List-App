@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import AccountMenu from '../components/account/AccountMenu';
-import ThemeToggle from '../components/ThemeToggle';
-import NudgeLogo from '../components/brand/NudgeLogo';
+import AppTopbar from '../components/AppTopbar';
+import NotesPanel from '../components/notes/NotesPanel';
+import { folderForTask } from '../api/notes';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
 import { ReminderBadge, ReminderField, ReminderPicker } from '../components/tasks/reminders';
 import { DEFAULT_REMINDER_TIME, isDayPast, nextAvailableTime, reminderMoment } from '../components/tasks/reminderUtils';
@@ -669,7 +669,15 @@ function TaskEditForm({ todo, onSave, onCancel }) {
 
 // `isSettling`: just checked off; shown as done in place briefly before it moves to
 // the Completed section, so an accidental click can be undone.
-function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCancelEdit, onSave }) {
+function NotesIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4" />
+        </svg>
+    );
+}
+
+function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCancelEdit, onSave, onOpenNotes }) {
     const isOverdue = !todo.completed && todo.due_date && todo.due_date < today;
     const priority = PRIORITIES.find((p) => p.key === todo.priority);
     const classes = ['task'];
@@ -709,6 +717,16 @@ function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCanc
                             <ReminderBadge todo={todo} />
                         </span>
                     </div>
+                    {/* Opens the task's notes folder (adding the task to Notes the first time). */}
+                    <button
+                        type="button"
+                        className={`task-notes-button${todo.notes_folder_id ? ' has-notes' : ''}`}
+                        onClick={() => onOpenNotes(todo)}
+                        aria-label={todo.notes_folder_id ? `Open notes for "${todo.title}"` : `Add notes for "${todo.title}"`}
+                        title={todo.notes_folder_id ? 'Open notes' : 'Add notes'}
+                    >
+                        <NotesIcon />
+                    </button>
                     <button
                         type="button"
                         className="task-edit-button"
@@ -773,7 +791,7 @@ function ViewIcon({ view }) {
 // Layout: top bar, greeting + stat tiles, then lists (left) / tasks (center) /
 // priority + upcoming (right).
 function Dashboard() {
-    const { user, authFetch, logout } = useAuth();
+    const { user, authFetch } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [todos, setTodos] = useState([]);
@@ -941,9 +959,14 @@ function Dashboard() {
         await loadDashboard();
     }
 
-    function handleLogout() {
-        logout();
-        navigate('/login');
+    // Opens a task's notes folder, creating it ("importing" the task) the first time.
+    async function handleOpenNotes(todo) {
+        try {
+            const folderId = todo.notes_folder_id ?? (await folderForTask(authFetch, todo.todo_id)).folder.id;
+            navigate(`/notes?folder=${folderId}`);
+        } catch (err) {
+            setError(err.message);
+        }
     }
 
     const today = localToday();
@@ -1020,22 +1043,14 @@ function Dashboard() {
                 onEdit={setEditingId}
                 onCancelEdit={() => setEditingId(null)}
                 onSave={handleSave}
+                onOpenNotes={handleOpenNotes}
             />
         );
     }
 
     return (
         <div className="dash">
-            <header className="topbar">
-                <Link to="/" className="topbar-brand">
-                    <NudgeLogo animate="intro" />
-                </Link>
-                {/* Same light/dark button as the landing and auth pages' top bars. */}
-                <div className="topbar-actions">
-                    <ThemeToggle />
-                    <AccountMenu user={user} onLogout={handleLogout} />
-                </div>
-            </header>
+            <AppTopbar />
 
             <main className="dash-main">
                 <section className="intro">
@@ -1082,12 +1097,15 @@ function Dashboard() {
 
                 {stats && (
                     <div className="dash-grid">
-                        <ListsPanel
-                            stats={stats}
-                            selectedList={selectedList}
-                            onSelect={setSelectedList}
-                            onRename={handleRenameList}
-                        />
+                        <div className="lists-column">
+                            <ListsPanel
+                                stats={stats}
+                                selectedList={selectedList}
+                                onSelect={setSelectedList}
+                                onRename={handleRenameList}
+                            />
+                            <NotesPanel />
+                        </div>
 
                         <section ref={tasksPanelRef} className="panel tasks-panel" aria-labelledby="tasks-heading">
                             <div className="panel-header tasks-panel-header">

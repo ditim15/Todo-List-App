@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
@@ -14,6 +15,10 @@ import ResetPassword from './pages/ResetPassword';
 import Account from './pages/Account';
 import Privacy from './pages/Privacy';
 import Contact from './pages/Contact';
+import { NudgeLoader } from './components/brand/NudgeLogo';
+
+// Notes pulls in the rich-text editor, so it's loaded only when opened.
+const Notes = lazy(() => import('./pages/Notes'));
 
 // Top-level route table for the app.
 function App() {
@@ -37,6 +42,13 @@ function App() {
                         <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/privacy" element={<Privacy />} />
                         <Route path="/contact" element={<Contact />} />
+                        <Route path="/notes" element={
+                            <ProtectedRoute>
+                                <Suspense fallback={<NudgeLoader label="Opening notes" />}>
+                                    <Notes />
+                                </Suspense>
+                            </ProtectedRoute>
+                        }/>
                         <Route path="/account" element={
                             <ProtectedRoute>
                                 <Account />
