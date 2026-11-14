@@ -39,7 +39,14 @@ app.listen(port, (err) => {
     }
     console.log(`Server is running on port ${port} (allowing requests from ${allowedOrigins.join(', ')})`);
     // Sends task reminders as they come due (see notifications/reminders.js).
-    startReminderScheduler();
+    // REMINDER_SCHEDULER=off runs the API without it, for a second local server that
+    // shares the database: otherwise both claim the same reminders, and one that
+    // isn't set up to send email would swallow them.
+    if ((process.env.REMINDER_SCHEDULER || 'on').toLowerCase() === 'off') {
+        console.log('REMINDER_SCHEDULER is off: this server will not send task reminders.');
+    } else {
+        startReminderScheduler();
+    }
     if (!isAiConfigured()) {
         console.log("ANTHROPIC_API_KEY is not set: the assistant is off (POST /ai/chat returns 503).");
     }
