@@ -32,6 +32,22 @@ export function isDayPast(dueDate, days) {
     return moment !== null && moment < startOfToday();
 }
 
+// The reminder time to suggest for `days` before `dueDate`: `time` if that moment is
+// still ahead, otherwise (the reminder day is today and `time` has passed) the next
+// whole minute, so "Day of" on a task due today works straight away. It's only a
+// starting point: any later time can be picked. The server checks for due reminders
+// every minute, so a reminder arrives within about a minute of its time.
+export function nextAvailableTime(dueDate, days, time = DEFAULT_REMINDER_TIME) {
+    const moment = reminderMoment(dueDate, days, time);
+    if (!moment || moment > new Date() || isDayPast(dueDate, days)) return time;
+
+    const now = new Date();
+    const next = new Date(now);
+    next.setMinutes(now.getMinutes() + 1, 0, 0);
+    if (next.getDate() !== now.getDate()) return '23:59';
+    return `${String(next.getHours()).padStart(2, '0')}:${String(next.getMinutes()).padStart(2, '0')}`;
+}
+
 export function formatReminderTime(date) {
     return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }

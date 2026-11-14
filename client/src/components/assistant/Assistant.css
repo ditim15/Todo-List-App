@@ -433,6 +433,12 @@
     gap: 6px;
 }
 
+/* The reminder field (day + inline time) takes the card's full width. */
+.assistant-card-reminder {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
 .assistant-card-notes,
 .assistant-card-note,
 .assistant-card-error {

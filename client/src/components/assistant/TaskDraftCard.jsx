@@ -2,8 +2,8 @@
 // nothing is saved until the user presses Add (which goes through POST /todos).
 import { useState } from 'react';
 import { PrioritySelect } from '../tasks/PrioritySelect';
-import { ReminderSelect } from '../tasks/reminders';
-import { DEFAULT_REMINDER_TIME, reminderMoment } from '../tasks/reminderUtils';
+import { ReminderField } from '../tasks/reminders';
+import { DEFAULT_REMINDER_TIME, isDayPast, nextAvailableTime, reminderMoment } from '../tasks/reminderUtils';
 
 function CheckIcon() {
     return (
@@ -56,10 +56,21 @@ export default function TaskDraftCard({ draft, listsDatalistId, onAdd, onDismiss
     const update = (changes) => setFields((current) => ({ ...current, ...changes }));
 
     function changeDueDate(next) {
-        // Drop a reminder the new date makes impossible (or that has no date).
-        const moment = reminderMoment(next, fields.reminder_days_before, fields.reminder_time);
-        const dropReminder = !next || (moment && moment <= new Date());
-        update({ due_date: next, ...(dropReminder && { reminder_days_before: null }) });
+        // Drop a reminder whose day the new date puts in the past (or that has no date);
+        // if only the time has passed today, move it to the next minute.
+        const days = fields.reminder_days_before;
+        if (!next || (days !== null && isDayPast(next, days))) {
+            update({ due_date: next, reminder_days_before: null });
+        } else {
+            update({ due_date: next, ...(days !== null && { reminder_time: nextAvailableTime(next, days, fields.reminder_time) }) });
+        }
+    }
+
+    function changeReminderDays(days) {
+        update({
+            reminder_days_before: days,
+            ...(days !== null && { reminder_time: nextAvailableTime(fields.due_date, days, fields.reminder_time) }),
+        });
     }
 
     async function run(action) {
@@ -75,6 +86,11 @@ export default function TaskDraftCard({ draft, listsDatalistId, onAdd, onDismiss
 
     function handleAdd() {
         const hasReminder = Boolean(fields.due_date) && fields.reminder_days_before !== null;
+        const moment = hasReminder ? reminderMoment(fields.due_date, fields.reminder_days_before, fields.reminder_time) : null;
+        if (moment && moment <= new Date()) {
+            setError('That reminder time has already passed. Pick a later one.');
+            return;
+        }
         return run(() => onAdd({
             title: fields.title.trim(),
             description: fields.description || undefined,
@@ -114,22 +130,16 @@ export default function TaskDraftCard({ draft, listsDatalistId, onAdd, onDismiss
                     maxLength={50}
                     onChange={(e) => update({ category: e.target.value })}
                 />
-                <ReminderSelect
-                    compact
-                    dueDate={fields.due_date}
-                    days={fields.reminder_days_before}
-                    time={fields.reminder_time}
-                    onChange={(days) => update({ reminder_days_before: days })}
-                />
-                {fields.due_date && fields.reminder_days_before !== null && (
-                    <input
-                        type="time"
-                        aria-label="Reminder time"
-                        value={fields.reminder_time}
-                        required
-                        onChange={(e) => update({ reminder_time: e.target.value || DEFAULT_REMINDER_TIME })}
+                <div className="assistant-card-reminder">
+                    <ReminderField
+                        compact
+                        dueDate={fields.due_date}
+                        days={fields.reminder_days_before}
+                        time={fields.reminder_time}
+                        onDaysChange={changeReminderDays}
+                        onTimeChange={(reminder_time) => update({ reminder_time })}
                     />
-                )}
+                </div>
             </div>
             {reminderPassed && fields.reminder_days_before === null && (
                 <p className="assistant-card-note">That reminder time has already passed, so it&apos;s off. Pick another.</p>

@@ -368,24 +368,9 @@
     grid-column: 1 / -1;
 }
 
-/* Medium panel: title row, then list / priority / date / reminder / button in one row. */
+/* Medium and wide panels: columns are set with .add-task-reminder below. */
 @container tasks (min-width: 560px) {
-    .add-task {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-    }
-
     .add-task button {
-        grid-column: auto;
-    }
-}
-
-/* Wide panel: everything on one row. */
-@container tasks (min-width: 900px) {
-    .add-task {
-        grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)) auto;
-    }
-
-    .add-task-title {
         grid-column: auto;
     }
 }
@@ -425,16 +410,44 @@
     cursor: not-allowed;
 }
 
-/* Reminder select + its time field share one grid cell, wrapping when it's narrow. */
+/* Layout of the add-task fields by panel width. The reminder field (day + inline time)
+   needs about 18em to show its longest label and the time without clipping.
+     narrow:  title / list, priority / date / reminder / Add
+     medium:  title / list, priority, date / reminder (2 cols), Add
+     wide:    title, list, priority, date, reminder, Add on one row */
+.add-task-date,
 .add-task-reminder {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    grid-column: 1 / -1;
     min-width: 0;
 }
 
-.add-task-reminder > * {
-    flex: 1 1 110px;
+@container tasks (min-width: 560px) {
+    .add-task {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .add-task-date {
+        grid-column: auto;
+    }
+
+    .add-task-reminder {
+        grid-column: span 2;
+    }
+
+    .add-task.add-task button {
+        grid-column: auto;
+    }
+}
+
+@container tasks (min-width: 960px) {
+    .add-task {
+        grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr)) minmax(8.5em, 1fr) minmax(18em, 2fr) auto;
+    }
+
+    .add-task-title,
+    .add-task-reminder {
+        grid-column: auto;
+    }
 }
 
 .form-error {
@@ -712,19 +725,100 @@
     gap: 5px;
 }
 
-.reminder-picker-inputs {
+.reminder-picker .reminder-field {
+    max-width: 340px;
+    height: 34px;
+    background: var(--surface);
+}
+
+/* ---------- Reminder field (ReminderField): one box, day + inline time ----------
+   The box carries the border, background and focus ring; the select and time input
+   inside are bare. The doubled class beats the forms' own input/select rules. */
+.reminder-field {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    height: 36px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-sizing: border-box;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
 }
 
-.reminder-picker-inputs select {
-    flex: 1 1 180px;
-    max-width: 240px;
+.reminder-field:hover:not(.is-disabled) {
+    border-color: var(--line-strong);
 }
 
-.reminder-picker-inputs input[type="time"] {
-    flex: 0 1 130px;
+.reminder-field:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.reminder-field.is-disabled {
+    opacity: 0.6;
+}
+
+.reminder-field-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    padding-left: 10px;
+    color: var(--ink-3);
+}
+
+.reminder-field.has-time .reminder-field-icon {
+    color: var(--accent);
+}
+
+.reminder-field-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.reminder-field.reminder-field select,
+.reminder-field.reminder-field input {
+    height: 100%;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.reminder-field.reminder-field select {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    padding: 0 6px 0 8px;
+    /* Not transparent: the browser builds the open option list from the select's own
+       colours, and a transparent select gets a white list (unreadable in dark mode).
+       Inheriting the box's background keeps the closed select seamless. */
+    background-color: inherit;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.reminder-field.reminder-field option {
+    background-color: var(--surface);
+    color: var(--ink);
+}
+
+.reminder-field.reminder-field option:disabled {
+    color: var(--ink-3);
+}
+
+.reminder-field.reminder-field select:disabled {
+    cursor: not-allowed;
+}
+
+/* The time sits behind a thin divider and only takes the room it needs. */
+.reminder-field.reminder-field input[type="time"] {
+    flex: 0 0 auto;
+    width: 7.6em;
+    padding: 0 8px;
+    border-left: 1px solid var(--line);
 }
 
 .reminder-note {

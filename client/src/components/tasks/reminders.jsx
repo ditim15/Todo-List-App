@@ -5,6 +5,7 @@ import {
     REMINDER_OPTIONS,
     formatReminderTime,
     isDayPast,
+    nextAvailableTime,
     reminderMoment,
 } from './reminderUtils';
 
@@ -19,7 +20,9 @@ function BellIcon() {
 // Days-before dropdown. Disabled until the task has a due date. Options that can no
 // longer work are disabled: with a fixed `time`, those whose moment has passed;
 // otherwise those whose whole day has passed (the time can still be changed).
-export function ReminderSelect({ dueDate, days, onChange, id, time = null, compact = false }) {
+// `compact` is for fields without a visible label (short option text, an aria-label);
+// `shortLabels` alone keeps the visible label but uses the short option text.
+export function ReminderSelect({ dueDate, days, onChange, id, time = null, compact = false, shortLabels = compact }) {
     const isUnavailable = (optionDays) => time
         ? reminderMoment(dueDate, optionDays, time) <= new Date()
         : isDayPast(dueDate, optionDays);
@@ -43,15 +46,40 @@ export function ReminderSelect({ dueDate, days, onChange, id, time = null, compa
             <option value="">{compact && !dueDate ? 'Reminder' : 'No reminder'}</option>
             {options.map((option) => (
                 <option key={option.days} value={option.days} disabled={Boolean(dueDate) && isUnavailable(option.days)}>
-                    {compact ? option.short : option.label}
+                    {shortLabels ? option.short : option.label}
                 </option>
             ))}
         </select>
     );
 }
 
-// Full picker for the edit form: days-before + time of day, with a note saying when
-// the email goes out (or why it can't).
+// The reminder day and its time in one box: the days-before dropdown, and once a
+// reminder is picked, the time sits inline on its right behind a divider, so the
+// control grows sideways instead of adding a row. Used by the add-task form, the edit
+// form and the assistant's task cards.
+export function ReminderField({ dueDate, days, time, onDaysChange, onTimeChange, id, compact = false }) {
+    const showTime = Boolean(dueDate) && days !== null && days !== undefined;
+
+    return (
+        <div className={`reminder-field${showTime ? ' has-time' : ''}${dueDate ? '' : ' is-disabled'}`}>
+            <span className="reminder-field-icon" aria-hidden="true"><BellIcon /></span>
+            {/* Short option text ("Day of") everywhere, so the time always fits beside it. */}
+            <ReminderSelect id={id} compact={compact} shortLabels dueDate={dueDate} days={days} onChange={onDaysChange} />
+            {showTime && (
+                <input
+                    type="time"
+                    aria-label="Reminder time"
+                    value={time}
+                    required
+                    onChange={(e) => onTimeChange(e.target.value || DEFAULT_REMINDER_TIME)}
+                />
+            )}
+        </div>
+    );
+}
+
+// Full picker for the edit form: the reminder field, with a note saying when the
+// email goes out (or why it can't).
 export function ReminderPicker({ dueDate, days, time, onChange, sentAt, checkPast }) {
     const moment = reminderMoment(dueDate, days, time);
     const isPast = checkPast && moment !== null && moment <= new Date();
@@ -69,23 +97,17 @@ export function ReminderPicker({ dueDate, days, time, onChange, sentAt, checkPas
 
     return (
         <div className="reminder-picker">
-            <div className="reminder-picker-inputs">
-                <ReminderSelect
-                    id="reminder-days"
-                    dueDate={dueDate}
-                    days={days}
-                    onChange={(nextDays) => onChange({ days: nextDays, time })}
-                />
-                {days !== null && dueDate && (
-                    <input
-                        type="time"
-                        aria-label="Reminder time"
-                        value={time}
-                        required
-                        onChange={(e) => onChange({ days, time: e.target.value || DEFAULT_REMINDER_TIME })}
-                    />
-                )}
-            </div>
+            <ReminderField
+                id="reminder-days"
+                dueDate={dueDate}
+                days={days}
+                time={time}
+                onDaysChange={(nextDays) => onChange({
+                    days: nextDays,
+                    time: nextDays === null ? time : nextAvailableTime(dueDate, nextDays, time),
+                })}
+                onTimeChange={(nextTime) => onChange({ days, time: nextTime })}
+            />
             {note && <p className="reminder-note" aria-live="polite">{note}</p>}
         </div>
     );

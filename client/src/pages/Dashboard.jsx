@@ -4,8 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import AccountMenu from '../components/account/AccountMenu';
 import NudgeLogo from '../components/brand/NudgeLogo';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
-import { ReminderBadge, ReminderPicker, ReminderSelect } from '../components/tasks/reminders';
-import { DEFAULT_REMINDER_TIME, reminderMoment } from '../components/tasks/reminderUtils';
+import { ReminderBadge, ReminderField, ReminderPicker } from '../components/tasks/reminders';
+import { DEFAULT_REMINDER_TIME, isDayPast, nextAvailableTime, reminderMoment } from '../components/tasks/reminderUtils';
 import CalendarView from '../components/tasks/CalendarView';
 import { PRIORITIES, PrioritySelect } from '../components/tasks/PrioritySelect';
 import Assistant from '../components/assistant/Assistant';
@@ -446,9 +446,22 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
         setReminderDays(null);
     }, [defaultDueDate]);
 
+    // Picking a reminder day keeps the chosen time when it's still ahead; for today, a
+    // time that has already passed starts at the next minute (any later time can be set).
+    function chooseReminderDays(days) {
+        setReminderDays(days);
+        if (days !== null) setReminderTime((time) => nextAvailableTime(dueDate, days, time));
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
         if (!title.trim()) return;
+
+        const moment = dueDate && reminderDays !== null ? reminderMoment(dueDate, reminderDays, reminderTime) : null;
+        if (moment && moment <= new Date()) {
+            setError('That reminder time has already passed. Pick a later one.');
+            return;
+        }
 
         setIsSaving(true);
         setError('');
@@ -495,36 +508,33 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
             />
             <PrioritySelect value={priority} onChange={setPriority} />
             <input
+                className="add-task-date"
                 type="date"
                 aria-label="Due date"
                 value={dueDate}
                 onChange={(e) => {
                     const next = e.target.value;
                     setDueDate(next);
-                    // Drop a reminder the new date makes impossible (or that has no date).
-                    const moment = reminderMoment(next, reminderDays, reminderTime);
-                    if (!next || (moment && moment <= new Date())) setReminderDays(null);
+                    // Drop a reminder whose day the new date puts in the past (or that has
+                    // no date); if only the time has passed today, move it later.
+                    if (!next || (reminderDays !== null && isDayPast(next, reminderDays))) {
+                        setReminderDays(null);
+                    } else if (reminderDays !== null) {
+                        setReminderTime((time) => nextAvailableTime(next, reminderDays, time));
+                    }
                     // Clearing the field doesn't move the calendar; there's no day to show.
                     if (next) onDueDateChange?.(next);
                 }}
             />
             <div className="add-task-reminder">
-                <ReminderSelect
+                <ReminderField
                     compact
                     dueDate={dueDate}
                     days={reminderDays}
                     time={reminderTime}
-                    onChange={setReminderDays}
+                    onDaysChange={chooseReminderDays}
+                    onTimeChange={setReminderTime}
                 />
-                {dueDate && reminderDays !== null && (
-                    <input
-                        type="time"
-                        aria-label="Reminder time"
-                        value={reminderTime}
-                        required
-                        onChange={(e) => setReminderTime(e.target.value || DEFAULT_REMINDER_TIME)}
-                    />
-                )}
             </div>
             <button type="submit" disabled={isSaving || !title.trim()}>
                 {isSaving ? 'Adding...' : 'Add'}
