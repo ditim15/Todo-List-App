@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import AccountMenu from '../components/account/AccountMenu';
+import ThemeToggle from '../components/ThemeToggle';
 import NudgeLogo from '../components/brand/NudgeLogo';
 import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo } from '../api/todos';
 import { ReminderBadge, ReminderField, ReminderPicker } from '../components/tasks/reminders';
@@ -1029,7 +1030,11 @@ function Dashboard() {
                 <Link to="/" className="topbar-brand">
                     <NudgeLogo animate="intro" />
                 </Link>
-                <AccountMenu user={user} onLogout={handleLogout} />
+                {/* Same light/dark button as the landing and auth pages' top bars. */}
+                <div className="topbar-actions">
+                    <ThemeToggle />
+                    <AccountMenu user={user} onLogout={handleLogout} />
+                </div>
             </header>
 
             <main className="dash-main">

@@ -164,46 +164,12 @@
     background: var(--line);
 }
 
-/* Small on/off switch for toggle items. */
-.account-switch {
-    position: relative;
-    flex-shrink: 0;
-    width: 32px;
-    height: 18px;
-    background: color-mix(in srgb, var(--ink-3) 50%, var(--line));
-    border-radius: 999px;
-    transition: background-color 0.2s ease;
-}
-
-.account-switch::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 14px;
-    height: 14px;
-    background: var(--surface);
-    border-radius: 50%;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s ease;
-}
-
-.account-switch.is-on {
-    background: var(--accent);
-}
-
-.account-switch.is-on::after {
-    transform: translateX(14px);
-}
-
 @media (prefers-reduced-motion: reduce) {
     .account-panel {
         animation: none;
     }
 
-    .account-button,
-    .account-switch,
-    .account-switch::after {
+    .account-button {
         transition: none;
     }
 }

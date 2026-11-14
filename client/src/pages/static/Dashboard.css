@@ -37,6 +37,13 @@
     flex-shrink: 0;
 }
 
+/* Theme button + account menu, spaced like the landing page's nav actions. */
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .topbar-brand {
     display: inline-flex;
     font-size: 1.8em;
