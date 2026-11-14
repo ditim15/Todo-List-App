@@ -67,6 +67,27 @@ describe('folders', () => {
         assert.equal(intoChild.status, 400);
         assert.match(intoChild.body.message, /inside itself/);
     });
+
+    test('folders take a colour from the palette, and can clear it', async () => {
+        const api = as(await createUser());
+        const made = (await api.post('/notes/folders', { name: 'Art', color: 'rose' })).body.folder;
+        assert.equal(made.color, 'rose');
+        assert.equal((await api.post('/notes/folders', { name: 'Bad', color: '#ff0000' })).status, 400);
+
+        const sky = await api.put(`/notes/folders/${made.id}`, { color: 'sky' });
+        assert.equal(sky.body.folder.color, 'sky');
+        assert.equal(sky.body.folder.name, 'Art', 'other fields are untouched');
+
+        const renamed = await api.put(`/notes/folders/${made.id}`, { name: 'Art history' });
+        assert.equal(renamed.body.folder.color, 'sky', 'renaming keeps the colour');
+
+        const invalid = await api.put(`/notes/folders/${made.id}`, { color: 'url(javascript:1)' });
+        assert.equal(invalid.status, 400);
+
+        const cleared = await api.put(`/notes/folders/${made.id}`, { color: null });
+        assert.equal(cleared.body.folder.color, null);
+        assert.equal((await api.get('/notes/tree')).body.folders[0].color, null);
+    });
 });
 
 describe('notes', () => {

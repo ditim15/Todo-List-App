@@ -145,6 +145,10 @@ CREATE TABLE IF NOT EXISTS note_folders (
 CREATE INDEX IF NOT EXISTS idx_note_folders_user_id ON note_folders(user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_note_folders_todo_id ON note_folders(todo_id) WHERE todo_id IS NOT NULL;
 
+-- Folder customisation (Folder settings in the app). color is one of the palette keys
+-- in controllers/notes.controller.js (FOLDER_COLORS); NULL = the default look.
+ALTER TABLE note_folders ADD COLUMN IF NOT EXISTS color VARCHAR(20);
+
 -- A note's body is the editor's document (Tiptap JSON). content_text is its plain text,
 -- kept for previews. folder_id NULL means the note sits at the top level.
 CREATE TABLE IF NOT EXISTS notes (

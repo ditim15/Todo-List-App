@@ -12,6 +12,9 @@ export const TITLE_MAX = 200;
 export const CONTENT_MAX_BYTES = 1_000_000;   // a note's JSON document
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const USER_ATTACHMENT_QUOTA_BYTES = 200 * 1024 * 1024;
+// Background colours a folder can have (Folder settings). Keys, not hex values: the
+// client maps each to light- and dark-theme colours (client/src/components/notes/folderColors.js).
+export const FOLDER_COLORS = ['sage', 'sky', 'lavender', 'rose', 'peach', 'butter', 'clay', 'slate'];
 const SIGNED_URL_HOURS = 6;
 // Attachments a note's document no longer refers to are deleted on save once they're
 // this old; younger ones are kept so undo in the editor can still bring them back.
@@ -88,7 +91,7 @@ function attachmentJson(row) {
     return { id: row.id, filename: row.filename, mime_type: row.mime_type, size_bytes: row.size_bytes, url: signedUrl(row.id) };
 }
 
-const FOLDER_COLUMNS = 'f.id, f.parent_id, f.name, f.todo_id, f.created_at, f.updated_at,'
+const FOLDER_COLUMNS = 'f.id, f.parent_id, f.name, f.todo_id, f.color, f.created_at, f.updated_at,'
     + ' t.title AS task_title, t.due_date AS task_due_date, t.completed AS task_completed,'
     + ' t.priority AS task_priority, t.category AS task_category';
 
@@ -176,6 +179,8 @@ const createFolder = async (req, res, next) => {
         const parentId = optionalId(req.body?.parent_id);
         if (!name) return res.status(400).json({ message: 'Give the folder a name' });
         if (parentId === false) return res.status(400).json({ message: 'Invalid parent folder' });
+        const color = req.body?.color === undefined ? null : folderColor(req.body.color);
+        if (color === false) return res.status(400).json({ message: 'Pick one of the folder colours' });
 
         if (parentId) {
             if (!(await getOwnedFolder(req.user.id, parentId))) {
@@ -187,8 +192,8 @@ const createFolder = async (req, res, next) => {
         }
 
         const created = await pool.query(
-            'INSERT INTO note_folders (user_id, parent_id, name) VALUES ($1, $2, $3) RETURNING id',
-            [req.user.id, parentId, name]
+            'INSERT INTO note_folders (user_id, parent_id, name, color) VALUES ($1, $2, $3, $4) RETURNING id',
+            [req.user.id, parentId, name, color]
         );
         res.status(201).json({ folder: await getOwnedFolder(req.user.id, created.rows[0].id) });
     } catch (err) {
@@ -196,7 +201,14 @@ const createFolder = async (req, res, next) => {
     }
 };
 
-// Rename and/or move a folder. `parent_id: null` moves it to the top level.
+// A colour from the request body: a palette key, null to clear it, or false if invalid.
+function folderColor(value) {
+    if (value === null || value === '') return null;
+    return FOLDER_COLORS.includes(value) ? value : false;
+}
+
+// Rename, move and/or restyle a folder. `parent_id: null` moves it to the top level;
+// `color: null` goes back to the default look.
 const updateFolder = async (req, res, next) => {
     try {
         const folder = await getOwnedFolder(req.user.id, req.params.id);
@@ -226,9 +238,15 @@ const updateFolder = async (req, res, next) => {
             }
         }
 
+        let color = folder.color;
+        if (req.body?.color !== undefined) {
+            color = folderColor(req.body.color);
+            if (color === false) return res.status(400).json({ message: 'Pick one of the folder colours' });
+        }
+
         await pool.query(
-            'UPDATE note_folders SET name = $1, parent_id = $2, updated_at = NOW() WHERE id = $3 AND user_id = $4',
-            [name, parentId, folder.id, req.user.id]
+            'UPDATE note_folders SET name = $1, parent_id = $2, color = $3, updated_at = NOW() WHERE id = $4 AND user_id = $5',
+            [name, parentId, color, folder.id, req.user.id]
         );
         res.status(200).json({ folder: await getOwnedFolder(req.user.id, folder.id) });
     } catch (err) {

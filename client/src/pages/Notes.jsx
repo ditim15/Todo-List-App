@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import AppTopbar from '../components/AppTopbar';
 import SiteFooter from '../components/SiteFooter';
 import NoteEditor from '../components/notes/NoteEditor';
+import FolderSettings from '../components/notes/FolderSettings';
 import {
     MAX_FOLDER_DEPTH,
     countNotesDeep,
@@ -36,6 +37,12 @@ import './static/Notes.css';
 
 const SAVE_DELAY_MS = 700;
 const EXPANDED_KEY = 'notes:expanded';
+// Hovering a collapsed folder this long while dragging opens it.
+const DRAG_EXPAND_MS = 650;
+const TOAST_MS = 6000;
+// Our own drag type. Deliberately not text/plain, so dropping a note on the editor
+// (or another app) doesn't paste its title.
+const DRAG_TYPE = 'application/x-doneyet-notes';
 
 // ---------- Icons ----------
 const ICON_PATHS = {
@@ -46,6 +53,7 @@ const ICON_PATHS = {
     plus: 'M12 5v14M5 12h14',
     back: 'M15 18l-6-6 6-6',
     search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',
+    settings: 'M4 7h9M17 7h3M15 5v4M4 17h3M11 17h9M9 15v4',
 };
 
 function Icon({ name, className = '' }) {
@@ -55,6 +63,21 @@ function Icon({ name, className = '' }) {
         </svg>
     );
 }
+
+// A folder's icon: the task glyph for task folders, otherwise a folder (filled with
+// the folder's colour, if it has one).
+function FolderIcon({ folder, className = '' }) {
+    if (folder.todo_id) return <Icon name="task" className={`is-task ${className}`} />;
+    return <Icon name="folder" className={`notes-folder-glyph ${className}`} />;
+}
+
+// ---------- Drag and drop ----------
+// Notes and folders can be dragged onto folders (sidebar rows, folder cards,
+// breadcrumbs) or onto "All notes" (the top level). The page provides the state and
+// the move; components spread dnd.source(item) / dnd.target(folderId, zone) on elements.
+// "Move to" pickers stay as the keyboard and touch alternative.
+const DndContext = createContext(null);
+const useDnd = () => useContext(DndContext);
 
 function loadExpanded() {
     try {
@@ -74,15 +97,30 @@ function docText(node) {
 // ---------- Sidebar ----------
 
 function FolderNode({ folder, index, depth, selection, expanded, onToggle, onSelect }) {
+    const dnd = useDnd();
     const subfolders = index.children.get(folder.id) ?? [];
     const notes = index.notesIn.get(folder.id) ?? [];
     const isOpen = expanded.has(folder.id);
     const isSelected = selection.type === 'folder' && selection.id === folder.id;
     const hasChildren = subfolders.length > 0 || notes.length > 0;
+    const isDropTarget = dnd.isOver(folder.id, 'tree');
+
+    // Hovering a closed folder mid-drag opens it, so things can be dropped deeper in.
+    useEffect(() => {
+        if (!isDropTarget || isOpen || !hasChildren) return;
+        const t = setTimeout(() => onToggle(folder.id), DRAG_EXPAND_MS);
+        return () => clearTimeout(t);
+    }, [isDropTarget, isOpen, hasChildren, folder.id, onToggle]);
 
     return (
         <li>
-            <div className={`notes-row${isSelected ? ' is-selected' : ''}`} style={{ '--depth': depth }}>
+            <div
+                className={`notes-row${isSelected ? ' is-selected' : ''}${dnd.rowClasses({ type: 'folder', id: folder.id }, folder.id, 'tree')}`}
+                style={{ '--depth': depth }}
+                data-folder-color={folder.color || undefined}
+                {...dnd.source({ type: 'folder', id: folder.id })}
+                {...dnd.target(folder.id, 'tree')}
+            >
                 <button
                     type="button"
                     className="notes-row-toggle"
@@ -94,7 +132,7 @@ function FolderNode({ folder, index, depth, selection, expanded, onToggle, onSel
                     <Icon name="chevron" className={isOpen ? 'is-open' : ''} />
                 </button>
                 <button type="button" className="notes-row-main" onClick={() => onSelect('folder', folder.id)}>
-                    <Icon name={folder.todo_id ? 'task' : 'folder'} className={folder.todo_id ? 'is-task' : ''} />
+                    <FolderIcon folder={folder} />
                     <span className="notes-row-name">{folder.name}</span>
                     <span className="notes-row-count">{countNotesDeep(index, folder.id) || ''}</span>
                 </button>
@@ -123,10 +161,16 @@ function FolderNode({ folder, index, depth, selection, expanded, onToggle, onSel
 }
 
 function NoteRow({ note, depth, selection, onSelect, showFolder = null }) {
+    const dnd = useDnd();
     const isSelected = selection.type === 'note' && selection.id === note.id;
+    const item = { type: 'note', id: note.id };
     return (
         <li>
-            <div className={`notes-row notes-row--note${isSelected ? ' is-selected' : ''}`} style={{ '--depth': depth }}>
+            <div
+                className={`notes-row notes-row--note${isSelected ? ' is-selected' : ''}${dnd.rowClasses(item)}`}
+                style={{ '--depth': depth }}
+                {...dnd.source(item)}
+            >
                 <span className="notes-row-toggle" aria-hidden="true" />
                 <button type="button" className="notes-row-main" onClick={() => onSelect('note', note.id)}>
                     <Icon name="note" />
@@ -167,17 +211,50 @@ function MoveSelect({ index, value, exclude = new Set(), maxDepth = MAX_FOLDER_D
     );
 }
 
+// Each crumb is also a drop target: drag a card onto a parent folder to move it up.
 function Breadcrumbs({ path, onSelect }) {
+    const dnd = useDnd();
     return (
         <nav className="notes-crumbs" aria-label="Folder path">
-            <button type="button" onClick={() => onSelect(null)}>All notes</button>
+            <button type="button" className={dnd.rowClasses(null, null, 'crumb')} onClick={() => onSelect(null)} {...dnd.target(null, 'crumb')}>
+                All notes
+            </button>
             {path.map((folder) => (
                 <span key={folder.id}>
                     <span aria-hidden="true">/</span>
-                    <button type="button" onClick={() => onSelect('folder', folder.id)}>{folder.name}</button>
+                    <button
+                        type="button"
+                        className={dnd.rowClasses(null, folder.id, 'crumb')}
+                        onClick={() => onSelect('folder', folder.id)}
+                        {...dnd.target(folder.id, 'crumb')}
+                    >
+                        {folder.name}
+                    </button>
                 </span>
             ))}
         </nav>
+    );
+}
+
+// A subfolder (or task folder) shown as a card: opens on click, accepts drops, and
+// can itself be dragged.
+function FolderCard({ folder, index, onOpen, children }) {
+    const dnd = useDnd();
+    const count = countNotesDeep(index, folder.id);
+    const item = { type: 'folder', id: folder.id };
+    return (
+        <button
+            type="button"
+            className={`notes-card notes-card--folder${folder.todo_id ? ' notes-card--task' : ''}${dnd.rowClasses(item, folder.id, 'card')}`}
+            data-folder-color={folder.color || undefined}
+            onClick={onOpen}
+            {...dnd.source(item)}
+            {...dnd.target(folder.id, 'card')}
+        >
+            <span className="notes-card-title"><FolderIcon folder={folder} />{folder.name}</span>
+            <span className="notes-card-preview">{count} note{count === 1 ? '' : 's'}</span>
+            {children}
+        </button>
     );
 }
 
@@ -207,13 +284,20 @@ function TaskCard({ folder, compact = false }) {
     );
 }
 
-function NoteCard({ note, folderName, onOpen }) {
+function NoteCard({ note, folder = null, onOpen }) {
+    const dnd = useDnd();
+    const item = { type: 'note', id: note.id };
     return (
-        <button type="button" className="notes-card" onClick={onOpen}>
+        <button type="button" className={`notes-card${dnd.rowClasses(item)}`} onClick={onOpen} {...dnd.source(item)}>
             <span className="notes-card-title">{note.title}</span>
             <span className="notes-card-preview">{note.preview || 'Empty note'}</span>
             <span className="notes-card-meta">
-                {folderName && <span>{folderName}</span>}
+                {folder && (
+                    <span className="notes-card-folder" data-folder-color={folder.color || undefined}>
+                        {folder.color && <span className="notes-color-dot" aria-hidden="true" />}
+                        {folder.name}
+                    </span>
+                )}
                 <span>Edited {formatEdited(note.updated_at)}</span>
             </span>
         </button>
@@ -305,6 +389,10 @@ function Notes() {
     const [saveStatus, setSaveStatus] = useState('idle');
     const [renamingId, setRenamingId] = useState(null);
     const [pickerOpen, setPickerOpen] = useState(false);
+    const [settingsId, setSettingsId] = useState(null);
+    const [drag, setDrag] = useState(null);       // { type: 'note' | 'folder', id }
+    const [over, setOver] = useState(null);       // `${zone}:${folderId ?? 'root'}`
+    const [toast, setToast] = useState(null);     // { message, undo? }
 
     const selection = useMemo(() => {
         if (params.get('note')) return { type: 'note', id: Number(params.get('note')) };
@@ -426,14 +514,14 @@ function Notes() {
         setParams(type ? { [type]: String(id) } : {});
     }
 
-    function toggle(id) {
+    const toggle = useCallback((id) => {
         setExpanded((current) => {
             const next = new Set(current);
             if (next.has(id)) next.delete(id);
             else next.add(id);
             return next;
         });
-    }
+    }, []);
 
     async function run(action) {
         setActionError('');
@@ -464,6 +552,141 @@ function Notes() {
         select('folder', folder.id);
     });
 
+    // ----- Moving (drag and drop) -----
+    // Where an item currently lives: a note's folder, or a folder's parent (null = top).
+    const parentOf = useCallback((item) => {
+        if (!tree) return undefined;
+        if (item.type === 'note') return tree.notes.find((n) => n.id === item.id)?.folder_id;
+        return index.byId.get(item.id)?.parent_id;
+    }, [tree, index]);
+
+    // Whether `item` can be dropped into folder `targetId` (null = top level). Mirrors
+    // the server's checks so a bad drop shows the "not allowed" cursor up front.
+    const canDrop = useCallback((item, targetId) => {
+        if (!item || !index) return false;
+        const current = parentOf(item);
+        if (current === undefined || current === targetId) return false;
+        if (targetId !== null && !index.byId.has(targetId)) return false;
+        if (item.type === 'note') return true;
+        if (targetId === item.id || descendantIds(index.children, item.id).has(targetId)) return false;
+        const targetDepth = targetId === null ? 0 : folderPath(index.byId, targetId).length;
+        return targetDepth + subtreeHeight(index.children, item.id) <= MAX_FOLDER_DEPTH;
+    }, [index, parentOf]);
+
+    const showToast = useCallback((next) => setToast(next && { ...next, key: Date.now() }), []);
+
+    useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), TOAST_MS);
+        return () => clearTimeout(t);
+    }, [toast]);
+
+    // Moves right away on screen, then saves; a failed save puts the tree back.
+    const moveItem = useCallback(async (item, targetId, { undoable = true } = {}) => {
+        const from = parentOf(item);
+        const itemName = item.type === 'note'
+            ? tree.notes.find((n) => n.id === item.id)?.title
+            : index.byId.get(item.id)?.name;
+        const targetName = targetId === null ? 'All notes' : index.byId.get(targetId)?.name;
+
+        setActionError('');
+        setTree((current) => current && (item.type === 'note'
+            ? { ...current, notes: current.notes.map((n) => (n.id === item.id ? { ...n, folder_id: targetId } : n)) }
+            : { ...current, folders: current.folders.map((f) => (f.id === item.id ? { ...f, parent_id: targetId } : f)) }));
+        if (item.type === 'note') setNote((current) => (current?.id === item.id ? { ...current, folder_id: targetId } : current));
+        if (targetId !== null) setExpanded((current) => (current.has(targetId) ? current : new Set([...current, targetId])));
+
+        try {
+            if (item.type === 'note') await updateNote(authFetch, item.id, { folderId: targetId });
+            else await updateFolder(authFetch, item.id, { parentId: targetId });
+            showToast({
+                message: `Moved “${itemName}” to ${targetName}`,
+                undo: undoable ? () => moveItem(item, from, { undoable: false }) : null,
+            });
+        } catch (err) {
+            setActionError(err.message);
+            showToast(null);
+            await reloadTree();
+            if (item.type === 'note') setNote((current) => (current?.id === item.id ? { ...current, folder_id: from } : current));
+        }
+    }, [authFetch, index, parentOf, reloadTree, showToast, tree]);
+
+    // The item being dragged, set synchronously on dragstart (the `drag` state, used
+    // for styling, can lag a frame behind).
+    const dragRef = useRef(null);
+
+    const endDrag = useCallback(() => {
+        dragRef.current = null;
+        setDrag(null);
+        setOver(null);
+    }, []);
+
+    const dnd = useMemo(() => {
+        const keyFor = (targetId, zone) => `${zone}:${targetId ?? 'root'}`;
+        return {
+            drag,
+            isOver: (targetId, zone) => over === keyFor(targetId, zone),
+            // Class names for a source and/or target element.
+            rowClasses: (item, targetId, zone) => {
+                let classes = '';
+                if (item && drag && drag.type === item.type && drag.id === item.id) classes += ' is-dragging';
+                if (zone && over === keyFor(targetId, zone)) classes += ' is-drop-target';
+                return classes;
+            },
+            source: (item) => ({
+                draggable: true,
+                onDragStart: (e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData(DRAG_TYPE, `${item.type}:${item.id}`);
+                    dragRef.current = item;
+                    // Styling waits until the browser has taken its drag image, so the
+                    // source's "is-dragging" fade doesn't end up in the picture.
+                    requestAnimationFrame(() => setDrag(dragRef.current));
+                },
+                onDragEnd: endDrag,
+            }),
+            target: (targetId, zone) => ({
+                onDragOver: (e) => {
+                    if (!canDrop(dragRef.current, targetId)) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = 'move';
+                    const key = keyFor(targetId, zone);
+                    if (over !== key) setOver(key);
+                },
+                onDragLeave: (e) => {
+                    if (e.currentTarget.contains(e.relatedTarget)) return;
+                    const key = keyFor(targetId, zone);
+                    setOver((current) => (current === key ? null : current));
+                },
+                onDrop: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const item = dragRef.current;
+                    endDrag();
+                    if (canDrop(item, targetId)) moveItem(item, targetId);
+                },
+            }),
+        };
+    }, [drag, over, canDrop, moveItem, endDrag]);
+
+    // ----- Folder settings -----
+    const setFolderColor = (folderId, color) => {
+        setTree((current) => current && {
+            ...current,
+            folders: current.folders.map((f) => (f.id === folderId ? { ...f, color } : f)),
+        });
+        run(async () => {
+            try {
+                await updateFolder(authFetch, folderId, { color });
+            } catch (err) {
+                await reloadTree();
+                throw err;
+            }
+        });
+    };
+
     // ----- Render -----
     const q = search.trim().toLowerCase();
     const searchResults = index && q
@@ -491,6 +714,7 @@ function Notes() {
                 onNewNote={newNote}
                 onNewFolder={newFolder}
                 onChanged={reloadTree}
+                onSettings={() => setSettingsId(selectedFolder.id)}
                 run={run}
             />
         );
@@ -529,8 +753,11 @@ function Notes() {
         main = <Overview tree={tree} index={index} onSelect={select} onNewNote={newNote} onNewFolder={newFolder} onImport={() => setPickerOpen(true)} />;
     }
 
+    const settingsFolder = index && settingsId ? index.byId.get(settingsId) : null;
+
     return (
-        <div className="dash notes-app">
+        <DndContext.Provider value={dnd}>
+        <div className={`dash notes-app${drag ? ' is-dragging-item' : ''}`}>
             <AppTopbar />
             <main className={`notes-main${selection.type ? ' has-selection' : ''}`}>
                 <aside className="panel notes-sidebar" aria-label="Notes and folders">
@@ -560,7 +787,11 @@ function Notes() {
                     ) : (
                         <ul className="notes-tree notes-tree--root">
                             <li>
-                                <div className={`notes-row${!selection.type ? ' is-selected' : ''}`} style={{ '--depth': 0 }}>
+                                <div
+                                    className={`notes-row${!selection.type ? ' is-selected' : ''}${dnd.rowClasses(null, null, 'tree')}`}
+                                    style={{ '--depth': 0 }}
+                                    {...dnd.target(null, 'tree')}
+                                >
                                     <span className="notes-row-toggle" aria-hidden="true" />
                                     <button type="button" className="notes-row-main" onClick={() => select(null)}>
                                         <Icon name="note" />
@@ -599,7 +830,35 @@ function Notes() {
             </main>
             <SiteFooter compact />
             <TaskPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={importTask} />
+            {settingsFolder && (
+                <FolderSettings
+                    key={settingsFolder.id}
+                    folder={settingsFolder}
+                    noteCount={countNotesDeep(index, settingsFolder.id)}
+                    onClose={() => setSettingsId(null)}
+                    onColor={(color) => setFolderColor(settingsFolder.id, color)}
+                />
+            )}
+            {toast && (
+                <div key={toast.key} className="notes-toast" role="status">
+                    <span>{toast.message}</span>
+                    {toast.undo && (
+                        <button
+                            type="button"
+                            className="link-button"
+                            onClick={() => {
+                                const undo = toast.undo;
+                                setToast(null);
+                                undo();
+                            }}
+                        >
+                            Undo
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
+        </DndContext.Provider>
     );
 }
 
@@ -636,13 +895,11 @@ function Overview({ tree, index, onSelect, onNewNote, onNewFolder, onImport }) {
                         {taskFolders.map((f) => {
                             const status = taskStatus(f);
                             return (
-                                <button type="button" key={f.id} className="notes-card notes-card--task" onClick={() => onSelect('folder', f.id)}>
-                                    <span className="notes-card-title"><Icon name="task" className="is-task" />{f.name}</span>
-                                    <span className="notes-card-preview">{countNotesDeep(index, f.id)} note{countNotesDeep(index, f.id) === 1 ? '' : 's'}</span>
+                                <FolderCard key={f.id} folder={f} index={index} onOpen={() => onSelect('folder', f.id)}>
                                     <span className="notes-card-meta">
                                         <span className={`notes-task-status${status.tone ? ` is-${status.tone}` : ''}`}>{status.label}</span>
                                     </span>
-                                </button>
+                                </FolderCard>
                             );
                         })}
                     </div>
@@ -654,7 +911,7 @@ function Overview({ tree, index, onSelect, onNewNote, onNewFolder, onImport }) {
             ) : (
                 <div className="notes-cards">
                     {tree.notes.slice(0, 12).map((n) => (
-                        <NoteCard key={n.id} note={n} folderName={index.byId.get(n.folder_id)?.name} onOpen={() => onSelect('note', n.id)} />
+                        <NoteCard key={n.id} note={n} folder={index.byId.get(n.folder_id)} onOpen={() => onSelect('note', n.id)} />
                     ))}
                 </div>
             )}
@@ -662,8 +919,9 @@ function Overview({ tree, index, onSelect, onNewNote, onNewFolder, onImport }) {
     );
 }
 
-function FolderView({ folder, index, autoRename, onRenamed, onSelect, onNewNote, onNewFolder, onChanged, run }) {
+function FolderView({ folder, index, autoRename, onRenamed, onSelect, onNewNote, onNewFolder, onChanged, onSettings, run }) {
     const { authFetch } = useAuth();
+    const dnd = useDnd();
     const [name, setName] = useState(folder.name);
     const path = folderPath(index.byId, folder.id);
     const depth = path.length;
@@ -695,11 +953,12 @@ function FolderView({ folder, index, autoRename, onRenamed, onSelect, onNewNote,
 
     const total = countNotesDeep(index, folder.id);
 
+    // The whole view is a drop target too: drag a note from the sidebar into this folder.
     return (
-        <div className="notes-folder">
+        <div className={`notes-folder${dnd.rowClasses(null, folder.id, 'view')}`} {...dnd.target(folder.id, 'view')}>
             <Breadcrumbs path={path.slice(0, -1)} onSelect={onSelect} />
-            <div className="notes-view-head">
-                <Icon name={folder.todo_id ? 'task' : 'folder'} className={`notes-view-icon${folder.todo_id ? ' is-task' : ''}`} />
+            <div className={`notes-view-head${folder.color ? ' notes-view-head--colored' : ''}`} data-folder-color={folder.color || undefined}>
+                <FolderIcon folder={folder} className="notes-view-icon" />
                 <input
                     ref={inputRef}
                     className="notes-view-title notes-title-input"
@@ -716,6 +975,9 @@ function FolderView({ folder, index, autoRename, onRenamed, onSelect, onNewNote,
                         }
                     }}
                 />
+                <button type="button" className="button-ghost notes-settings-button" onClick={onSettings}>
+                    <Icon name="settings" /> Settings
+                </button>
             </div>
 
             {folder.todo_id && <TaskCard folder={folder} />}
@@ -772,10 +1034,7 @@ function FolderView({ folder, index, autoRename, onRenamed, onSelect, onNewNote,
             ) : (
                 <div className="notes-cards">
                     {subfolders.map((f) => (
-                        <button type="button" key={f.id} className="notes-card notes-card--folder" onClick={() => onSelect('folder', f.id)}>
-                            <span className="notes-card-title"><Icon name={f.todo_id ? 'task' : 'folder'} className={f.todo_id ? 'is-task' : ''} />{f.name}</span>
-                            <span className="notes-card-preview">{countNotesDeep(index, f.id)} note{countNotesDeep(index, f.id) === 1 ? '' : 's'}</span>
-                        </button>
+                        <FolderCard key={f.id} folder={f} index={index} onOpen={() => onSelect('folder', f.id)} />
                     ))}
                     {notes.map((n) => (
                         <NoteCard key={n.id} note={n} onOpen={() => onSelect('note', n.id)} />

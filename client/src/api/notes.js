@@ -73,11 +73,12 @@ export async function createFolder(authFetch, { name, parentId = null }) {
     return data.folder;
 }
 
-// Any of { name, parentId } (parentId null = top level).
-export async function updateFolder(authFetch, id, { name, parentId } = {}) {
+// Any of { name, parentId, color } (parentId null = top level; color null = default).
+export async function updateFolder(authFetch, id, { name, parentId, color } = {}) {
     const body = {};
     if (name !== undefined) body.name = name;
     if (parentId !== undefined) body.parent_id = parentId;
+    if (color !== undefined) body.color = color;
     const data = await authFetch(`/notes/folders/${id}`, { method: 'PUT', body: JSON.stringify(body) });
     return data.folder;
 }

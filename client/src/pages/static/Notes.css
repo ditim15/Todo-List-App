@@ -984,6 +984,365 @@
     font-weight: 600;
 }
 
+/* ---------- Folder colours ----------
+   Palette for Folder settings (keys in components/notes/folderColors.js). Each colour
+   has a soft background, a border, and a deeper "ink" for the folder icon and dots.
+   Body text stays --ink on every background (all pairs >= 4.5:1). */
+:root {
+    --fc-sage-bg: #e4eedf;     --fc-sage-line: #c3d6b9;     --fc-sage-ink: #4f7a3f;
+    --fc-sky-bg: #dfeaf5;      --fc-sky-line: #b9cfe6;      --fc-sky-ink: #2f6aa3;
+    --fc-lavender-bg: #ebe4f4; --fc-lavender-line: #d2c4e6; --fc-lavender-ink: #6b4fa0;
+    --fc-rose-bg: #f6e0e3;     --fc-rose-line: #e6bcc2;     --fc-rose-ink: #a83f52;
+    --fc-peach-bg: #fae5d6;    --fc-peach-line: #eec4a6;    --fc-peach-ink: #b05a22;
+    --fc-butter-bg: #f7efc9;   --fc-butter-line: #e5d58f;   --fc-butter-ink: #8a6d0a;
+    --fc-clay-bg: #efe2d7;     --fc-clay-line: #d9c1ad;     --fc-clay-ink: #8a5a3b;
+    --fc-slate-bg: #e3e6ea;    --fc-slate-line: #c4cad2;    --fc-slate-ink: #4d5866;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --fc-sage-bg: #223025;     --fc-sage-line: #3a4f3b;     --fc-sage-ink: #9fcf8f;
+        --fc-sky-bg: #1d2a38;      --fc-sky-line: #344a62;      --fc-sky-ink: #8fbbe6;
+        --fc-lavender-bg: #2a2338; --fc-lavender-line: #463a5e; --fc-lavender-ink: #bda6e6;
+        --fc-rose-bg: #3a2228;     --fc-rose-line: #5e3a42;     --fc-rose-ink: #eaa0ad;
+        --fc-peach-bg: #3a281c;    --fc-peach-line: #5e4130;    --fc-peach-ink: #f0b48a;
+        --fc-butter-bg: #34301a;   --fc-butter-line: #57502c;   --fc-butter-ink: #e6cf74;
+        --fc-clay-bg: #33271f;     --fc-clay-line: #514035;     --fc-clay-ink: #d7ae8f;
+        --fc-slate-bg: #24272c;    --fc-slate-line: #3d434b;    --fc-slate-ink: #aeb7c3;
+    }
+}
+
+:root[data-theme="dark"] {
+    --fc-sage-bg: #223025;     --fc-sage-line: #3a4f3b;     --fc-sage-ink: #9fcf8f;
+    --fc-sky-bg: #1d2a38;      --fc-sky-line: #344a62;      --fc-sky-ink: #8fbbe6;
+    --fc-lavender-bg: #2a2338; --fc-lavender-line: #463a5e; --fc-lavender-ink: #bda6e6;
+    --fc-rose-bg: #3a2228;     --fc-rose-line: #5e3a42;     --fc-rose-ink: #eaa0ad;
+    --fc-peach-bg: #3a281c;    --fc-peach-line: #5e4130;    --fc-peach-ink: #f0b48a;
+    --fc-butter-bg: #34301a;   --fc-butter-line: #57502c;   --fc-butter-ink: #e6cf74;
+    --fc-clay-bg: #33271f;     --fc-clay-line: #514035;     --fc-clay-ink: #d7ae8f;
+    --fc-slate-bg: #24272c;    --fc-slate-line: #3d434b;    --fc-slate-ink: #aeb7c3;
+}
+
+[data-folder-color="sage"]     { --folder-bg: var(--fc-sage-bg);     --folder-line: var(--fc-sage-line);     --folder-ink: var(--fc-sage-ink); }
+[data-folder-color="sky"]      { --folder-bg: var(--fc-sky-bg);      --folder-line: var(--fc-sky-line);      --folder-ink: var(--fc-sky-ink); }
+[data-folder-color="lavender"] { --folder-bg: var(--fc-lavender-bg); --folder-line: var(--fc-lavender-line); --folder-ink: var(--fc-lavender-ink); }
+[data-folder-color="rose"]     { --folder-bg: var(--fc-rose-bg);     --folder-line: var(--fc-rose-line);     --folder-ink: var(--fc-rose-ink); }
+[data-folder-color="peach"]    { --folder-bg: var(--fc-peach-bg);    --folder-line: var(--fc-peach-line);    --folder-ink: var(--fc-peach-ink); }
+[data-folder-color="butter"]   { --folder-bg: var(--fc-butter-bg);   --folder-line: var(--fc-butter-line);   --folder-ink: var(--fc-butter-ink); }
+[data-folder-color="clay"]     { --folder-bg: var(--fc-clay-bg);     --folder-line: var(--fc-clay-line);     --folder-ink: var(--fc-clay-ink); }
+[data-folder-color="slate"]    { --folder-bg: var(--fc-slate-bg);    --folder-line: var(--fc-slate-line);    --folder-ink: var(--fc-slate-ink); }
+
+/* Coloured folder glyph: tinted fill, deeper outline. */
+[data-folder-color] .notes-folder-glyph {
+    color: var(--folder-ink);
+}
+
+[data-folder-color] .notes-folder-glyph path {
+    fill: color-mix(in srgb, var(--folder-ink) 22%, transparent);
+}
+
+/* Sidebar rows: a soft band of the colour. Selection keeps its own green. */
+.notes-row[data-folder-color] {
+    background: var(--folder-bg);
+    margin-bottom: 2px;
+}
+
+.notes-row[data-folder-color]:hover {
+    background: color-mix(in srgb, var(--folder-bg) 70%, var(--folder-line));
+}
+
+.notes-row[data-folder-color].is-selected {
+    background: var(--folder-bg);
+    box-shadow: inset 0 0 0 2px var(--folder-ink);
+}
+
+/* Cards and the folder header. */
+.notes-card[data-folder-color] {
+    background: var(--folder-bg);
+    border-color: var(--folder-line);
+}
+
+.notes-card[data-folder-color]:hover {
+    border-color: var(--folder-ink);
+}
+
+.notes-view-head--colored {
+    padding: 12px 14px;
+    background: var(--folder-bg);
+    border: 1px solid var(--folder-line);
+    border-radius: 10px;
+}
+
+.notes-color-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: var(--folder-ink);
+    vertical-align: 0.05em;
+}
+
+.notes-settings-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    height: 34px;
+    background: var(--surface);
+}
+
+/* ---------- Drag and drop ---------- */
+[draggable="true"] {
+    -webkit-user-drag: element;
+}
+
+.notes-row.is-dragging,
+.notes-card.is-dragging {
+    opacity: 0.45;
+}
+
+/* While dragging, hovering doesn't move cards, so drop targets stay put. */
+.is-dragging-item .notes-card:hover {
+    transform: none;
+}
+
+.notes-row.is-drop-target,
+.notes-row[data-folder-color].is-drop-target {
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.notes-card.is-drop-target {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: translateY(-1px);
+}
+
+.notes-crumbs button.is-drop-target {
+    background: var(--accent-soft);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.notes-folder {
+    border-radius: 10px;
+    transition: box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+
+.notes-folder.is-drop-target {
+    background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-soft) 45%, transparent), 0 0 0 10px var(--accent);
+}
+
+/* "Moved ... · Undo" confirmation. */
+.notes-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: calc(100vw - 32px);
+    padding: 10px 16px;
+    background: var(--band);
+    color: var(--band-ink);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    font-size: 0.88em;
+    transform: translateX(-50%);
+    animation: notes-toast-in var(--dur-base) var(--ease);
+}
+
+.notes-toast > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notes-toast .link-button {
+    margin: 0;
+    color: var(--band-accent);
+    font-size: 1em;
+}
+
+@keyframes notes-toast-in {
+    from { opacity: 0; transform: translate(-50%, 8px); }
+}
+
+/* ---------- Folder settings dialog ---------- */
+.folder-settings {
+    width: min(620px, calc(100vw - 32px));
+}
+
+.folder-settings-layout {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 20px;
+    min-height: 300px;
+}
+
+.folder-settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-right: 12px;
+    border-right: 1px solid var(--line);
+}
+
+.folder-settings-nav button {
+    height: 36px;
+    padding: 0 10px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: 0.92em;
+    text-align: left;
+    cursor: pointer;
+}
+
+.folder-settings-nav button:hover {
+    background: var(--surface-hover);
+    color: var(--ink);
+}
+
+.folder-settings-nav button.is-active {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.folder-settings-nav button:focus-visible,
+.folder-swatch:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.folder-settings-body .notes-section-label:first-child {
+    margin-top: 4px;
+}
+
+.folder-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+}
+
+.folder-swatch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 10px;
+    background: var(--folder-bg, var(--canvas));
+    border: 1px solid var(--folder-line, var(--line));
+    border-radius: 8px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.folder-swatch:hover {
+    border-color: var(--folder-ink, var(--line-strong));
+}
+
+.folder-swatch[aria-checked="true"] {
+    box-shadow: 0 0 0 2px var(--folder-ink, var(--accent));
+    font-weight: 600;
+}
+
+.folder-swatch-chip {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--folder-ink);
+}
+
+.folder-swatch--none .folder-swatch-chip {
+    background: none;
+    border: 1.5px dashed var(--ink-3);
+}
+
+.folder-settings-preview {
+    max-width: 260px;
+    min-height: 0;
+    cursor: default;
+}
+
+.folder-settings-preview:hover {
+    transform: none;
+}
+
+.folder-sync-list {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.folder-sync-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.folder-sync-row + .folder-sync-row {
+    border-top: 1px solid var(--line);
+}
+
+.folder-sync-name {
+    flex: 1;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 0.92em;
+}
+
+.folder-sync-badge {
+    padding: 2px 8px;
+    background: var(--surface-hover);
+    border-radius: var(--radius-pill);
+    color: var(--ink-3);
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.folder-sync-row .button-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+    .folder-settings-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .folder-settings-nav {
+        flex-direction: row;
+        padding: 0 0 8px;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .notes-settings-button {
+        width: 34px;
+        padding: 0;
+        justify-content: center;
+        font-size: 0;
+    }
+
+    .notes-settings-button .notes-icon {
+        font-size: initial;
+    }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
     .notes-main {
@@ -1029,7 +1388,12 @@
         transition: none;
     }
 
-    .notes-card:hover {
+    .notes-card:hover,
+    .notes-card.is-drop-target {
         transform: none;
+    }
+
+    .notes-toast {
+        animation: none;
     }
 }
