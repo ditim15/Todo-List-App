@@ -20,6 +20,12 @@ function supportAddress() {
     return process.env.SUPPORT_EMAIL || 'support@doneyet.app';
 }
 
+// Contact messages come from the support address rather than EMAIL_FROM (reminders@),
+// so they're easy to tell apart from reminders and account emails in the inbox.
+function contactSender() {
+    return process.env.CONTACT_FROM || `DoneYet? Contact form <${supportAddress()}>`;
+}
+
 // Collapses whitespace (including line breaks) so a value can't add lines to the
 // email subject or headers.
 function singleLine(value) {
@@ -59,6 +65,7 @@ const submitContact = async (req, res, next) => {
         const preview = singleLine(message).slice(0, 60);
         try {
             await sendEmail({
+                from: contactSender(),
                 to: supportAddress(),
                 replyTo: `${name.replace(/["<>]/g, '')} <${email}>`,
                 subject: `[Contact] ${topic}: ${preview}${message.length > 60 ? '…' : ''}`,

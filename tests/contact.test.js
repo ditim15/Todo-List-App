@@ -29,6 +29,7 @@ describe('contact form', () => {
         assert.equal(sentEmails.length, 1);
         const [email] = sentEmails;
         assert.equal(email.to, 'support@test.example');
+        assert.equal(email.from, 'DoneYet? Contact form <support@test.example>', 'sent from support, not EMAIL_FROM');
         assert.equal(email.replyTo, 'Sam Bcc: victim@example.com <sam@example.com>', 'line breaks are collapsed');
         assert.ok(!email.subject.includes('\n'));
         assert.match(email.subject, /^\[Contact\] Bug report: The calendar skips Sunday/);

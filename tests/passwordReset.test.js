@@ -32,6 +32,8 @@ describe('forgot password', () => {
         assert.equal(unknown.body.message, known.body.message);
         assert.equal(sentEmails.length, 1, 'only the real account gets an email');
         assert.equal(sentEmails[0].to, user.email);
+        assert.equal(sentEmails[0].from, process.env.EMAIL_FROM || 'DoneYet? <reminders@doneyet.local>',
+            'account emails use EMAIL_FROM, not the contact sender');
 
         const again = await forgot(user.email);
         assert.equal(again.status, 200);

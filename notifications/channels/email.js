@@ -96,16 +96,18 @@ function getTransporter() {
     return transporterPromise;
 }
 
-// Sends one message: { to, subject, text, html, replyTo? }. `replyTo` makes the
-// recipient's Reply button answer someone other than EMAIL_FROM (the contact form uses
-// it so support can reply straight to the person who wrote in).
-export async function sendEmail({ to, subject, text, html, replyTo }) {
+// Sends one message: { to, subject, text, html, replyTo?, from? }. `replyTo` makes the
+// recipient's Reply button answer someone other than the sender (the contact form uses
+// it so support can reply straight to the person who wrote in). `from` overrides
+// EMAIL_FROM, the default sender for reminders and account emails; it must be on a
+// domain the SMTP provider has verified.
+export async function sendEmail({ to, subject, text, html, replyTo, from: fromOverride }) {
     const { mode, transporter } = await getTransporter();
-    const from = process.env.EMAIL_FROM || 'DoneYet? <reminders@doneyet.local>';
+    const from = fromOverride || process.env.EMAIL_FROM || 'DoneYet? <reminders@doneyet.local>';
     const info = await transporter.sendMail({ from, to, subject, text, html, replyTo });
 
     if (mode === 'memory') {
-        sentEmails.push({ to, subject, text, html, replyTo });
+        sentEmails.push({ from, to, subject, text, html, replyTo });
     } else if (mode === 'console') {
         console.log(`[email] (console mode, not sent)\n  To: ${to}\n  Subject: ${subject}\n\n${text}\n`);
     } else if (mode === 'ethereal') {
