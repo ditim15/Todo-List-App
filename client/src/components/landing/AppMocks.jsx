@@ -47,18 +47,60 @@ function MockProgress({ value, max }) {
     );
 }
 
-export function DeadlinesMock() {
+// The landing page's one visual device: a slightly uneven, hand-drawn line that
+// crosses finished work out. It draws itself in on mount (static with reduced motion).
+export function Strike({ className = '', style }) {
     return (
-        <MockWindow title="Today">
-            <div className="mock-stats">
-                <div><span>Due today</span><strong>2</strong></div>
-                <div><span>Overdue</span><strong>1</strong></div>
-                <div><span>Done</span><strong>68%</strong></div>
+        <svg className={`strike ${className}`.trim()} style={style} viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5" pathLength="1" />
+        </svg>
+    );
+}
+
+const PLANNER = [
+    { day: 'Mon', title: 'Problem set 6', list: 'Calculus II', priority: 'medium', done: true },
+    { day: 'Tue', title: 'Read chapters 7–8', list: 'History 210', priority: 'low', done: true },
+    { day: 'Wed', title: 'Lab report: cellular respiration', list: 'Biology 101', priority: 'high', done: true },
+    { day: 'Thu', title: 'History essay: first draft', list: 'History 210', priority: 'high', done: false, next: true },
+    { day: 'Fri', title: 'Group project slides', list: 'Marketing 120', priority: 'medium', done: false },
+];
+
+// Hero preview: one planner page for the week, with finished tasks struck through in
+// sequence and the next task to work on marked.
+export function PlannerMock() {
+    let strikeIndex = 0;
+    return (
+        <div className="planner" aria-hidden="true">
+            <div className="planner-head">
+                <span className="planner-title">Week 9</span>
+                <span className="planner-progress">3 of 5 done</span>
             </div>
-            <MockTask title="Lab report: cellular respiration" list="Biology 101" priority="high" due="Due today" />
-            <MockTask title="Problem set 6" list="Calculus II" priority="medium" due="Overdue · Mon" overdue />
-            <MockTask title="Read chapters 7–8" list="History 210" priority="low" due="Due Fri" />
-        </MockWindow>
+            <ul className="planner-rows">
+                {PLANNER.map((row) => {
+                    const delay = row.done ? strikeIndex++ : 0;
+                    return (
+                        <li key={row.title} className={`planner-row${row.done ? ' is-done' : ''}${row.next ? ' is-next' : ''}`}>
+                            <span className="planner-day">{row.day}</span>
+                            <span className={`mock-check${row.done ? ' mock-check--on' : ''}`} />
+                            <span className="planner-task">
+                                <span className="planner-task-title">
+                                    {row.title}
+                                    {row.done && <Strike style={{ '--strike-step': delay }} />}
+                                </span>
+                                <span className="mock-task-meta">
+                                    <span className="mock-chip">{row.list}</span>
+                                    <span className="mock-priority">
+                                        <Dot priority={row.priority} />
+                                        {row.priority[0].toUpperCase() + row.priority.slice(1)}
+                                    </span>
+                                </span>
+                            </span>
+                            {row.next && <span className="planner-next">Up next</span>}
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
     );
 }
 

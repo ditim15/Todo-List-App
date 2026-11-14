@@ -1,36 +1,102 @@
-/* ---------- Theme tokens ----------
+/* ---------- Design tokens ----------
+   Direction: "warm and decisive" — a paper planner, not a SaaS template. Warm paper
+   neutrals, one ink-green accent (the colour of a ticked box), a soft serif for
+   headlines over the system sans for reading. The one visual device is the hand-drawn
+   strike line that crosses finished work out (see .strike in pages/static/Splash.css).
+
    Light is the default. Dark applies when the user picks it (data-theme="dark" on
    <html>), or when they haven't picked and their system prefers dark. The saved choice
-   is applied before React loads by the inline script in index.html. */
+   is applied before React loads by the inline script in index.html.
+
+   Every colour pair used for text was checked for contrast: body text >= 4.5:1. */
 :root {
-  --canvas: #f4f5f7;
-  --surface: #ffffff;
-  --surface-hover: #eef0f3;
-  --line: #e2e5ea;
-  --ink: #14161b;
-  --ink-2: #545b69;
-  --ink-3: #737b88;
-  --accent: #2563eb;
-  --accent-hover: #1d4fd8;
-  --accent-soft: #e9effe;
+  /* Colour: 1 accent, 3 neutrals (canvas/surface/line) plus 3 ink steps. */
+  --canvas: #f5f1e8;
+  --surface: #fffcf5;
+  --surface-hover: #efe9dc;
+  --line: #e2dac8;
+  --line-strong: #cfc5ae;
+  --ink: #1d1b16;
+  --ink-2: #4d483e;
+  --ink-3: #686254;
+  --accent: #1e6a48;
+  --accent-hover: #175539;
+  --accent-soft: #e3eee5;
   --on-accent: #ffffff;
-  --track: #dce5fb;
-  --critical: #d03b3b;
-  --critical-text: #b42323;
-  --warning: #e8a317;
+  --track: #cfe2d4;
+  --critical: #c0392b;
+  --critical-text: #b3261e;
+  --warning: #d9940f;
   /* Priority (severity) colors. Validated as a set; always shown with a text label. */
-  --prio-high: #d03b3b;
-  --prio-medium: #e8a317;
-  --prio-low: #3b6fd9;
-  --radius: 10px;
-  --shadow: 0 1px 2px rgba(17, 19, 24, 0.05);
-  --shadow-lg: 0 10px 30px rgba(17, 19, 24, 0.08);
+  --prio-high: #c0392b;
+  --prio-medium: #d9940f;
+  --prio-low: #3567c9;
+  /* Inverted "ink" band used once per page for rhythm. */
+  --band: #1d1b16;
+  --band-ink: #f5f1e8;
+  --band-ink-2: #c9c2b2;
+  --band-line: #3a362d;
+  --band-accent: #82d3a4;
+
+  /* Type: one display face, one text face. Scale jumps hard: 12/14/16/20/28/40/64. */
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-text: var(--sans);
+  /* Wordmark only (components/brand/NudgeLogo). It is the logo, not a third type family. */
+  --brand-font: 'Fredoka Variable', 'Fredoka', ui-rounded, var(--sans);
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 40px;
+  --text-3xl: 64px;
+  --leading-tight: 1.05;
+  --leading-snug: 1.2;
+  --leading-body: 1.6;
+
+  /* Spacing: 4px grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* Shape, depth, motion, layout. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --radius: var(--radius-md);
+  --border: 1px;
+  --border-thick: 2px;
+  --shadow: 0 1px 2px rgba(29, 27, 22, 0.06);
+  --shadow-lg: 0 12px 32px rgba(29, 27, 22, 0.1);
+  /* Flat offset shadow, like a card sitting on a desk. Hero/preview cards only. */
+  --shadow-paper: 8px 8px 0 var(--line);
+  /* Flat "press" shadow under the primary button, and the ruled-paper line colour. */
+  --press: var(--ink);
+  --rule: color-mix(in srgb, var(--line) 60%, transparent);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 600ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  --container: 1200px;
+  --measure: 560px;
+  --gutter: var(--space-5);
+  --nav-height: 64px;
+  --control-sm: 36px;
+  --control-height: 44px;
+  --control-lg: 52px;
+
   /* Native controls (date pickers, scrollbars, checkboxes) follow the theme. */
   color-scheme: light;
-
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  /* Wordmark only (components/brand/NudgeLogo). Loaded in main.jsx. */
-  --brand-font: 'Fredoka Variable', 'Fredoka', ui-rounded, var(--sans);
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -44,56 +110,78 @@
   @media (max-width: 1024px) {
     font-size: 16px;
   }
+
+  @media (max-width: 640px) {
+    --gutter: var(--space-4);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --canvas: #111318;
-    --surface: #1a1d24;
-    --surface-hover: #232731;
-    --line: #2b2f3a;
-    --ink: #eceef2;
-    --ink-2: #a5abb8;
-    --ink-3: #7f8694;
-    --accent: #7aa2f7;
-    --accent-hover: #93b4f9;
-    --accent-soft: #1f2a44;
-    --on-accent: #0b1020;
-    --track: #273252;
-    --critical: #e05252;
-    --critical-text: #f08a8a;
-    --warning: #fab219;
-    --prio-high: #e05252;
-    --prio-medium: #fab219;
-    --prio-low: #5b8def;
+    --canvas: #14130f;
+    --surface: #1d1b16;
+    --surface-hover: #28251e;
+    --line: #353128;
+    --line-strong: #4a4539;
+    --ink: #f2eee4;
+    --ink-2: #bcb5a5;
+    --ink-3: #a0988a;
+    --accent: #82d3a4;
+    --accent-hover: #9fdfba;
+    --accent-soft: #1e3227;
+    --on-accent: #0c1d13;
+    --track: #2a4535;
+    --critical: #e5675a;
+    --critical-text: #f08a7e;
+    --warning: #f0b33c;
+    --prio-high: #e5675a;
+    --prio-medium: #f0b33c;
+    --prio-low: #6b95ec;
+    --band: #10241a;
+    --band-ink: #f2eee4;
+    --band-ink-2: #bcb5a5;
+    --band-line: #24402f;
+    --band-accent: #82d3a4;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+    --shadow-paper: 8px 8px 0 #0a0907;
+    --press: #2f5a42;
+    --rule: color-mix(in srgb, var(--line) 45%, transparent);
     color-scheme: dark;
   }
 }
 
 /* Same values as above, for an explicit dark choice. Keep the two blocks in sync. */
 :root[data-theme="dark"] {
-  --canvas: #111318;
-  --surface: #1a1d24;
-  --surface-hover: #232731;
-  --line: #2b2f3a;
-  --ink: #eceef2;
-  --ink-2: #a5abb8;
-  --ink-3: #7f8694;
-  --accent: #7aa2f7;
-  --accent-hover: #93b4f9;
-  --accent-soft: #1f2a44;
-  --on-accent: #0b1020;
-  --track: #273252;
-  --critical: #e05252;
-  --critical-text: #f08a8a;
-  --warning: #fab219;
-  --prio-high: #e05252;
-  --prio-medium: #fab219;
-  --prio-low: #5b8def;
+  --canvas: #14130f;
+  --surface: #1d1b16;
+  --surface-hover: #28251e;
+  --line: #353128;
+  --line-strong: #4a4539;
+  --ink: #f2eee4;
+  --ink-2: #bcb5a5;
+  --ink-3: #a0988a;
+  --accent: #82d3a4;
+  --accent-hover: #9fdfba;
+  --accent-soft: #1e3227;
+  --on-accent: #0c1d13;
+  --track: #2a4535;
+  --critical: #e5675a;
+  --critical-text: #f08a7e;
+  --warning: #f0b33c;
+  --prio-high: #e5675a;
+  --prio-medium: #f0b33c;
+  --prio-low: #6b95ec;
+  --band: #10241a;
+  --band-ink: #f2eee4;
+  --band-ink-2: #bcb5a5;
+  --band-line: #24402f;
+  --band-accent: #82d3a4;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-paper: 8px 8px 0 #0a0907;
+  --press: #2f5a42;
+  --rule: color-mix(in srgb, var(--line) 45%, transparent);
   color-scheme: dark;
 }
 
@@ -139,6 +227,16 @@ h3 {
   color: var(--ink);
 }
 
+/* Page-level headings use the display face everywhere; h3 stays in the text face
+   inside the app so dense UI labels remain crisp. Landing/auth opt h3 in. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
 p {
   margin: 0;
 }
@@ -147,83 +245,96 @@ a {
   color: var(--accent);
 }
 
-/* ---------- Shared auth-page layout (Login, Register, Not Found) ---------- */
+/* ---------- Shared auth-page layout (Login, Register, Not Found) ----------
+   Fixed 16px base (see .auth-shell), so values come straight from the token scale. */
 .auth-page {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 24px 16px;
+  padding: var(--space-5) var(--space-4);
   box-sizing: border-box;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 380px;
-  padding: 32px 28px;
+  max-width: 400px;
+  padding: var(--space-6);
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: var(--shadow-lg);
+  border: var(--border) solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
   box-sizing: border-box;
 }
 
 .auth-card h1 {
-  margin: 0 0 4px;
-  font-size: 1.5rem;
-  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
 }
 
 .auth-subtitle {
-  margin-bottom: 24px;
-  font-size: 0.9rem;
+  margin-bottom: var(--space-5);
+  font-size: var(--text-sm);
   color: var(--ink-3);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .auth-form label {
-  margin-top: 8px;
-  font-size: 0.8rem;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--ink);
 }
 
 .auth-form input {
-  height: 42px;
-  padding: 0 12px;
+  height: var(--control-height);
+  padding: 0 var(--space-3);
   background: var(--canvas);
   color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: var(--border) solid var(--line-strong);
+  border-radius: var(--radius-md);
   font: inherit;
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   box-sizing: border-box;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 
-.auth-form input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
+.auth-form input:hover {
+  border-color: var(--ink-3);
+}
+
+.auth-form input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .auth-form button {
-  margin-top: 18px;
-  height: 44px;
+  margin-top: var(--space-4);
+  height: var(--control-height);
   background: var(--accent);
   color: var(--on-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 
 .auth-form button:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+.auth-form button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .auth-form button:disabled {
@@ -232,18 +343,18 @@ a {
 }
 
 .auth-error {
-  margin-top: 10px;
-  padding: 8px 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   color: var(--critical-text);
   background: var(--canvas);
-  border-left: 3px solid var(--critical);
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-left: var(--border-thick) solid var(--critical);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
 }
 
 /* Small helper text under a field. */
 .auth-hint {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--ink-3);
 }
 
@@ -253,32 +364,32 @@ a {
 
 /* Success / info message (e.g. "we sent a new link"). */
 .auth-notice {
-  margin-top: 10px;
-  padding: 8px 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   color: var(--ink-2);
   background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-left: var(--border-thick) solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
 }
 
 /* Live password requirements (components/auth/PasswordChecklist). */
 .password-rules {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px 12px;
-  margin: 4px 0 2px;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-1) 0;
   padding: 0;
   list-style: none;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--ink-3);
 }
 
 .password-rules li {
   display: flex;
   align-items: center;
-  gap: 6px;
-  transition: color 0.15s ease;
+  gap: var(--space-2);
+  transition: color var(--dur-fast) var(--ease);
 }
 
 .password-rules li.is-met {
@@ -289,12 +400,12 @@ a {
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  border: 1.5px solid var(--line);
+  width: var(--space-4);
+  height: var(--space-4);
+  border: var(--border-thick) solid var(--line-strong);
   border-radius: 50%;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
 
 .password-rules li.is-met .password-rule-icon {
@@ -304,8 +415,8 @@ a {
 }
 
 .password-rule-icon svg {
-  width: 10px;
-  height: 10px;
+  width: var(--space-3);
+  height: var(--space-3);
 }
 
 @media (max-width: 380px) {
@@ -320,23 +431,23 @@ a {
 }
 
 .auth-card--centered .auth-hint {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .auth-icon {
   display: inline-grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  margin-bottom: 14px;
+  width: var(--space-7);
+  height: var(--space-7);
+  margin-bottom: var(--space-4);
   background: var(--accent-soft);
   color: var(--accent);
   border-radius: 50%;
 }
 
 .auth-icon svg {
-  width: 26px;
-  height: 26px;
+  width: var(--space-5);
+  height: var(--space-5);
 }
 
 .auth-email {
@@ -345,15 +456,15 @@ a {
 }
 
 .resend-verification {
-  margin-top: 14px;
+  margin-top: var(--space-4);
   text-align: left;
 }
 
 .auth-form button.auth-secondary-button {
-  margin-top: 8px;
-  background: var(--surface);
+  margin-top: var(--space-2);
+  background: transparent;
   color: var(--ink);
-  border: 1px solid var(--line);
+  border: var(--border) solid var(--line-strong);
 }
 
 .auth-form button.auth-secondary-button:hover:not(:disabled) {
@@ -366,10 +477,10 @@ a {
 .auth-action {
   display: flex;
   width: 100%;
-  height: 44px;
-  margin-top: 4px;
-  padding: 0 16px;
-  border-radius: 8px;
+  height: var(--control-height);
+  margin-top: var(--space-1);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
   font: inherit;
   font-weight: 600;
   box-sizing: border-box;
@@ -377,39 +488,54 @@ a {
 }
 
 .auth-action + .auth-action {
-  margin-top: 10px;
+  margin-top: var(--space-3);
 }
 
 .auth-hint + .auth-action {
-  margin-top: 18px;
+  margin-top: var(--space-4);
 }
 
 .auth-footer {
-  margin-top: 20px;
-  font-size: 0.88rem;
+  margin-top: var(--space-5);
+  font-size: var(--text-sm);
   text-align: center;
 }
 
-.auth-footer a {
+.auth-footer a,
+.auth-forgot a,
+.auth-consent a {
   font-weight: 600;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 3px;
+  border-radius: var(--radius-sm);
+  transition: text-decoration-color var(--dur-fast) var(--ease);
 }
 
-.auth-footer a:hover {
-  text-decoration: underline;
+.auth-footer a:hover,
+.auth-forgot a:hover,
+.auth-consent a:hover {
+  text-decoration-color: currentColor;
+}
+
+.auth-footer a:focus-visible,
+.auth-forgot a:focus-visible,
+.auth-consent a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* "Forgot your password?" under the login password field. */
 .auth-forgot {
-  margin: 2px 0 0;
-  font-size: 0.82rem;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
   text-align: right;
 }
 
 /* "By creating an account you agree to..." under the register button. */
 .auth-consent {
-  margin-top: 12px;
-  font-size: 0.78rem;
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
   color: var(--ink-3);
   text-align: center;
 }
@@ -420,28 +546,28 @@ a {
 }
 
 .account-section {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: var(--border) solid var(--line);
 }
 
 .account-section h2 {
-  margin: 0 0 6px;
-  font-size: 1rem;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
 }
 
 .account-section p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   color: var(--ink-2);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .account-details {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px 16px;
+  gap: var(--space-2) var(--space-4);
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .account-details dt {
@@ -459,7 +585,7 @@ a {
 
 .auth-form button.danger-button {
   background: var(--critical);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .auth-form button.danger-button:hover:not(:disabled) {
@@ -469,16 +595,18 @@ a {
 /* ---------- Privacy policy ---------- */
 .legal {
   width: min(720px, 100%);
-  line-height: 1.6;
+  line-height: var(--leading-body);
 }
 
 .legal h1 {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
 }
 
 .legal h2 {
-  margin: 28px 0 8px;
-  font-size: 1.1rem;
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-lg);
 }
 
 .legal p,
@@ -487,26 +615,26 @@ a {
 }
 
 .legal ul {
-  padding-left: 20px;
+  padding-left: var(--space-5);
 }
 
 .legal-updated {
   margin-top: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-3);
 }
 
 .auth-form .account-confirm {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 400;
   color: var(--ink-2);
 }
 
 .auth-form .account-confirm input {
-  width: 16px;
-  height: 16px;
+  width: var(--space-4);
+  height: var(--space-4);
   padding: 0;
   accent-color: var(--critical);
 }

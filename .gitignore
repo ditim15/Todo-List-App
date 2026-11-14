@@ -4,3 +4,6 @@ node_modules
 
 # Personal developer notes (not shared)
 DEV_NOTES.md
+
+# Local Claude Code skills (not shared)
+.claude/

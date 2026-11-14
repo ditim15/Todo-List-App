@@ -1,12 +1,14 @@
 /* Shell around the auth pages. Card and form styles live in src/index.css (.auth-*);
-   shared bits (.btn, .landing-brand, .eyebrow, mocks, footer) come from Splash.css. */
+   shared bits (.btn, .landing-brand, .eyebrow, mocks, footer) come from Splash.css.
+   All values come from the tokens in src/index.css. */
 
 .auth-shell {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    font-size: 16px;
-    line-height: 1.55;
+    font-family: var(--font-text);
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
     background: var(--canvas);
 }
 
@@ -15,73 +17,60 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: color-mix(in srgb, var(--canvas) 82%, transparent);
-    backdrop-filter: saturate(1.4) blur(12px);
-    -webkit-backdrop-filter: saturate(1.4) blur(12px);
-    border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    background: color-mix(in srgb, var(--canvas) 88%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: var(--border) solid var(--line);
 }
 
 .auth-nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    max-width: 1180px;
-    height: 64px;
+    gap: var(--space-4);
+    max-width: var(--container);
+    height: var(--nav-height);
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 var(--gutter);
 }
 
 .auth-nav-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-3);
 }
 
 .auth-nav-hint {
-    margin-left: 6px;
-    font-size: 0.9em;
+    margin-left: var(--space-2);
+    font-size: var(--text-sm);
     color: var(--ink-3);
 }
 
 /* ---------- Main area ---------- */
-/* Same accent glow and fading grid as the landing hero. */
+/* Same faint ruled-notebook lines as the landing hero. */
 .auth-main {
-    position: relative;
-    isolation: isolate;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 72px;
+    gap: var(--space-9);
     width: 100%;
-    max-width: 1180px;
+    max-width: var(--container);
     margin: 0 auto;
-    padding: 56px 24px;
+    padding: var(--space-8) var(--gutter);
     box-sizing: border-box;
 }
 
-.auth-main::before,
-.auth-main::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-}
-
-.auth-main::before {
-    background: radial-gradient(ellipse 50% 60% at 50% 45%, var(--accent-soft), transparent 70%);
-}
-
-.auth-main::after {
-    background-image:
-        linear-gradient(var(--line) 1px, transparent 1px),
-        linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 44px 44px;
-    opacity: 0.45;
-    mask-image: radial-gradient(ellipse 65% 70% at 50% 45%, #000 15%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse 65% 70% at 50% 45%, #000 15%, transparent 75%);
+.auth-shell:has(.auth-main) {
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent calc(var(--space-7) - var(--border)),
+            var(--rule) calc(var(--space-7) - var(--border)),
+            var(--rule) var(--space-7)
+        ),
+        var(--canvas);
 }
 
 .auth-content {
@@ -89,6 +78,10 @@
     justify-content: center;
     width: 100%;
     max-width: 400px;
+}
+
+.auth-card h1 {
+    font-family: var(--font-display);
 }
 
 /* ---------- Side panel ---------- */
@@ -100,19 +93,19 @@
 
 .auth-aside h2 {
     margin: 0;
-    font-size: clamp(1.8em, 3vw, 2.4em);
-    line-height: 1.12;
+    font-size: var(--text-2xl);
+    line-height: var(--leading-snug);
     letter-spacing: -0.03em;
     color: var(--ink);
 }
 
-.auth-aside > p {
-    margin-top: 14px;
-    font-size: 1.05em;
+.auth-aside > p:not(.eyebrow) {
+    margin-top: var(--space-4);
+    font-size: var(--text-lg);
 }
 
 .auth-aside .mock-window {
-    margin-top: 32px;
+    margin-top: var(--space-7);
 }
 
 /* ---------- Responsive ---------- */
@@ -123,16 +116,26 @@
 }
 
 @media (max-width: 640px) {
-    .auth-nav-inner {
-        padding: 0 16px;
-    }
-
     .auth-nav-hint {
         display: none;
     }
 
+    /* Touch targets: 44px tall on phones. */
+    .auth-nav-actions .theme-toggle {
+        width: var(--control-height);
+        height: var(--control-height);
+    }
+
+    .auth-nav-actions .btn-sm {
+        height: var(--control-height);
+    }
+
     .auth-main {
         align-items: flex-start;
-        padding: 32px 16px 48px;
+        padding: var(--space-6) var(--gutter) var(--space-7);
+    }
+
+    .auth-card {
+        padding: var(--space-5);
     }
 }
