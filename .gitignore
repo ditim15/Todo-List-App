@@ -6,4 +6,4 @@ node_modules
 DEV_NOTES.md
 
 # Local Claude Code skills (not shared)
-.claude/
+.claude/skills/security-audit

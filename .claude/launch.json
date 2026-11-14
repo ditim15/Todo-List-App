@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "client", "run", "dev", "--", "--port", "5174", "--strictPort"],
+      "env": { "VITE_API_URL": "http://localhost:4100" },
+      "port": 5174
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "env": {
+        "PORT": "4100",
+        "EMAIL_TRANSPORT": "console",
+        "CLIENT_ORIGIN": "http://localhost:5174"
+      },
+      "port": 4100
+    }
+  ]
+}
