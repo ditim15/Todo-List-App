@@ -87,9 +87,12 @@
   --dur-slow: 600ms;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
-  --container: 1200px;
+  /* Page width caps. Wide enough that a 1920px+ screen isn't mostly empty margin; the
+     side gutter also grows with the viewport so content never touches the edge. */
+  --container: 1600px;
+  --app-max: 1760px;
   --measure: 560px;
-  --gutter: var(--space-5);
+  --gutter: clamp(var(--space-5), 4vw, var(--space-8));
   --nav-height: 64px;
   --control-sm: 36px;
   --control-height: 44px;
@@ -113,6 +116,13 @@
 
   @media (max-width: 640px) {
     --gutter: var(--space-4);
+  }
+
+  /* Big screens: the top two steps of the type scale grow so headlines keep their
+     weight in the wider layout. */
+  @media (min-width: 1600px) {
+    --text-2xl: 48px;
+    --text-3xl: 80px;
   }
 }
 

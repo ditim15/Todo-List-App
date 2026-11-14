@@ -30,8 +30,8 @@
     align-items: center;
     justify-content: space-between;
     height: 56px;
-    /* Lines up with .dash-main's content once it hits its 1440px max width. */
-    padding: 0 max(24px, calc((100% - 1440px) / 2 + 24px));
+    /* Lines up with .dash-main's content once it hits its max width (--app-max). */
+    padding: 0 max(24px, calc((100% - var(--app-max)) / 2 + 24px));
     background: var(--surface);
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
@@ -106,7 +106,7 @@
     flex: 1;
     min-height: 0;
     width: 100%;
-    max-width: 1440px;
+    max-width: var(--app-max);
     margin: 0 auto;
     padding: 24px;
     box-sizing: border-box;
@@ -198,7 +198,8 @@
 .dash-grid {
     display: grid;
     /* Side columns give up width before the task panel does. */
-    grid-template-columns: clamp(220px, 20%, 260px) minmax(0, 1fr) clamp(240px, 22%, 300px);
+    /* Upper bounds let the sidebars widen a little on very large screens too. */
+    grid-template-columns: clamp(220px, 18%, 320px) minmax(0, 1fr) clamp(240px, 20%, 360px);
     gap: 20px;
     flex: 1;
     min-height: 420px;
