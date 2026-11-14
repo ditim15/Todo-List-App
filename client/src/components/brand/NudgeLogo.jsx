@@ -21,7 +21,16 @@ function NudgeLogo({ animate = 'none', className = '' }) {
                 greyed + struck through ("done"). The arrow's head is the boundary. */}
             <span className="nudge-logo-stage" aria-hidden="true">
                 <span className="nudge-logo-text nudge-logo-text--todo">DoneYet?</span>
-                <span className="nudge-logo-text nudge-logo-text--done">DoneYet?</span>
+                <span className="nudge-logo-text nudge-logo-text--done">
+                    {/* Crossed off with the site's hand-drawn strike (same path as the
+                        landing page's Strike in components/landing/AppMocks). */}
+                    <span className="nudge-logo-done-word">
+                        DoneYet?
+                        <svg className="nudge-logo-strike" viewBox="0 0 100 12" preserveAspectRatio="none">
+                            <path d="M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5" />
+                        </svg>
+                    </span>
+                </span>
                 <span className="nudge-logo-arrow">
                     <span className="nudge-logo-shaft" />
                     <svg className="nudge-logo-head" viewBox="0 0 10 14" fill="none">
@@ -31,7 +40,8 @@ function NudgeLogo({ animate = 'none', className = '' }) {
             </span>
             <span className="nudge-logo-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 12.5l4 4L18 8" pathLength="1" />
+                    {/* Slightly hand-drawn tick, matching the favicon. */}
+                    <path d="M6 12.6c1.3.8 2.6 2.2 4 4C12.6 12.4 15 9.6 18.2 7.4" pathLength="1" />
                 </svg>
             </span>
         </span>

@@ -42,8 +42,9 @@
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
   --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-text: var(--sans);
-  /* Wordmark only (components/brand/NudgeLogo). It is the logo, not a third type family. */
-  --brand-font: 'Fredoka Variable', 'Fredoka', ui-rounded, var(--sans);
+  /* The wordmark (components/brand/NudgeLogo) uses the display face, so the whole
+     site stays at two families. */
+  --brand-font: var(--font-display);
   --text-xs: 12px;
   --text-sm: 14px;
   --text-md: 16px;

@@ -1,8 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Self-hosted brand font for the DoneYet? wordmark (see --brand-font in index.css).
-import '@fontsource-variable/fredoka/wght.css'
-// Display face for headlines (see --font-display in index.css). opsz axis included.
+// Display face for headlines and the DoneYet? wordmark (see --font-display in
+// index.css). opsz axis included.
 import '@fontsource-variable/fraunces/opsz.css'
 import './index.css'
 import App from './App.jsx'
