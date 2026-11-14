@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import ThemeToggle from '../ThemeToggle';
 import NudgeLogo from '../brand/NudgeLogo';
+import SiteFooter from '../SiteFooter';
 import { CheckIcon } from '../landing/FeatureIcons';
 // Reuses the landing page's buttons, brand mark, eyebrow, check-list and app mocks.
 import '../../pages/static/Splash.css';
@@ -60,17 +61,7 @@ function AuthLayout({ aside, children }) {
                 <div className="auth-content">{children}</div>
             </main>
 
-            <footer className="landing-footer">
-                <div className="landing-footer-inner">
-                    <span>© {new Date().getFullYear()} DoneYet? · Gentle reminders for busy students</span>
-                    <nav aria-label="Footer">
-                        <Link to="/">Home</Link>
-                        <Link to="/login">Log in</Link>
-                        <Link to="/register">Sign up</Link>
-                        <Link to="/privacy">Privacy</Link>
-                    </nav>
-                </div>
-            </footer>
+            <SiteFooter />
         </div>
     );
 }

@@ -1,0 +1,81 @@
+/* Shared footer (components/SiteFooter). Values come from the tokens in src/index.css.
+   Fixed px font sizes so it looks the same inside the dashboard's 15px base. */
+
+.site-footer {
+    flex-shrink: 0;
+    font-family: var(--font-text);
+    border-top: var(--border) solid var(--line);
+}
+
+.site-footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: var(--space-6) var(--gutter);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+    color: var(--ink-3);
+}
+
+.site-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-5);
+}
+
+.site-footer a {
+    /* 44px tap height without changing the visual size of the text. */
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-height);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: color var(--dur-fast) var(--ease);
+}
+
+.site-footer a:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-underline-offset: var(--space-1);
+}
+
+.site-footer a:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Dashboard: one slim row, same width as the dashboard's content. */
+.site-footer--compact {
+    background: var(--surface);
+}
+
+.site-footer--compact .site-footer-inner {
+    max-width: var(--app-max);
+    /* Right padding clears the assistant's floating button (52px, 20px from the edge),
+       so it never covers the last footer link. */
+    padding: 0 var(--space-9) 0 var(--space-5);
+    font-size: var(--text-xs);
+}
+
+.site-footer--compact a {
+    font-size: var(--text-xs);
+}
+
+@media (max-width: 640px) {
+    .site-footer-inner {
+        padding-top: var(--space-5);
+        padding-bottom: var(--space-5);
+    }
+
+    .site-footer--compact .site-footer-inner {
+        padding: var(--space-3) var(--space-9) var(--space-3) var(--space-4);
+    }
+}

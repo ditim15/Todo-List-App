@@ -10,6 +10,7 @@ import pool from "./db/pool.js";
 import authRouter from "./routes/auth.js";
 import todosRouter from "./routes/todos.js";
 import aiRouter from "./routes/ai.js";
+import contactRouter from "./routes/contact.js";
 import { authenticate } from "./middleware/authenticate.js";
 
 dotenv.config({
@@ -56,6 +57,8 @@ app.use("/auth", authRouter);
 app.use("/todos", todosRouter);
 // AI assistant chat. It only proposes tasks; they are still saved through POST /todos.
 app.use("/ai", authenticate, aiRouter);
+// Contact form; emails the support inbox (SUPPORT_EMAIL). Open to signed-out visitors.
+app.use("/contact", contactRouter);
 
 app.use(errorHandler);
 

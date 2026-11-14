@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import NudgeLogo from '../components/brand/NudgeLogo';
+import SiteFooter from '../components/SiteFooter';
 import { FiltersMock, ListsMock, PlannerMock, PriorityMock, Strike } from '../components/landing/AppMocks';
 import { CheckIcon } from '../components/landing/FeatureIcons';
 import './static/Splash.css';
@@ -251,18 +252,7 @@ function Splash() {
                 </section>
             </main>
 
-            <footer className="landing-footer">
-                <div className="landing-footer-inner">
-                    <span>© {new Date().getFullYear()} DoneYet? · Gentle reminders for busy students</span>
-                    <nav aria-label="Footer">
-                        <a href="#features">Features</a>
-                        <a href="#how-it-works">How it works</a>
-                        <Link to="/login">Log in</Link>
-                        <Link to="/register">Sign up</Link>
-                        <Link to="/privacy">Privacy</Link>
-                    </nav>
-                </div>
-            </footer>
+            <SiteFooter />
         </div>
     );
 }

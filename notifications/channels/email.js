@@ -96,14 +96,16 @@ function getTransporter() {
     return transporterPromise;
 }
 
-// Sends one message: { to, subject, text, html }.
-export async function sendEmail({ to, subject, text, html }) {
+// Sends one message: { to, subject, text, html, replyTo? }. `replyTo` makes the
+// recipient's Reply button answer someone other than EMAIL_FROM (the contact form uses
+// it so support can reply straight to the person who wrote in).
+export async function sendEmail({ to, subject, text, html, replyTo }) {
     const { mode, transporter } = await getTransporter();
     const from = process.env.EMAIL_FROM || 'DoneYet? <reminders@doneyet.local>';
-    const info = await transporter.sendMail({ from, to, subject, text, html });
+    const info = await transporter.sendMail({ from, to, subject, text, html, replyTo });
 
     if (mode === 'memory') {
-        sentEmails.push({ to, subject, text, html });
+        sentEmails.push({ to, subject, text, html, replyTo });
     } else if (mode === 'console') {
         console.log(`[email] (console mode, not sent)\n  To: ${to}\n  Subject: ${subject}\n\n${text}\n`);
     } else if (mode === 'ethereal') {

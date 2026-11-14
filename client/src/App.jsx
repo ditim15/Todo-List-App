@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Account from './pages/Account';
 import Privacy from './pages/Privacy';
+import Contact from './pages/Contact';
 
 // Top-level route table for the app.
 function App() {
@@ -35,6 +36,7 @@ function App() {
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/privacy" element={<Privacy />} />
+                        <Route path="/contact" element={<Contact />} />
                         <Route path="/account" element={
                             <ProtectedRoute>
                                 <Account />

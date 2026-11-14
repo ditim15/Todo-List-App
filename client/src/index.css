@@ -315,10 +315,40 @@ a {
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 
-.auth-form input:hover {
+/* Selects and textareas share the input look (contact form). */
+.auth-form select,
+.auth-form textarea {
+  padding: 0 var(--space-3);
+  background: var(--canvas);
+  color: var(--ink);
+  border: var(--border) solid var(--line-strong);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--text-md);
+  box-sizing: border-box;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+.auth-form select {
+  height: var(--control-height);
+  cursor: pointer;
+}
+
+.auth-form textarea {
+  min-height: calc(var(--control-height) * 3);
+  padding: var(--space-3);
+  line-height: var(--leading-body);
+  resize: vertical;
+}
+
+.auth-form input:hover,
+.auth-form select:hover,
+.auth-form textarea:hover {
   border-color: var(--ink-3);
 }
 
+.auth-form select:focus-visible,
+.auth-form textarea:focus-visible,
 .auth-form input:focus-visible {
   outline: none;
   border-color: var(--accent);
@@ -548,6 +578,21 @@ a {
   font-size: var(--text-xs);
   color: var(--ink-3);
   text-align: center;
+}
+
+/* ---------- Contact form ---------- */
+.contact-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Honeypot field: off-screen for people, still in the form for bots. */
+.contact-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 /* ---------- Account settings ---------- */

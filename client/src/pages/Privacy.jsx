@@ -26,6 +26,7 @@ function Privacy() {
                     <li><strong>Your tasks:</strong> titles, notes, due dates, priorities, list names and reminder settings, including the timezone your reminders use.</li>
                     <li><strong>Assistant chats:</strong> if you use the assistant, your messages and its replies, so the conversation is there when you come back.</li>
                     <li><strong>Sign-in data:</strong> a login cookie (see below) and records of your active sessions so they can be ended.</li>
+                    <li><strong>Contact form messages:</strong> if you use the <Link to="/contact">contact form</Link>, your name, email, topic and message are emailed to our support inbox so we can reply. They aren&apos;t stored in the app.</li>
                 </ul>
                 <p>We don&apos;t use advertising, analytics or tracking tools, and we don&apos;t sell your data.</p>
 

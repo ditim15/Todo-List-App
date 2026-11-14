@@ -217,6 +217,13 @@ html:has(.landing) {
     border-radius: var(--radius-sm);
 }
 
+/* Narrow phones: a smaller wordmark leaves room for the 44px toggle and a button. */
+@media (max-width: 400px) {
+    .landing-brand {
+        font-size: var(--text-lg);
+    }
+}
+
 .landing-brand:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
@@ -228,8 +235,7 @@ html:has(.landing) {
     margin-right: auto;
 }
 
-.landing-links a,
-.landing-footer a {
+.landing-links a {
     /* 44px tap height without changing the visual size of the text. */
     display: inline-flex;
     align-items: center;
@@ -242,16 +248,14 @@ html:has(.landing) {
     transition: color var(--dur-fast) var(--ease);
 }
 
-.landing-links a:hover,
-.landing-footer a:hover {
+.landing-links a:hover {
     color: var(--ink);
     text-decoration: underline;
     text-decoration-color: var(--accent);
     text-underline-offset: var(--space-1);
 }
 
-.landing-links a:focus-visible,
-.landing-footer a:focus-visible {
+.landing-links a:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
 }
@@ -942,30 +946,6 @@ html:has(.landing) {
     font-size: var(--text-sm);
 }
 
-/* ---------- Footer (shared with the auth pages) ---------- */
-.landing-footer {
-    border-top: var(--border) solid var(--line);
-}
-
-.landing-footer-inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3) var(--space-5);
-    max-width: var(--container);
-    margin: 0 auto;
-    padding: var(--space-6) var(--gutter);
-    font-size: var(--text-sm);
-    color: var(--ink-3);
-}
-
-.landing-footer nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-5);
-}
-
 /* ---------- Reveal on scroll ---------- */
 .reveal {
     opacity: 0;
@@ -1057,10 +1037,6 @@ html:has(.landing) {
 
     .landing-actions .btn-sm {
         height: var(--control-height);
-    }
-
-    .landing-footer nav {
-        gap: 0 var(--space-5);
     }
 
     .hero {

@@ -9,6 +9,7 @@ import { DEFAULT_REMINDER_TIME, reminderMoment } from '../components/tasks/remin
 import CalendarView from '../components/tasks/CalendarView';
 import { PRIORITIES, PrioritySelect } from '../components/tasks/PrioritySelect';
 import Assistant from '../components/assistant/Assistant';
+import SiteFooter from '../components/SiteFooter';
 import { addDays, isSameMonth, localeFirstDayOfWeek, monthGrid, monthOf } from '../components/tasks/calendarUtils';
 import './static/Dashboard.css';
 
@@ -1192,6 +1193,7 @@ function Dashboard() {
                     </div>
                 )}
             </main>
+            <SiteFooter compact />
             <Assistant onTaskAdded={loadDashboard} listsDatalistId={LISTS_DATALIST_ID} />
         </div>
     );
