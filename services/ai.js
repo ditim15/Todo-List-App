@@ -34,7 +34,7 @@ export function isAiConfigured() {
 
 // Created on first use so the server starts (and the rest of the app works) without a key.
 let client = null;
-function getClient() {
+export function getClient() {
     if (!isAiConfigured()) {
         throw new AiUnavailableError('ANTHROPIC_API_KEY is not set');
     }
@@ -44,6 +44,12 @@ function getClient() {
         maxRetries: 0,
     });
     return client;
+}
+
+// Tests swap in a fake client (an object with messages.create) to script the model's
+// replies; pass null to go back to the real one.
+export function setClientForTests(fake) {
+    client = fake;
 }
 
 // ---------- Tools ----------
@@ -165,7 +171,7 @@ export async function runChat({ history, today, timezone, lists = [], validateDr
     const drafts = [];
 
     for (let step = 0; step < MAX_STEPS; step++) {
-        const response = await callModel(anthropic, { system, messages });
+        const response = await callModel(anthropic, { system, messages, tools: [PROPOSE_TASK_TOOL, LIST_OPEN_TASKS_TOOL] });
         if (onUsage) await onUsage(response.usage);
 
         if (response.stop_reason === 'refusal') {
@@ -191,15 +197,17 @@ export async function runChat({ history, today, timezone, lists = [], validateDr
     return { text, drafts };
 }
 
-async function callModel(anthropic, { system, messages }) {
+// One API call. Shared with services/notesAi.js, which passes its own tools and a
+// smaller max_tokens.
+export async function callModel(anthropic, { system, messages, tools, maxTokens = MAX_TOKENS, toolChoice = 'auto' }) {
     try {
         return await anthropic.messages.create({
             model: MODEL,
-            max_tokens: MAX_TOKENS,
+            max_tokens: maxTokens,
             output_config: { effort: EFFORT },
             system,
-            tools: [PROPOSE_TASK_TOOL, LIST_OPEN_TASKS_TOOL],
-            tool_choice: { type: 'auto' },
+            tools,
+            tool_choice: { type: toolChoice },
             messages,
         });
     } catch (err) {

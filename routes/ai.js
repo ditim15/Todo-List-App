@@ -1,6 +1,7 @@
 import { Router } from "express";
 import rateLimit from 'express-rate-limit';
 import { clearChat, getChat, sendChat, updateDraft } from "../controllers/ai.controller.js";
+import { notesStatus, sendNotesChat } from "../controllers/notesAi.controller.js";
 
 // Each chat message costs API requests, so sending is limited per account rather than
 // per IP (students on one campus network share an IP). server.js mounts this router
@@ -26,5 +27,10 @@ router.get("/chat", getChat);
 router.post("/chat", chatLimiter, sendChat);
 router.delete("/chat", clearChat);
 router.patch("/chat/messages/:id/drafts/:index", updateDraft);
+
+// The notes assistant shares the same limiter (one counter per user across both
+// assistants) and the same daily message cap.
+router.get("/notes", notesStatus);
+router.post("/notes", chatLimiter, sendNotesChat);
 
 export default router;

@@ -5,6 +5,8 @@ import AppTopbar from '../components/AppTopbar';
 import SiteFooter from '../components/SiteFooter';
 import NoteEditor from '../components/notes/NoteEditor';
 import FolderSettings from '../components/notes/FolderSettings';
+import NotesAssistant from '../components/notes/NotesAssistant';
+import { applyNoteEdit } from '../components/notes/noteEdits';
 import {
     MAX_FOLDER_DEPTH,
     countNotesDeep,
@@ -393,6 +395,10 @@ function Notes() {
     const [drag, setDrag] = useState(null);       // { type: 'note' | 'folder', id }
     const [over, setOver] = useState(null);       // `${zone}:${folderId ?? 'root'}`
     const [toast, setToast] = useState(null);     // { message, undo? }
+    // The open note's editor (set by NoteEditor), for applying assistant edits.
+    const editorRef = useRef(null);
+    // An assistant edit for a note that isn't open: applied once that note loads.
+    const [queuedEdit, setQueuedEdit] = useState(null); // { edit, resolve }
 
     const selection = useMemo(() => {
         if (params.get('note')) return { type: 'note', id: Number(params.get('note')) };
@@ -671,6 +677,36 @@ function Notes() {
         };
     }, [drag, over, canDrop, moveItem, endDrag]);
 
+    // ----- Assistant edits -----
+    // Applies an edit in the editor (so Ctrl+Z undoes it and autosave saves it). For a
+    // note that isn't open, opens it first. Resolves to { ok } or { error }.
+    const applyAssistantEdit = (edit) => {
+        if (note?.id === edit.note_id && editorRef.current) {
+            return Promise.resolve(applyNoteEdit(editorRef.current, edit));
+        }
+        if (!tree?.notes.some((n) => n.id === edit.note_id)) {
+            return Promise.resolve({ error: 'That note no longer exists.' });
+        }
+        return new Promise((resolve) => {
+            setQueuedEdit({ edit, resolve });
+            select('note', edit.note_id);
+        });
+    };
+
+    useEffect(() => {
+        if (!queuedEdit) return;
+        if (noteError && selection.type === 'note' && selection.id === queuedEdit.edit.note_id) {
+            queuedEdit.resolve({ error: noteError });
+            setQueuedEdit(null);
+            return;
+        }
+        if (note?.id !== queuedEdit.edit.note_id) return;
+        const { edit, resolve } = queuedEdit;
+        setQueuedEdit(null);
+        // The new note's editor is mounted by now; give it a frame to settle.
+        requestAnimationFrame(() => resolve(applyNoteEdit(editorRef.current, edit)));
+    }, [queuedEdit, note, noteError, selection]);
+
     // ----- Folder settings -----
     const setFolderColor = (folderId, color) => {
         setTree((current) => current && {
@@ -733,6 +769,7 @@ function Notes() {
                 onSelect={select}
                 onQueue={(changes) => queueSave(note.id, changes)}
                 onUpload={(file) => uploadAttachment(authFetch, note.id, file)}
+                editorRef={editorRef}
                 onMoved={async (folderId) => run(async () => {
                     await flush();
                     await updateNote(authFetch, note.id, { folderId });
@@ -829,6 +866,11 @@ function Notes() {
                 </section>
             </main>
             <SiteFooter compact />
+            <NotesAssistant
+                openNote={note ? { id: note.id, title: tree?.notes.find((n) => n.id === note.id)?.title ?? note.title } : null}
+                onBeforeSend={flush}
+                onApply={applyAssistantEdit}
+            />
             <TaskPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={importTask} />
             {settingsFolder && (
                 <FolderSettings
@@ -1047,12 +1089,11 @@ function FolderView({ folder, index, autoRename, onRenamed, onSelect, onNewNote,
 
 const SAVE_LABELS = { idle: '', pending: 'Editing…', saving: 'Saving…', saved: 'Saved', error: "Couldn't save" };
 
-function NoteView({ note, index, saveStatus, saveError, onSelect, onQueue, onUpload, onMoved, onDelete }) {
+function NoteView({ note, index, saveStatus, saveError, onSelect, onQueue, onUpload, onMoved, onDelete, editorRef }) {
     const [title, setTitle] = useState(note.title === 'Untitled note' ? '' : note.title);
     const path = note.folder_id ? folderPath(index.byId, note.folder_id) : [];
     const taskFolder = note.folder_id ? taskFolderFor(index.byId, note.folder_id) : null;
     const titleRef = useRef(null);
-    const editorRef = useRef(null);
 
     // New, untitled notes start with the cursor in the title.
     useEffect(() => {

@@ -1343,6 +1343,65 @@
     }
 }
 
+/* ---------- Notes assistant (components/notes/NotesAssistant.jsx) ----------
+   The panel itself uses the dashboard assistant's styles (assistant/Assistant.css). */
+.notes-edit-diff {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    font-size: 0.88em;
+}
+
+.notes-edit-diff del,
+.notes-edit-diff ins {
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.notes-edit-diff del {
+    background: color-mix(in srgb, var(--critical) 12%, transparent);
+    color: var(--ink-2);
+    text-decoration: line-through;
+    text-decoration-color: var(--critical);
+}
+
+.notes-edit-diff ins {
+    background: var(--accent-soft);
+    color: var(--ink);
+}
+
+.notes-edit-preview {
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 6px 10px;
+    background: var(--accent-soft);
+    border-radius: 4px;
+    font-size: 0.88em;
+}
+
+.notes-edit-preview p,
+.notes-edit-preview ul,
+.notes-edit-preview ol {
+    margin: 0 0 4px;
+}
+
+.notes-assistant-limit {
+    margin: 4px 0 0;
+    color: var(--ink-3);
+    font-size: 0.78em;
+}
+
+.notes-assistant-quota {
+    margin: 0;
+    padding: 0 12px 8px;
+    color: var(--ink-3);
+    font-size: 0.75em;
+    text-align: center;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
     .notes-main {

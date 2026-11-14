@@ -47,9 +47,10 @@ export async function spentTodayUsd() {
     return row ? estimateCostUsd({ inputTokens: row.input_tokens, outputTokens: row.output_tokens }) : 0;
 }
 
-// Reserves one of the user's messages for today. Returns false if they've used them
-// all. The check and the increment are one statement, so parallel requests can't
-// slip past the limit.
+// Reserves one of the user's messages for today. Returns how many they've used today
+// (including this one), or false if they've used them all. The check and the increment
+// are one statement, so parallel requests can't slip past the limit. The task and notes
+// assistants share this count.
 export async function claimUserMessage(userId) {
     const result = await pool.query(
         `INSERT INTO ai_usage (user_id, day, messages) VALUES ($1, ${TODAY_UTC}, 1)`
@@ -58,7 +59,7 @@ export async function claimUserMessage(userId) {
         + ' RETURNING messages',
         [userId, userDailyMessageLimit()]
     );
-    return result.rows.length > 0;
+    return result.rows[0]?.messages ?? false;
 }
 
 // Gives back a claimed message when the turn failed and the user got no reply.
