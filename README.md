@@ -111,12 +111,12 @@ Require an `Authorization: Bearer <accessToken>` header, except the signed file 
 
 ## Cloud Backup
 
-A notes folder can be backed up to the user's Google Drive (Folder settings → Sync). It's **one-way**: the folder, its subfolders and their notes are copied to a `DoneYet` folder in Drive as Markdown files, with images and PDFs in an `attachments` folder the notes link to. Nothing is read back from Drive.
+A notes folder can be backed up to the user's Google Drive (Folder settings → Sync). It's **one-way**: the folder, its subfolders and their notes are copied to a `DoneYet` folder in Drive. Each note is a Word file (`.docx`, opens in Google Docs and Word) with its PNG, JPEG and GIF images embedded. Attachments Word can't embed (PDFs, WebP images) are saved next to their note as `<Note> - <file>`. Only attachments a note still contains are backed up: an image that was pasted and then removed or undone isn't. Nothing is read back from Drive.
 
 - **Access:** the `drive.file` scope only, so DoneYet can see the files it created and nothing else in the user's Drive. Sign-in is OAuth 2 with PKCE and a single-use `state`. Tokens are stored encrypted (AES-256-GCM, key from `CLOUD_TOKEN_KEY`).
 - **When it runs:** any change to notes, folders or attachments flags the user's backups. A background worker (every minute, in `server.js`) syncs a flagged folder once the user has stopped editing for a minute. **Back up now** runs one straight away. Unchanged files are skipped (content hash); renamed or moved notes and folders are renamed or moved in Drive rather than copied; anything deleted in the app goes to Drive's bin. Failures retry with back-off (1, 2, 4… minutes, up to 6 hours).
 - **If Google stops accepting the token** (revoked, password change), the connection is marked as needing to reconnect, backups pause, and the folder settings show **Reconnect**. Reconnecting resumes them.
-- **Code:** `services/cloud/` (`google.js` is the Drive client, `sync.js` the engine and worker, `markdown.js` the note → Markdown converter, `crypto.js` token encryption), `controllers/cloud.controller.js`, `routes/cloud.js`, `client/src/components/notes/CloudBackupSection.jsx`. Another provider (OneDrive, Dropbox) would be one more module shaped like `google.js`, registered in `services/cloud/providers.js`.
+- **Code:** `services/cloud/` (`google.js` is the Drive client, `sync.js` the engine and worker, `docx.js` the note → Word converter (uses the `docx` package), `crypto.js` token encryption), `controllers/cloud.controller.js`, `routes/cloud.js`, `client/src/components/notes/CloudBackupSection.jsx`. Another provider (OneDrive, Dropbox) would be one more module shaped like `google.js`, registered in `services/cloud/providers.js`.
 - **Tables:** `cloud_connections`, `cloud_oauth_states`, `cloud_folder_syncs`, `cloud_sync_items`. Re-run `db/init.sql` after pulling.
 
 ### Setting up Google Drive

@@ -8,7 +8,9 @@ import { setProviderForTests } from '../services/cloud/providers.js';
 import { decryptToken, encryptToken } from '../services/cloud/crypto.js';
 import { CloudAuthError, CloudReauthError } from '../services/cloud/http.js';
 import { dueSyncs, safeName, syncFolder } from '../services/cloud/sync.js';
-import { noteToMarkdown } from '../services/cloud/markdown.js';
+import { DOCX_MIME, imageSize, noteToDocx, referencedAttachmentIds } from '../services/cloud/docx.js';
+// The zip library `docx` itself uses; here only to read the generated files back.
+import JSZip from 'jszip';
 
 const PROVIDER = 'google-drive';
 const PNG = Buffer.from(
@@ -16,6 +18,17 @@ const PNG = Buffer.from(
     + '1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082',
     'hex'
 );
+const PDF = Buffer.from('%PDF-1.4\n%âã\n1 0 obj <<>> endobj\ntrailer <<>>\n%%EOF\n', 'latin1');
+
+// A .docx's document text (word/document.xml), relationships and embedded media names.
+async function readDocx(buffer) {
+    const zip = await JSZip.loadAsync(buffer);
+    return {
+        xml: await zip.file('word/document.xml').async('string'),
+        rels: await zip.file('word/_rels/document.xml.rels').async('string'),
+        media: Object.keys(zip.files).filter((name) => name.startsWith('word/media/') && !zip.files[name].dir),
+    };
+}
 
 // An in-memory "Drive": items by ref, plus a log of calls.
 function fakeDrive() {
@@ -69,7 +82,7 @@ function fakeDrive() {
         uploadFile: api('uploadFile', (parent, name, content, mime, existing) => {
             const ref = existing ?? `r${next++}`;
             const old = items.get(ref);
-            items.set(ref, { name, parent: existing ? old.parent : parent, content: content.toString('utf8'), mime });
+            items.set(ref, { name, parent: existing ? old.parent : parent, content: content.toString('utf8'), raw: Buffer.from(content), mime });
             return { ref };
         }),
         move: api('move', (ref, { name, parentRef }) => {
@@ -82,7 +95,7 @@ function fakeDrive() {
             items.get(ref).trashed = true;
         }),
     });
-    // "DoneYet/Folder/Note.md"-style paths of everything not in the bin.
+    // "DoneYet/Folder/Note.docx"-style paths of everything not in the bin.
     fake.paths = () => {
         const pathOf = (ref) => {
             const item = items.get(ref);
@@ -284,58 +297,114 @@ describe('syncing', () => {
         return { user, api, folder, sub, cells, lab, att, syncId: await syncIdFor(folder.id) };
     }
 
-    test('mirrors the folder as Markdown with attachments, then only uploads changes', async () => {
-        const { syncId, att } = await setUp();
+    test('mirrors the folder as Word files with their images inside, then only uploads changes', async () => {
+        const { syncId } = await setUp();
         const first = await syncFolder(syncId);
         assert.deepEqual(drive.paths(), [
             'DoneYet',
             'DoneYet/Biology',
-            'DoneYet/Biology/Cells.md',
+            'DoneYet/Biology/Cells.docx',
             'DoneYet/Biology/Labs',
-            'DoneYet/Biology/Labs/Lab 1.md',
-            'DoneYet/Biology/attachments',
-            `DoneYet/Biology/attachments/${att.id}-cell.png`,
+            'DoneYet/Biology/Labs/Lab 1.docx',
         ]);
-        assert.equal(first.uploaded, 6);
+        assert.equal(first.uploaded, 4);
 
-        const cells = drive.fileAt('DoneYet/Biology/Cells.md');
-        assert.equal(cells.mime, 'text/markdown');
-        assert.equal(cells.content, `# Cells\n\nCells have a nucleus.\n\n![A cell](attachments/${att.id}-cell.png)\n`);
-        assert.match(drive.fileAt('DoneYet/Biology/Labs/Lab 1.md').content, new RegExp(`\\(\\.\\./attachments/${att.id}-cell\\.png\\)`));
+        const cells = drive.fileAt('DoneYet/Biology/Cells.docx');
+        assert.equal(cells.mime, DOCX_MIME);
+        const doc = await readDocx(cells.raw);
+        assert.match(doc.xml, />Cells</, 'the title');
+        assert.match(doc.xml, /Cells have a nucleus\./);
+        assert.equal(doc.media.length, 1, 'the image is embedded');
+        // Lab 1 uses the same image (pasted from Cells), so it's embedded there too.
+        assert.equal((await readDocx(drive.fileAt('DoneYet/Biology/Labs/Lab 1.docx').raw)).media.length, 1);
 
         const again = await syncFolder(syncId);
         assert.deepEqual({ uploaded: again.uploaded, moved: again.moved, removed: again.removed }, { uploaded: 0, moved: 0, removed: 0 });
     });
 
+    test('only attachments a note still uses are backed up; PDFs sit next to the note', async () => {
+        const { api, syncId, cells, att } = await setUp();
+        // Pasted, then removed or undone: uploaded to the note, but not in its content.
+        await api.upload(`/notes/${cells.id}/attachments`, PNG, 'image/png', 'oops.png');
+        const pdf = (await api.upload(`/notes/${cells.id}/attachments`, PDF, 'application/pdf', 'Week 1 slides.pdf')).body.attachment;
+        const withPdf = [paragraph('Cells have a nucleus.'),
+            { type: 'image', attrs: { src: att.url, attachmentId: att.id } },
+            { type: 'fileAttachment', attrs: { attachmentId: pdf.id, filename: 'Week 1 slides.pdf' } }];
+        await api.put(`/notes/${cells.id}`, { content: { type: 'doc', content: withPdf } });
+
+        await syncFolder(syncId);
+        assert.deepEqual(drive.paths().filter((p) => !p.includes('Labs')), [
+            'DoneYet', 'DoneYet/Biology', 'DoneYet/Biology/Cells - Week 1 slides.pdf', 'DoneYet/Biology/Cells.docx',
+        ]);
+        const doc = await readDocx(drive.fileAt('DoneYet/Biology/Cells.docx').raw);
+        assert.equal(doc.media.length, 1, 'the unused image is not embedded');
+        assert.match(doc.xml, /Week 1 slides\.pdf/);
+        assert.match(doc.xml, /saved in Drive as &quot;Cells - Week 1 slides\.pdf&quot;/);
+        assert.equal(drive.fileAt('DoneYet/Biology/Cells - Week 1 slides.pdf').mime, 'application/pdf');
+
+        // Taking the PDF out of the note bins its copy in Drive.
+        await api.put(`/notes/${cells.id}`, { content: { type: 'doc', content: withPdf.slice(0, 2) } });
+        const stats = await syncFolder(syncId);
+        assert.equal(stats.removed, 1);
+        assert.ok(!drive.paths().some((p) => p.endsWith('.pdf')));
+    });
+
+    test('a backup made with the old layout (Markdown + attachments folder) is converted in place', async () => {
+        const { syncId, cells, att } = await setUp();
+        await syncFolder(syncId);
+        const refOf = (name) => [...drive.items.entries()].find(([, i]) => i.name === name)[0];
+        const [biology, cellsRef] = [refOf('Biology'), refOf('Cells.docx')];
+        // Make the cloud and the records look like the old version left them.
+        drive.items.get(cellsRef).name = 'Cells.md';
+        drive.items.set('old-att-folder', { name: 'attachments', parent: biology, folder: true });
+        drive.items.set('old-att', { name: `${att.id}-cell.png`, parent: 'old-att-folder', content: '' });
+        drive.items.set('old-oops', { name: '999-oops.png', parent: 'old-att-folder', content: '' });
+        await pool.query("UPDATE cloud_sync_items SET remote_name = 'Cells.md', content_hash = 'old' WHERE kind = 'note' AND local_id = $1", [cells.id]);
+        await pool.query(
+            'INSERT INTO cloud_sync_items (sync_id, kind, local_id, remote_ref, remote_name, parent_ref, content_hash) VALUES'
+            + " ($1, 'attachments', 0, 'old-att-folder', 'attachments', $2, NULL),"
+            + " ($1, 'attachment', $3, 'old-att', $4, 'old-att-folder', 'x'),"
+            + " ($1, 'attachment', 999, 'old-oops', '999-oops.png', 'old-att-folder', 'x')",
+            [syncId, biology, att.id, `${att.id}-cell.png`]
+        );
+
+        await syncFolder(syncId);
+        assert.deepEqual(drive.paths(), ['DoneYet', 'DoneYet/Biology', 'DoneYet/Biology/Cells.docx', 'DoneYet/Biology/Labs', 'DoneYet/Biology/Labs/Lab 1.docx']);
+        assert.equal(refOf('Cells.docx'), cellsRef, 'the old .md file was updated, not copied');
+        assert.equal(drive.items.get(cellsRef).mime, DOCX_MIME);
+        assert.ok(drive.items.get('old-att-folder').trashed, 'the attachments folder (with the stray images) goes to the bin');
+        const left = (await pool.query("SELECT count(*)::int AS n FROM cloud_sync_items WHERE kind IN ('attachments', 'attachment')")).rows[0].n;
+        assert.equal(left, 0);
+    });
+
     test('renames, moves and deletions in the app follow into the cloud (deletions to the bin)', async () => {
         const { api, syncId, folder, sub, cells, lab } = await setUp();
         await syncFolder(syncId);
-        const cellsRef = [...drive.items.entries()].find(([, i]) => i.name === 'Cells.md')[0];
+        const cellsRef = [...drive.items.entries()].find(([, i]) => i.name === 'Cells.docx')[0];
 
         await api.put(`/notes/${cells.id}`, { title: 'Cell biology' });
         await api.put(`/notes/folders/${sub.id}`, { name: 'Practicals' });
         await api.put(`/notes/folders/${folder.id}`, { name: 'Bio 101' });
         await syncFolder(syncId);
-        assert.ok(drive.paths().includes('DoneYet/Bio 101/Cell biology.md'));
-        assert.ok(drive.paths().includes('DoneYet/Bio 101/Practicals/Lab 1.md'));
-        assert.equal(drive.items.get(cellsRef).name, 'Cell biology.md', 'the same file was updated, not a copy');
+        assert.ok(drive.paths().includes('DoneYet/Bio 101/Cell biology.docx'));
+        assert.ok(drive.paths().includes('DoneYet/Bio 101/Practicals/Lab 1.docx'));
+        assert.equal(drive.items.get(cellsRef).name, 'Cell biology.docx', 'the same file was updated, not a copy');
 
         await api.put(`/notes/${cells.id}`, { folder_id: sub.id });
         await api.delete(`/notes/${lab.id}`);
         const stats = await syncFolder(syncId);
-        assert.ok(drive.paths().includes('DoneYet/Bio 101/Practicals/Cell biology.md'));
-        assert.ok(!drive.paths().some((p) => p.endsWith('Lab 1.md')));
+        assert.ok(drive.paths().includes('DoneYet/Bio 101/Practicals/Cell biology.docx'));
+        assert.ok(!drive.paths().some((p) => p.endsWith('Lab 1.docx')));
         assert.equal(stats.removed, 1);
 
-        // Deleting a subfolder bins the folder itself, not each file in it. (Its note owned
-        // the only attachment, so the now-empty attachments folder goes too.)
+        // Deleting a subfolder bins the folder itself, not each file in it.
         const refOf = (name) => [...drive.items.entries()].find(([, i]) => i.name === name)[0];
-        const [practicals, attachments] = [refOf('Practicals'), refOf('attachments')];
+        const practicals = refOf('Practicals');
         const removesBefore = drive.calls.filter((c) => c[0] === 'remove').length;
         await api.delete(`/notes/folders/${sub.id}`);
         await syncFolder(syncId);
-        const removed = drive.calls.filter((c) => c[0] === 'remove').slice(removesBefore).map((c) => c[2]).sort();
-        assert.deepEqual(removed, [practicals, attachments].sort());
+        const removed = drive.calls.filter((c) => c[0] === 'remove').slice(removesBefore).map((c) => c[2]);
+        assert.deepEqual(removed, [practicals]);
         assert.deepEqual(drive.paths(), ['DoneYet', 'DoneYet/Bio 101']);
     });
 
@@ -349,8 +418,8 @@ describe('syncing', () => {
         await connect(api);
         await api.put(`/cloud/folders/${folder.id}/${PROVIDER}`);
         await syncFolder(await syncIdFor(folder.id));
-        const files = drive.paths().filter((p) => p.endsWith('.md')).map((p) => p.split('/').pop()).sort();
-        assert.deepEqual(files, ['Plan.md', 'a-b.md', 'plan (2).md']);
+        const files = drive.paths().filter((p) => p.endsWith('.docx')).map((p) => p.split('/').pop()).sort();
+        assert.deepEqual(files, ['Plan.docx', 'a-b.docx', 'plan (2).docx']);
         assert.ok(drive.paths().includes('DoneYet/Exam- prep-'));
         assert.equal(safeName('  ..hidden  '), 'hidden');
         assert.equal(safeName(''), 'Untitled');
@@ -397,7 +466,7 @@ describe('syncing', () => {
         const { api, folder, syncId } = await setUp();
         const res = await api.post(`/cloud/folders/${folder.id}/${PROVIDER}/sync`);
         assert.equal(res.status, 200);
-        assert.equal(res.body.stats.uploaded, 6);
+        assert.equal(res.body.stats.uploaded, 4); // 2 folders + 2 notes (images are inside them)
         assert.ok(res.body.backup.last_synced_at);
 
         await pool.query('UPDATE cloud_folder_syncs SET syncing_since = NOW() WHERE id = $1', [syncId]);
@@ -432,7 +501,7 @@ describe('Google Drive client (with fetch stubbed)', () => {
         assert.equal(sent[0].headers.Authorization, 'Bearer tok');
         assert.match(sent[0].headers['Content-Type'], /^multipart\/related; boundary=/);
         const body = sent[0].body.toString();
-        assert.match(body, /\{"name":"Cells\.md","parents":\["parent1"\]\}/);
+        assert.match(body, /\{"name":"Cells\.md","mimeType":"text\/markdown","parents":\["parent1"\]\}/);
         assert.match(body, /Content-Type: text\/markdown\r\n\r\n# Cells\r\n/);
     });
 
@@ -443,6 +512,7 @@ describe('Google Drive client (with fetch stubbed)', () => {
         assert.equal(sent[0].method, 'PATCH');
         assert.match(sent[0].url, /\/upload\/drive\/v3\/files\/file1\?uploadType=multipart/);
         assert.doesNotMatch(sent[0].body.toString(), /parents/);
+        assert.match(sent[0].body.toString(), /"mimeType":"text\/markdown"/, 'the type is updated too');
 
         const big = Buffer.alloc(6 * 1024 * 1024, 1);
         sent = stubFetch({ headers: { location: 'https://upload.example/session1' } }, { body: { id: 'big1' } });
@@ -498,32 +568,49 @@ describe('helpers', () => {
         assert.throws(() => decryptToken(parts.join('.')));
     });
 
-    test('notes become readable Markdown', () => {
-        const md = noteToMarkdown({
-            title: 'Week #1',
-            content: {
-                type: 'doc',
-                content: [
-                    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Plan' }] },
-                    { type: 'paragraph', content: [
-                        { type: 'text', text: 'Read ' },
-                        { type: 'text', text: 'chapter 3', marks: [{ type: 'bold' }] },
-                        { type: 'text', text: ' and ' },
-                        { type: 'text', text: 'notes', marks: [{ type: 'link', attrs: { href: 'https://example.com' } }] },
-                    ] },
-                    { type: 'bulletList', content: [{ type: 'listItem', content: [paragraph('one')] }, { type: 'listItem', content: [paragraph('two')] }] },
-                    { type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [paragraph('done')] }] },
-                    { type: 'orderedList', attrs: { start: 1 }, content: [{ type: 'listItem', content: [paragraph('first')] }] },
-                    { type: 'blockquote', content: [paragraph('quoted')] },
-                    { type: 'codeBlock', attrs: { language: 'js' }, content: [{ type: 'text', text: 'x = 1' }] },
-                    { type: 'fileAttachment', attrs: { attachmentId: 9, filename: 'syllabus.pdf' } },
-                ],
-            },
-        }, (id) => (id === 9 ? { name: '9-syllabus.pdf', path: 'attachments/9-syllabus.pdf' } : null));
-        assert.equal(md, [
-            '# Week \\#1', '', '## Plan', '', 'Read **chapter 3** and [notes](https://example.com)', '',
-            '- one\n- two', '', '- [x] done', '', '1. first', '', '> quoted', '', '```js\nx = 1\n```', '',
-            '📎 [syllabus.pdf](attachments/9-syllabus.pdf)', '',
-        ].join('\n'));
+    test('notes become Word documents with their formatting and images', async () => {
+        const content = {
+            type: 'doc',
+            content: [
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Plan' }] },
+                { type: 'paragraph', content: [
+                    { type: 'text', text: 'Read ' },
+                    { type: 'text', text: 'chapter 3', marks: [{ type: 'bold' }] },
+                    { type: 'text', text: ' and ' },
+                    { type: 'text', text: 'notes', marks: [{ type: 'link', attrs: { href: 'https://example.com/notes' } }] },
+                    { type: 'text', text: ' not this', marks: [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }] },
+                ] },
+                { type: 'bulletList', content: [{ type: 'listItem', content: [paragraph('one')] }, { type: 'listItem', content: [paragraph('two')] }] },
+                { type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [paragraph('done')] },
+                    { type: 'taskItem', attrs: { checked: false }, content: [paragraph('to do')] }] },
+                { type: 'orderedList', attrs: { start: 1 }, content: [{ type: 'listItem', content: [paragraph('first')] }] },
+                { type: 'blockquote', content: [paragraph('quoted')] },
+                { type: 'codeBlock', attrs: { language: 'js' }, content: [{ type: 'text', text: 'x = 1\ny = 2' }] },
+                { type: 'image', attrs: { attachmentId: 5, alt: 'A cell' } },
+                { type: 'fileAttachment', attrs: { attachmentId: 9, filename: 'syllabus.pdf' } },
+                { type: 'image', attrs: { attachmentId: 404 } },
+            ],
+        };
+        const files = (id) => (id === 5 ? { name: 'cell.png', embed: { data: PNG, mimeType: 'image/png', size: imageSize(PNG, 'image/png') } }
+            : id === 9 ? { name: 'syllabus.pdf', siblingName: 'Week 1 - syllabus.pdf' } : null);
+        const doc = await readDocx(await noteToDocx({ title: 'Week #1', content }, files));
+
+        for (const text of ['Week #1', 'Plan', 'chapter 3', 'one', 'two', '☑', 'done', '☐', 'to do', 'first', 'quoted', 'x = 1', 'y = 2', '(missing)']) {
+            assert.ok(doc.xml.includes(text), `has "${text}"`);
+        }
+        assert.match(doc.xml, /<w:b\/>[\s\S]*chapter 3/, 'bold');
+        assert.match(doc.rels, /Target="https:\/\/example\.com\/notes"/, 'a real link');
+        assert.doesNotMatch(doc.rels, /javascript:/, 'unsafe links are left as text');
+        assert.match(doc.xml, /Consolas/, 'code in a monospace font');
+        assert.match(doc.xml, /saved in Drive as &quot;Week 1 - syllabus\.pdf&quot;/);
+        assert.equal(doc.media.length, 1);
+        assert.match(doc.xml, /descr="A cell"/, 'alt text kept');
+
+        assert.deepEqual(referencedAttachmentIds(content), [5, 9, 404]);
+        assert.deepEqual(imageSize(PNG, 'image/png'), { width: 1, height: 1 });
+        const jpeg = Buffer.alloc(40);
+        Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]).copy(jpeg, 0);
+        Buffer.from([0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x20, 0x00, 0x40]).copy(jpeg, 20);
+        assert.deepEqual(imageSize(jpeg, 'image/jpeg'), { width: 64, height: 32 });
     });
 });

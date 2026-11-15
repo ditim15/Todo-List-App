@@ -1,9 +1,14 @@
 // Backs a notes folder up to the user's cloud storage (one way: nothing is read back).
 //
 // Layout in the cloud, under the provider's root ("DoneYet" in Google Drive):
-//   <Folder>/                      the synced folder
-//     <Subfolder>/<Note>.md        subfolders and notes mirror the app
-//     attachments/<id>-<file>      images and PDFs, linked from the notes
+//   <Folder>/                          the synced folder
+//     <Subfolder>/<Note>.docx          subfolders and notes mirror the app; a note's
+//                                      PNG/JPEG/GIF images are embedded in its file
+//     <Note> - <file>.pdf              attachments Word can't embed (PDFs, WebP) sit
+//                                      next to their note
+//
+// Only attachments a note still uses are backed up: an image that was pasted and then
+// removed or undone stays in note_attachments, but isn't in the note any more.
 //
 // cloud_sync_items remembers what each sync uploaded, so the next one only uploads
 // what changed (by content hash), renames or moves what was renamed or moved, and
@@ -13,7 +18,7 @@ import pool from '../../db/pool.js';
 import { getProvider } from './providers.js';
 import { decryptToken, encryptToken, sha256 } from './crypto.js';
 import { CloudAuthError, CloudError, CloudReauthError, CloudRetryableError } from './http.js';
-import { noteToMarkdown } from './markdown.js';
+import { canEmbed, DOCX_MIME, imageSize, noteToDocx, referencedAttachmentIds } from './docx.js';
 
 // A sync that has been "in progress" this long is assumed dead (server restarted).
 const STALE_LOCK = '10 minutes';
@@ -106,10 +111,12 @@ async function loadSubtree(userId, folderId) {
         'SELECT id, folder_id, title, content FROM notes WHERE user_id = $1 AND folder_id = ANY($2) ORDER BY lower(title), id',
         [userId, ids]
     );
-    const noteIds = notes.rows.map((n) => n.id);
-    const attachments = noteIds.length === 0 ? { rows: [] } : await pool.query(
-        'SELECT id, note_id, filename, mime_type, size_bytes FROM note_attachments WHERE user_id = $1 AND note_id = ANY($2) ORDER BY id',
-        [userId, noteIds]
+    // Only the attachments the notes still use (an image pasted into one note can be
+    // copied into another, so it's by id, not by owning note).
+    const usedIds = [...new Set(notes.rows.flatMap((n) => referencedAttachmentIds(n.content)))];
+    const attachments = usedIds.length === 0 ? { rows: [] } : await pool.query(
+        'SELECT id, filename, mime_type, size_bytes FROM note_attachments WHERE user_id = $1 AND id = ANY($2)',
+        [userId, usedIds]
     );
     return { folders: folders.rows, notes: notes.rows, attachments: attachments.rows };
 }
@@ -254,39 +261,65 @@ async function runSync({ sync, connection, provider }) {
         notesIn.get(n.folder_id).push(n);
     }
 
-    // Attachments first, so notes can link to them.
+    const attachmentById = new Map(tree.attachments.map((a) => [a.id, a]));
+    const siblingNames = new Map(); // attachment id -> file name, once saved next to a note
+    const loadData = async (id) => (await pool.query('SELECT data FROM note_attachments WHERE id = $1', [id])).rows[0]?.data;
+
     const top = tree.folders.find((f) => f.id === sync.folder_id);
     const topRef = await ensureFolder('folder', top.id, connection.root_ref, safeName(top.name));
-    const attachmentNames = new Map();
-    if (tree.attachments.length > 0) {
-        const attachmentsRef = await ensureFolder('attachments', 0, topRef, 'attachments');
-        for (const a of tree.attachments) {
-            const name = `${a.id}-${safeName(a.filename, 'file')}`;
-            attachmentNames.set(a.id, name);
-            await ensureFile('attachment', a.id, attachmentsRef, name, `att:${a.id}:${a.size_bytes}`, a.mime_type, async () => {
-                const row = await pool.query('SELECT data FROM note_attachments WHERE id = $1', [a.id]);
-                return row.rows[0].data;
-            });
+
+    async function syncNote(note, folderRef, allocate) {
+        const base = safeName(note.title);
+        const name = allocate(base, '.docx');
+        const used = referencedAttachmentIds(note.content).map((id) => attachmentById.get(id)).filter(Boolean);
+
+        // Attachments Word can't embed go next to the note, named after it. One used by
+        // two notes is saved once, next to the first.
+        const siblings = new Map();
+        for (const a of used.filter((x) => !canEmbed(x.mime_type))) {
+            if (siblingNames.has(a.id)) {
+                siblings.set(a.id, siblingNames.get(a.id));
+                continue;
+            }
+            const file = safeName(a.filename, 'file');
+            const dot = file.lastIndexOf('.');
+            const [stem, ext] = dot > 0 ? [file.slice(0, dot), file.slice(dot)] : [file, ''];
+            const siblingName = allocate(`${base} - ${stem}`, ext);
+            siblings.set(a.id, siblingName);
+            siblingNames.set(a.id, siblingName);
+            await ensureFile('attachment', a.id, folderRef, siblingName, `att:${a.id}:${a.size_bytes}:${siblingName}`, a.mime_type, () => loadData(a.id));
         }
+
+        const embedded = used.filter((x) => canEmbed(x.mime_type));
+        const hash = sha256(JSON.stringify([
+            'docx-v1', name, note.title, note.content,
+            embedded.map((a) => [a.id, a.size_bytes]), [...siblings.entries()],
+        ]));
+        await ensureFile('note', note.id, folderRef, name, hash, DOCX_MIME, async () => {
+            const images = new Map();
+            for (const a of embedded) {
+                const data = await loadData(a.id);
+                if (data) images.set(a.id, { data, mimeType: a.mime_type, size: imageSize(data, a.mime_type) });
+            }
+            return noteToDocx(note, (id) => {
+                const a = attachmentById.get(id);
+                if (!a) return null;
+                return { name: a.filename, embed: images.get(id), siblingName: siblings.get(id) };
+            });
+        });
     }
 
-    async function walk(folder, folderRef, depth) {
-        const allocate = nameAllocator(depth === 0 ? ['attachments'] : []);
+    async function walk(folder, folderRef) {
+        const allocate = nameAllocator();
         const subfolders = (childFolders.get(folder.id) ?? []).sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
         const subNames = subfolders.map((sub) => allocate(safeName(sub.name)));
         for (const [i, sub] of subfolders.entries()) {
             const ref = await ensureFolder('folder', sub.id, folderRef, subNames[i]);
-            await walk(sub, ref, depth + 1);
+            await walk(sub, ref);
         }
-        const prefix = `${'../'.repeat(depth)}attachments/`;
-        for (const note of notesIn.get(folder.id) ?? []) {
-            const name = allocate(safeName(note.title), '.md');
-            const markdown = noteToMarkdown(note, (id) => (attachmentNames.has(id) ? { name: attachmentNames.get(id), path: prefix + attachmentNames.get(id) } : null));
-            const content = Buffer.from(markdown, 'utf8');
-            await ensureFile('note', note.id, folderRef, name, sha256(`${name}\n${markdown}`), 'text/markdown', async () => content);
-        }
+        for (const note of notesIn.get(folder.id) ?? []) await syncNote(note, folderRef, allocate);
     }
-    await walk(top, topRef, 0);
+    await walk(top, topRef);
 
     // Whatever was synced before but isn't in the folder any more goes to the bin. Items
     // inside a removed folder go with it, so only the top-most ones are removed.

@@ -84,7 +84,9 @@ const google = {
 
     // Creates the file, or replaces an existing one's content (and name).
     async uploadFile(token, parentRef, name, content, mimeType, existingRef = null) {
-        const metadata = existingRef ? { name } : { name, parents: [parentRef] };
+        // mimeType on updates too, so a file that changes type (an old .md backup that is
+        // now a .docx) is relabelled rather than keeping its old type.
+        const metadata = existingRef ? { name, mimeType } : { name, mimeType, parents: [parentRef] };
         const base = existingRef ? `${UPLOAD}/files/${existingRef}` : `${UPLOAD}/files`;
         const method = existingRef ? 'PATCH' : 'POST';
 
