@@ -25,6 +25,8 @@ function Privacy() {
                     <li><strong>Account details:</strong> your name, email address, and your password (stored only as a one-way hash, never in readable form).</li>
                     <li><strong>Your tasks:</strong> titles, notes, due dates, priorities, list names and reminder settings, including the timezone your reminders use.</li>
                     <li><strong>Assistant chats:</strong> if you use the assistant, your messages and its replies, so the conversation is there when you come back.</li>
+                    <li><strong>Your notes:</strong> folders, notes, and the images and PDFs you add to them.</li>
+                    <li><strong>Google Drive connection:</strong> if you connect it, your Google account&apos;s email and name, and access tokens (stored encrypted) so backups can run.</li>
                     <li><strong>Sign-in data:</strong> a login cookie (see below) and records of your active sessions so they can be ended.</li>
                     <li><strong>Contact form messages:</strong> if you use the <Link to="/contact">contact form</Link>, your name, email, topic and message are emailed to our support inbox so we can reply. They aren&apos;t stored in the app.</li>
                 </ul>
@@ -46,6 +48,18 @@ function Privacy() {
                         generate a reply. If the assistant looks up your tasks, the title, due date, list and
                         priority of your open tasks are sent too. Completed tasks, task notes, your name and your
                         email are never sent. If you don&apos;t use the assistant, nothing is sent to Anthropic.
+                    </li>
+                    <li>
+                        <strong>Anthropic (notes assistant):</strong> when you message the assistant on the Notes page, your
+                        message, recent messages from that chat, the text of the note you have open, and the titles, folder
+                        names and text of any notes it looks up are sent to Anthropic&apos;s API. Edits it suggests are only
+                        made when you press Apply.
+                    </li>
+                    <li>
+                        <strong>Google (Drive backup):</strong> only if you turn on backup for a folder. That folder&apos;s
+                        notes, images and PDFs are copied to your own Google Drive, where Google&apos;s privacy policy
+                        applies. DoneYet can only see the files it creates there. Disconnecting stops further copies; files
+                        already in your Drive stay until you delete them.
                     </li>
                     <li><strong>Our email provider</strong>, to deliver the emails listed above.</li>
                     <li><strong>Our hosting and database providers</strong>, which store and run the service for us.</li>
@@ -72,7 +86,8 @@ function Privacy() {
                     <li>Edit or delete any task, and clear your assistant chat, at any time.</li>
                     <li>
                         Delete your account from <Link to="/account">Account settings</Link>. This permanently deletes your
-                        account, tasks, reminders and chat history right away.
+                        account, tasks, reminders, notes, chat history and any Google Drive connection right away.
+                        Copies already backed up to your own Google Drive stay there until you delete them.
                     </li>
                     <li>For a copy of your data, or any other question, email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</li>
                 </ul>

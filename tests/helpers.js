@@ -74,7 +74,8 @@ export { app, pool, sentEmails };
 export async function resetDatabase() {
     await pool.query(
         'TRUNCATE users, todos, refresh_tokens, email_verification_tokens, password_reset_tokens, ai_messages,'
-        + ' login_failures, ai_usage, ai_spend_daily, note_folders, notes, note_attachments'
+        + ' login_failures, ai_usage, ai_spend_daily, note_folders, notes, note_attachments,'
+        + ' cloud_connections, cloud_oauth_states, cloud_folder_syncs, cloud_sync_items'
         + ' RESTART IDENTITY CASCADE'
     );
     sentEmails.length = 0;

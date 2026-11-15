@@ -181,3 +181,73 @@ CREATE TABLE IF NOT EXISTS note_attachments (
 
 CREATE INDEX IF NOT EXISTS idx_note_attachments_note_id ON note_attachments(note_id);
 CREATE INDEX IF NOT EXISTS idx_note_attachments_user_id ON note_attachments(user_id);
+
+-- ---------- Cloud backup (Google Drive for now) ----------
+-- One-way backup: a folder's notes (as Markdown) and attachments are copied to the
+-- user's cloud storage; nothing is read back. See services/cloud/.
+--
+-- A user's link to a provider. Tokens are encrypted (AES-256-GCM, services/cloud/crypto.js).
+-- root_ref is the provider's id for the "DoneYet" folder everything goes in. status
+-- 'reauth' means the refresh token stopped working and the user has to connect again.
+CREATE TABLE IF NOT EXISTS cloud_connections (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(20) NOT NULL,
+    account_email VARCHAR(255),
+    account_name VARCHAR(255),
+    access_token_enc TEXT NOT NULL,
+    refresh_token_enc TEXT,
+    expires_at TIMESTAMPTZ,
+    root_ref TEXT,
+    status VARCHAR(10) NOT NULL DEFAULT 'ok' CHECK (status IN ('ok', 'reauth')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, provider)
+);
+
+-- Pending sign-ins with a provider: the OAuth `state` (stored hashed) and the PKCE
+-- verifier. Each works once and expires after 15 minutes.
+CREATE TABLE IF NOT EXISTS cloud_oauth_states (
+    state_hash VARCHAR(64) PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(20) NOT NULL,
+    code_verifier VARCHAR(128) NOT NULL,
+    return_folder_id INT,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '15 minutes'
+);
+
+-- A folder (and everything inside it) backed up to one provider. `dirty` is set when
+-- the user changes their notes; the background worker then syncs it. syncing_since
+-- marks a sync in progress, so two servers never run the same one.
+CREATE TABLE IF NOT EXISTS cloud_folder_syncs (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    connection_id INT NOT NULL REFERENCES cloud_connections(id) ON DELETE CASCADE,
+    folder_id INT NOT NULL REFERENCES note_folders(id) ON DELETE CASCADE,
+    dirty BOOLEAN NOT NULL DEFAULT TRUE,
+    dirty_at TIMESTAMPTZ,
+    syncing_since TIMESTAMPTZ,
+    last_attempt_at TIMESTAMPTZ,
+    last_synced_at TIMESTAMPTZ,
+    last_error TEXT,
+    failures INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (connection_id, folder_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cloud_folder_syncs_user_id ON cloud_folder_syncs(user_id);
+
+-- What a sync has put in the cloud, so the next one updates, renames or removes it
+-- instead of uploading a duplicate. kind: 'folder' | 'note' | 'attachment' | 'attachments'
+-- (the folder attachments go in). local_id is the folder/note/attachment id (0 for
+-- 'attachments'). content_hash skips uploads when nothing changed.
+CREATE TABLE IF NOT EXISTS cloud_sync_items (
+    id SERIAL PRIMARY KEY,
+    sync_id INT NOT NULL REFERENCES cloud_folder_syncs(id) ON DELETE CASCADE,
+    kind VARCHAR(12) NOT NULL,
+    local_id INT NOT NULL,
+    remote_ref TEXT NOT NULL,
+    remote_name TEXT NOT NULL,
+    parent_ref TEXT,
+    content_hash VARCHAR(64),
+    UNIQUE (sync_id, kind, local_id)
+);

@@ -1313,6 +1313,64 @@
     font-weight: 600;
 }
 
+.folder-sync-row--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+}
+
+.folder-sync-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 12px;
+}
+
+.folder-sync-account {
+    color: var(--ink-3);
+    font-size: 0.8em;
+    overflow-wrap: anywhere;
+}
+
+.folder-sync-account .link-button {
+    margin: 0;
+    font-size: 1em;
+}
+
+.folder-sync-status {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.88em;
+}
+
+.folder-sync-status.is-ok {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.folder-sync-status.is-error {
+    color: var(--critical-text);
+}
+
+.folder-sync-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.folder-sync-actions .button-primary,
+.folder-sync-actions .button-ghost {
+    height: 34px;
+    padding: 0 14px;
+}
+
+.folder-sync-footnote {
+    margin-top: 12px;
+    font-size: 0.78em;
+}
+
 .folder-sync-row .button-ghost:disabled {
     opacity: 0.5;
     cursor: not-allowed;

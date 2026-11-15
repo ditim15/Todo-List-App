@@ -17,6 +17,7 @@ import {
     ATTACHMENT_MAX_BYTES,
 } from "../controllers/notes.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { markUserDirty } from "../services/cloud/sync.js";
 
 const router = Router();
 
@@ -46,6 +47,19 @@ function readFile(req, res, next) {
 router.get("/attachments/:id/file", serveAttachment);
 
 router.use(authenticate);
+
+// Any successful change to notes, folders or attachments flags the user's cloud
+// backups, which the background worker then syncs (services/cloud/sync.js).
+router.use((req, res, next) => {
+    if (req.method !== 'GET') {
+        res.on('finish', () => {
+            if (res.statusCode < 400) {
+                markUserDirty(req.user.id).catch((err) => console.warn('[cloud] could not flag backups:', err.message));
+            }
+        });
+    }
+    next();
+});
 
 router.get("/tree", getTree);
 router.get("/recent", getRecentNotes);

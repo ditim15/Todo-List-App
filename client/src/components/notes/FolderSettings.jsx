@@ -1,24 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { FOLDER_COLORS } from './folderColors';
+import CloudBackupSection from './CloudBackupSection';
 
 // Folder settings: a dialog with one section per group of options. "Appearance" sets
-// the folder's background colour (saved as soon as it's picked). "Sync" is where cloud
-// storage (Google Drive, OneDrive, ...) will plug in; each provider is listed but not
-// connectable yet. New sections go in SECTIONS and get a case in the body below.
+// the folder's background colour (saved as soon as it's picked). "Sync" backs the
+// folder up to Google Drive (CloudBackupSection). New sections go in SECTIONS and get a
+// case in the body below.
 const SECTIONS = [
     { key: 'appearance', label: 'Appearance' },
     { key: 'sync', label: 'Sync' },
 ];
 
-const SYNC_PROVIDERS = [
-    { key: 'google-drive', label: 'Google Drive' },
-    { key: 'onedrive', label: 'OneDrive' },
-    { key: 'dropbox', label: 'Dropbox' },
-];
-
-function FolderSettings({ folder, noteCount, onClose, onColor }) {
+function FolderSettings({ folder, noteCount, onClose, onColor, initialSection = 'appearance' }) {
     const dialogRef = useRef(null);
-    const [section, setSection] = useState('appearance');
+    const [section, setSection] = useState(initialSection);
 
     // Opens as a modal when mounted (the page mounts it only while it's open).
     useEffect(() => {
@@ -99,23 +94,7 @@ function FolderSettings({ folder, noteCount, onClose, onColor }) {
                         </>
                     )}
 
-                    {section === 'sync' && (
-                        <>
-                            <h3 className="notes-section-label">Cloud storage</h3>
-                            <p className="notes-dialog-hint">
-                                Keep a copy of this folder's notes in your own cloud storage. Connecting accounts isn't available yet.
-                            </p>
-                            <ul className="folder-sync-list">
-                                {SYNC_PROVIDERS.map((p) => (
-                                    <li key={p.key} className="folder-sync-row">
-                                        <span className="folder-sync-name">{p.label}</span>
-                                        <span className="folder-sync-badge">Coming soon</span>
-                                        <button type="button" className="button-ghost" disabled>Connect</button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
+                    {section === 'sync' && <CloudBackupSection folder={folder} />}
                 </div>
             </div>
         </dialog>

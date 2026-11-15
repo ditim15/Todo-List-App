@@ -109,6 +109,34 @@ Require an `Authorization: Bearer <accessToken>` header, except the signed file 
 - **Front end:** `client/src/pages/Notes.jsx` (loaded only when opened, since it carries the editor), `client/src/components/notes/` (editor, extensions, dashboard panel).
 - After pulling this change, re-run `db/init.sql` to add the `note_folders`, `notes` and `note_attachments` tables. The task list (`GET /todos`) returns 500 until they exist.
 
+## Cloud Backup
+
+A notes folder can be backed up to the user's Google Drive (Folder settings → Sync). It's **one-way**: the folder, its subfolders and their notes are copied to a `DoneYet` folder in Drive as Markdown files, with images and PDFs in an `attachments` folder the notes link to. Nothing is read back from Drive.
+
+- **Access:** the `drive.file` scope only, so DoneYet can see the files it created and nothing else in the user's Drive. Sign-in is OAuth 2 with PKCE and a single-use `state`. Tokens are stored encrypted (AES-256-GCM, key from `CLOUD_TOKEN_KEY`).
+- **When it runs:** any change to notes, folders or attachments flags the user's backups. A background worker (every minute, in `server.js`) syncs a flagged folder once the user has stopped editing for a minute. **Back up now** runs one straight away. Unchanged files are skipped (content hash); renamed or moved notes and folders are renamed or moved in Drive rather than copied; anything deleted in the app goes to Drive's bin. Failures retry with back-off (1, 2, 4… minutes, up to 6 hours).
+- **If Google stops accepting the token** (revoked, password change), the connection is marked as needing to reconnect, backups pause, and the folder settings show **Reconnect**. Reconnecting resumes them.
+- **Code:** `services/cloud/` (`google.js` is the Drive client, `sync.js` the engine and worker, `markdown.js` the note → Markdown converter, `crypto.js` token encryption), `controllers/cloud.controller.js`, `routes/cloud.js`, `client/src/components/notes/CloudBackupSection.jsx`. Another provider (OneDrive, Dropbox) would be one more module shaped like `google.js`, registered in `services/cloud/providers.js`.
+- **Tables:** `cloud_connections`, `cloud_oauth_states`, `cloud_folder_syncs`, `cloud_sync_items`. Re-run `db/init.sql` after pulling.
+
+### Setting up Google Drive
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or pick one) and enable the **Google Drive API** (APIs & Services → Library).
+2. **OAuth consent screen:** User type *External*. Add the app name, support email and the `.../auth/drive.file` scope (plus `openid`, `email`, `profile`). While it's in *Testing*, only the test users you list can connect; publish it to let anyone connect. `drive.file` is a non-sensitive scope, so publishing doesn't need Google's security review.
+3. **Credentials → Create credentials → OAuth client ID**, type *Web application*. Under *Authorized redirect URIs* add `http://localhost:4000/cloud/google-drive/callback` for development and `https://<your API domain>/cloud/google-drive/callback` for production.
+4. Put the client ID and secret in `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, set `API_URL` to the API's address if it isn't `http://localhost:PORT`, and in production set `CLOUD_TOKEN_KEY`. Restart the API: the log no longer says cloud backup is off.
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET    | `/cloud` | Providers, whether each is set up on the server, and the user's connection |
+| POST   | `/cloud/:provider/connect` | `{ folder_id? }` → `{ url }`: the provider's sign-in page (`folder_id` is where to return) |
+| GET    | `/cloud/:provider/callback` | Where the provider sends the browser back (no token; identified by `state`). Redirects to `/notes?cloud_result=connected\|cancelled\|expired\|error` |
+| DELETE | `/cloud/:provider` | Disconnect: revokes the token and stops every backup (files in Drive stay) |
+| GET    | `/cloud/folders/:folderId` | The folder's backup status per provider, or the parent folder whose backup covers it |
+| PUT    | `/cloud/folders/:folderId/:provider` | Back the folder up. `409` if a parent or a subfolder is already backed up. |
+| DELETE | `/cloud/folders/:folderId/:provider` | Stop backing it up (files in Drive stay) |
+| POST   | `/cloud/folders/:folderId/:provider/sync` | Back up now and wait. `409` if one is running, or `code: "CLOUD_REAUTH"` if the user must reconnect. |
+
 ## Task Reminders
 
 A task with a due date can have an email reminder: "N days before the due date at a time of day", in the user's timezone. Send these fields on `POST /todos` and `PUT /todos/:id`:

@@ -392,6 +392,7 @@ function Notes() {
     const [renamingId, setRenamingId] = useState(null);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [settingsId, setSettingsId] = useState(null);
+    const [settingsSection, setSettingsSection] = useState('appearance');
     const [drag, setDrag] = useState(null);       // { type: 'note' | 'folder', id }
     const [over, setOver] = useState(null);       // `${zone}:${folderId ?? 'root'}`
     const [toast, setToast] = useState(null);     // { message, undo? }
@@ -677,6 +678,27 @@ function Notes() {
         };
     }, [drag, over, canDrop, moveItem, endDrag]);
 
+    // ----- Back from connecting Google Drive -----
+    // The server redirects to /notes?folder=<id>&cloud=<provider>&cloud_result=<outcome>:
+    // say how it went and reopen that folder's Sync settings.
+    useEffect(() => {
+        const result = params.get('cloud_result');
+        if (!result) return;
+        const messages = {
+            connected: 'Google Drive connected. You can back this folder up now.',
+            cancelled: 'Connecting Google Drive was cancelled.',
+            expired: 'That sign-in took too long or was already used. Try connecting again.',
+            error: "Couldn't connect Google Drive. Try again.",
+        };
+        showToast({ message: messages[result] ?? messages.error });
+        const folderId = Number(params.get('folder'));
+        setParams(folderId ? { folder: String(folderId) } : {}, { replace: true });
+        if (folderId) {
+            setSettingsSection('sync');
+            setSettingsId(folderId);
+        }
+    }, [params, setParams, showToast]);
+
     // ----- Assistant edits -----
     // Applies an edit in the editor (so Ctrl+Z undoes it and autosave saves it). For a
     // note that isn't open, opens it first. Resolves to { ok } or { error }.
@@ -750,7 +772,10 @@ function Notes() {
                 onNewNote={newNote}
                 onNewFolder={newFolder}
                 onChanged={reloadTree}
-                onSettings={() => setSettingsId(selectedFolder.id)}
+                onSettings={() => {
+                    setSettingsSection('appearance');
+                    setSettingsId(selectedFolder.id);
+                }}
                 run={run}
             />
         );
@@ -877,6 +902,7 @@ function Notes() {
                     key={settingsFolder.id}
                     folder={settingsFolder}
                     noteCount={countNotesDeep(index, settingsFolder.id)}
+                    initialSection={settingsSection}
                     onClose={() => setSettingsId(null)}
                     onColor={(color) => setFolderColor(settingsFolder.id, color)}
                 />

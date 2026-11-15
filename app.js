@@ -12,6 +12,7 @@ import todosRouter from "./routes/todos.js";
 import aiRouter from "./routes/ai.js";
 import contactRouter from "./routes/contact.js";
 import notesRouter from "./routes/notes.js";
+import cloudRouter from "./routes/cloud.js";
 import { authenticate } from "./middleware/authenticate.js";
 
 dotenv.config({
@@ -64,6 +65,8 @@ app.use("/todos", todosRouter);
 app.use("/ai", authenticate, aiRouter);
 // Notes: folders, rich-text notes, task folders and attachments (routes/notes.js).
 app.use("/notes", notesRouter);
+// Cloud backup of notes folders to Google Drive (routes/cloud.js, services/cloud/).
+app.use("/cloud", cloudRouter);
 // Contact form; emails the support inbox (SUPPORT_EMAIL). Open to signed-out visitors.
 app.use("/contact", contactRouter);
 

@@ -3,6 +3,8 @@
 import app, { allowedOrigins } from "./app.js";
 import { isAiConfigured } from "./services/ai.js";
 import { startReminderScheduler } from "./notifications/reminders.js";
+import { startCloudSyncScheduler } from "./services/cloud/sync.js";
+import { anyProviderConfigured } from "./services/cloud/providers.js";
 
 // The server can't issue or check logins without these, so it refuses to start rather
 // than failing on the first request.
@@ -28,6 +30,12 @@ if (process.env.NODE_ENV === 'production') {
         console.error('JWT_SECRET must be at least 32 characters in production. Generate one with the command in .env.example.');
         process.exit(1);
     }
+    // Cloud tokens are encrypted with a key derived from this. Falling back to
+    // JWT_SECRET would mean rotating it silently breaks every connected account.
+    if (anyProviderConfigured() && (process.env.CLOUD_TOKEN_KEY || '').length < 32) {
+        console.error('Cloud backup is configured but CLOUD_TOKEN_KEY is missing or shorter than 32 characters. Generate one with the command in .env.example.');
+        process.exit(1);
+    }
 }
 
 const port = process.env.PORT || 8000;
@@ -46,6 +54,15 @@ app.listen(port, (err) => {
         console.log('REMINDER_SCHEDULER is off: this server will not send task reminders.');
     } else {
         startReminderScheduler();
+    }
+    // Backs up changed notes folders to Google Drive (services/cloud/sync.js). Off with
+    // CLOUD_SYNC_SCHEDULER=off, like the reminders, for a second local server.
+    if (!anyProviderConfigured()) {
+        console.log('GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are not set: cloud backup is off.');
+    } else if ((process.env.CLOUD_SYNC_SCHEDULER || 'on').toLowerCase() === 'off') {
+        console.log('CLOUD_SYNC_SCHEDULER is off: this server will not run cloud backups in the background.');
+    } else {
+        startCloudSyncScheduler();
     }
     if (!isAiConfigured()) {
         console.log("ANTHROPIC_API_KEY is not set: the assistant is off (POST /ai/chat returns 503).");
