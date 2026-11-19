@@ -1,5 +1,5 @@
 {
-  "name": "todo-list-api",
+  "name": "todo-list-app",
   "version": "1.0.0",
   "description": "Backend API for DoneYet?, a gentle-reminder task app for students",
   "main": "server.js",
@@ -38,10 +38,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ditim15/Todo-List-API.git"
+    "url": "git+https://github.com/ditim15/Todo-List-App.git"
   },
   "bugs": {
-    "url": "https://github.com/ditim15/Todo-List-API/issues"
+    "url": "https://github.com/ditim15/Todo-List-App/issues"
   },
-  "homepage": "https://github.com/ditim15/Todo-List-API#readme"
+  "homepage": "https://github.com/ditim15/Todo-List-App#readme"
 }
