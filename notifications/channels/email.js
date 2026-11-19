@@ -9,6 +9,8 @@ import nodemailer from 'nodemailer';
 //   EMAIL_TRANSPORT=memory    keep each email in `sentEmails` and print nothing (tests)
 //   EMAIL_TRANSPORT=smtp      real delivery via SMTP_HOST, SMTP_PORT, SMTP_USER,
 //                             SMTP_PASS, SMTP_SECURE ('true' for port 465)
+//   EMAIL_TRANSPORT=resend    real delivery via Resend's HTTPS API (RESEND_API_KEY), for
+//                             hosts that block outbound SMTP ports (Railway's Hobby plan)
 //
 // EMAIL_FROM sets the sender (default "DoneYet? <reminders@doneyet.local>").
 //
@@ -42,8 +44,43 @@ export function describeEmailError(err) {
     return parts.join(' ');
 }
 
+// Resend's HTTPS API, with the same sendMail({ from, to, subject, text, html, replyTo })
+// shape as a nodemailer transporter. https://resend.com/docs/api-reference/emails/send-email
+const RESEND_URL = 'https://api.resend.com/emails';
+
+function resendTransporter(apiKey) {
+    return {
+        async sendMail({ from, to, subject, text, html, replyTo }) {
+            let res;
+            try {
+                res = await fetch(RESEND_URL, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        from, to: [to], subject, text, html,
+                        ...(replyTo ? { reply_to: replyTo } : {}),
+                    }),
+                    signal: AbortSignal.timeout(SMTP_TIMEOUT_MS),
+                });
+            } catch (err) {
+                throw Object.assign(new Error(`Could not reach Resend: ${err.message}`), { code: err.name === 'TimeoutError' ? 'ETIMEDOUT' : 'ECONNECTION' });
+            }
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw Object.assign(new Error(`Resend refused the email: ${body.message || res.statusText}`), { responseCode: res.status });
+            }
+            return { messageId: body.id };
+        },
+    };
+}
+
 async function createTransporter() {
     const mode = (process.env.EMAIL_TRANSPORT || 'console').toLowerCase();
+
+    if (mode === 'resend') {
+        if (!process.env.RESEND_API_KEY) throw new Error('EMAIL_TRANSPORT is "resend" but RESEND_API_KEY is not set');
+        return { mode, transporter: resendTransporter(process.env.RESEND_API_KEY) };
+    }
 
     if (mode === 'smtp') {
         return {

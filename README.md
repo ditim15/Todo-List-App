@@ -154,7 +154,7 @@ Delivery lives in `notifications/`. `reminders.js` builds the message and sends 
 ### Email settings (`.env`)
 
 ```
-EMAIL_TRANSPORT=console            # console (default) | ethereal | smtp
+EMAIL_TRANSPORT=console            # console (default) | ethereal | smtp | resend
 EMAIL_FROM="DoneYet? <reminders@example.com>"
 APP_URL=http://localhost:5173      # used for the "Open DoneYet?" link
 
@@ -164,11 +164,17 @@ SMTP_PORT=587
 SMTP_SECURE=false                  # true for port 465
 SMTP_USER=...
 SMTP_PASS=...
+
+# Only for EMAIL_TRANSPORT=resend
+RESEND_API_KEY=re_...
 ```
 
 - `console`: prints each email to the server log; nothing is sent.
 - `ethereal`: sends to a throwaway [Ethereal](https://ethereal.email) inbox and logs a link to view the email. Nothing reaches real inboxes.
 - `smtp`: real delivery to verified addresses.
+- `resend`: real delivery through [Resend](https://resend.com)'s HTTPS API instead of SMTP. Use it where the host blocks SMTP ports (Railway's Hobby plan does). `EMAIL_FROM` must be on a domain verified in Resend.
+
+Schema changes: `npm run db:init` applies `db/init.sql` to `DATABASE_URL` (safe to re-run; on Railway it runs as the pre-deploy command).
 
 After pulling this change, re-run `db/init.sql` to add the reminder columns (it's safe to re-run).
 

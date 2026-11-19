@@ -20,8 +20,13 @@ if (process.env.NODE_ENV === 'production') {
     // Any other transport delivers nothing, and console mode prints every verification
     // and password-reset link to the log, where anyone who can read the log could use
     // them to take over accounts.
-    if ((process.env.EMAIL_TRANSPORT || 'console').toLowerCase() !== 'smtp') {
-        console.error('NODE_ENV is production but EMAIL_TRANSPORT is not "smtp". Set EMAIL_TRANSPORT=smtp and the SMTP_* settings (see .env.example).');
+    const transport = (process.env.EMAIL_TRANSPORT || 'console').toLowerCase();
+    if (transport !== 'smtp' && transport !== 'resend') {
+        console.error('NODE_ENV is production but EMAIL_TRANSPORT is not "smtp" or "resend". Set EMAIL_TRANSPORT=smtp with the SMTP_* settings, or EMAIL_TRANSPORT=resend with RESEND_API_KEY (see .env.example).');
+        process.exit(1);
+    }
+    if (transport === 'resend' && !process.env.RESEND_API_KEY) {
+        console.error('EMAIL_TRANSPORT is "resend" but RESEND_API_KEY is not set.');
         process.exit(1);
     }
     // A short secret can be brute-forced offline from any access token, letting
