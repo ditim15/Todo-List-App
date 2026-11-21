@@ -207,7 +207,7 @@ Paper, ink and two pens, plus one action green. Each light value has a dark coun
 - **Body Graphite** (`ink-2`) is the default body text. **Margin Grey** (`ink-3`) is for meta, counts, hints and the struck title of a done task.
 - **Hairline** (`line`) for row dividers and quiet borders. **Pencil Line** (`line-strong`) for input borders, the theme toggle and the scrollbar.
 - **Wash** (`surface-hover`): the hover state for rows, tabs and ghost controls.
-- **Ink Band** (`band`, `band-ink`, `band-ink-2`, `band-line`, `band-accent`): one inverted section per page for rhythm. It inverts in dark mode, where the band becomes light paper and `band-accent` becomes ink green.
+- **Ink Band** (`band`, `band-ink`, `band-ink-2`, `band-line`, `band-accent`): the inverted ink surface for small floating things, the notes "Moved … Undo" toast and the theme button's hover. It inverts in dark mode, where it becomes light paper and `band-accent` becomes ink green. It is not used for whole page sections: on tall screens an inverted section peeked under the first screen as a strip, so landing sections all sit on the page ground.
 
 ### Status and priority
 - **Critical** (`critical`, `critical-text`): errors and the danger button. Overdue tasks use only a 6px `critical` dot beside ink text.

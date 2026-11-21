@@ -605,50 +605,61 @@ html:has(.landing) {
     background: var(--accent);
 }
 
-.mock-priority-bar {
-    display: flex;
-    gap: 2px;
-    height: 10px;
-}
-
-.mock-seg--high { background: var(--prio-high); }
-.mock-seg--medium { background: var(--prio-medium); }
-.mock-seg--low { background: var(--prio-low); }
-
-.mock-legend,
-.mock-upcoming {
-    display: flex;
-    flex-direction: column;
-    margin-top: var(--space-3);
-}
-
-.mock-legend span,
-.mock-upcoming span {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) 0;
-    border-bottom: var(--border) solid var(--line);
+/* Today mock: the dashboard's heading and its Today / Coming up sections. */
+.mock-day-head {
+    margin-bottom: var(--space-3);
     color: var(--ink);
+    font-size: var(--text-lg);
+    font-weight: 850;
+    letter-spacing: -0.03em;
 }
 
-.mock-legend strong {
-    margin-left: auto;
-    font-variant-numeric: tabular-nums;
-}
-
-.mock-upcoming em {
-    margin-left: auto;
-    color: var(--ink-3);
-    font-style: normal;
-    font-size: var(--text-xs);
-    white-space: nowrap;
-}
-
-.mock-subhead {
-    margin-top: var(--space-5);
+.mock-group {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding-bottom: var(--space-1);
+    border-bottom: var(--border) solid var(--line-strong);
     color: var(--ink);
     font-weight: 800;
+}
+
+.mock-group--today {
+    margin-top: 0;
+    border-bottom: var(--border-thick) solid var(--rule);
+}
+
+.mock-group em {
+    color: var(--ink-3);
+    font-style: normal;
+    font-weight: 600;
+    font-size: var(--text-xs);
+}
+
+.mock-group + .mock-task {
+    border-top: none;
+}
+
+/* Overdue reads as a fact: ink text with a small red marker, like the app. */
+.mock-overdue {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.mock-overdue::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--critical);
+}
+
+.mock-task-title.hl {
+    align-self: flex-start;
 }
 
 .mock-filters {
@@ -775,13 +786,10 @@ html:has(.landing) {
 }
 
 /* Inverted ink band. */
+/* Was an inverted ink band; on tall screens it peeked under the first screen as a dark
+   strip. Now it sits on the page ground, ruled off like the other sections. */
 .section--band {
-    background: var(--band);
-    color: var(--band-ink-2);
-}
-
-.section--band h2 {
-    color: var(--band-ink);
+    border-top: var(--border) solid var(--line);
 }
 
 .band {
@@ -797,22 +805,9 @@ html:has(.landing) {
     font-size: var(--text-lg);
 }
 
-.section--band .check-list li {
-    border-top-color: var(--band-line);
-}
-
-.section--band .bullet-icon {
-    color: var(--band-accent);
-}
-
-.section--band .check-list {
-    color: var(--band-ink);
-}
-
 .band-visual .mock-window {
     max-width: 480px;
     margin-left: auto;
-    border-top-color: var(--hl);
 }
 
 /* Two previews side by side. */

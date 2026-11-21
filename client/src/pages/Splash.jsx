@@ -3,12 +3,12 @@ import { useAuth } from '../auth/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import NudgeLogo from '../components/brand/NudgeLogo';
 import SiteFooter from '../components/SiteFooter';
-import { FiltersMock, ListsMock, PlannerMock, PriorityMock, Strike } from '../components/landing/AppMocks';
+import { FiltersMock, ListsMock, PlannerMock, Strike, TodayMock } from '../components/landing/AppMocks';
 import { CheckIcon } from '../components/landing/FeatureIcons';
 import './static/Splash.css';
 
 // Design direction: "Highlighted Handout" (see .impeccable/surfaces). Ruled handout
-// sections, one inverted ink band, and two hand marks: the biro strike for what is done
+// sections on one page ground, and two hand marks: the biro strike for what is done
 // and the highlighter swipe for what is next (both used once in the headline).
 
 // Only features the sections below don't already show (deadlines, lists, priorities
@@ -140,17 +140,17 @@ function Splash() {
                         <div className="band-copy">
                             <h2>A gentle nudge toward what's next</h2>
                             <p>
-                                Your dashboard leads with today and overdue, then shows how open work splits by
-                                priority. No digging through syllabi the night before.
+                                Your dashboard opens on today: how many things are due, then your tasks sorted
+                                into Today, Coming up and No due date. No digging through syllabi the night before.
                             </p>
                             <ul className="check-list">
-                                <Bullet>Overdue work is flagged in red, so it can't hide</Bullet>
-                                <Bullet>"Coming up" lists your next deadlines across every class</Bullet>
-                                <Bullet>The priority bar shows how much high-stakes work is left</Bullet>
+                                <Bullet>Overdue work stays at the top of Today, so it can't slip by</Bullet>
+                                <Bullet>The next thing to work on is highlighted for you</Bullet>
+                                <Bullet>"Coming up" lines up your next deadlines across every class</Bullet>
                             </ul>
                         </div>
                         <div className="band-visual">
-                            <PriorityMock />
+                            <TodayMock />
                         </div>
                     </div>
                 </section>

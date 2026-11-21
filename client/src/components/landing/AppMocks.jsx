@@ -20,12 +20,12 @@ function MockWindow({ title, children }) {
     );
 }
 
-function MockTask({ title, list, priority, due, overdue = false, done = false }) {
+function MockTask({ title, list, priority, due, overdue = false, done = false, next = false }) {
     return (
         <div className={`mock-task${done ? ' mock-task--done' : ''}`}>
             <span className={`mock-check${done ? ' mock-check--on' : ''}`} />
             <div className="mock-task-body">
-                <span className="mock-task-title">{title}</span>
+                <span className={`mock-task-title${next ? ' hl' : ''}`}>{title}</span>
                 <span className="mock-task-meta">
                     <span className="mock-chip">{list}</span>
                     <span className="mock-priority">
@@ -128,25 +128,19 @@ export function ListsMock() {
     );
 }
 
-export function PriorityMock() {
+// The dashboard's first screen: a date-led heading with today's count highlighted, then
+// open tasks grouped into Today (overdue first, the next one highlighted) and Coming up.
+export function TodayMock() {
     return (
-        <MockWindow title="Priority">
-            <div className="mock-priority-bar">
-                <span className="mock-seg mock-seg--high" style={{ flexGrow: 3 }} />
-                <span className="mock-seg mock-seg--medium" style={{ flexGrow: 5 }} />
-                <span className="mock-seg mock-seg--low" style={{ flexGrow: 2 }} />
-            </div>
-            <div className="mock-legend">
-                <span><Dot priority="high" />High<strong>3</strong></span>
-                <span><Dot priority="medium" />Medium<strong>5</strong></span>
-                <span><Dot priority="low" />Low<strong>2</strong></span>
-            </div>
-            <div className="mock-subhead">Coming up</div>
-            <div className="mock-upcoming">
-                <span><Dot priority="high" />Midterm study guide<em>Due Wed</em></span>
-                <span><Dot priority="medium" />Group project slides<em>Due Thu</em></span>
-                <span><Dot priority="low" />Return library books<em>Due Sat</em></span>
-            </div>
+        <MockWindow title="Tasks">
+            <div className="mock-day-head">Thursday. <span className="hl">3 things today.</span></div>
+            <div className="mock-group mock-group--today">Today <em>3</em></div>
+            <MockTask title="Return library books" list="History 210" priority="low" due="Overdue · Tue" overdue next />
+            <MockTask title="Lab report: cellular respiration" list="Biology 101" priority="high" />
+            <MockTask title="Problem set 7" list="Calculus II" priority="medium" />
+            <div className="mock-group">Coming up <em>2</em></div>
+            <MockTask title="Midterm study guide" list="History 210" priority="high" due="Due Mon" />
+            <MockTask title="Group project slides" list="Marketing 120" priority="medium" due="Due Wed" />
         </MockWindow>
     );
 }
@@ -158,7 +152,7 @@ export function FiltersMock() {
                 <span className="mock-search">essay</span>
                 <span className="mock-filter-chip mock-filter-chip--on"><Dot priority="high" />High</span>
                 <span className="mock-filter-chip"><Dot priority="medium" />Medium</span>
-                <span className="mock-filter-chip">This week</span>
+                <span className="mock-filter-chip">Due Nov 24 – 30</span>
             </div>
             <div className="mock-result-count">2 matching</div>
             <MockTask title="History essay: first draft" list="History 210" priority="high" due="Due Thu" />

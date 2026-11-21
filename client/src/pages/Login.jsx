@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import AuthLayout from '../components/auth/AuthLayout';
 import ResendVerification from '../components/auth/ResendVerification';
-import { PriorityMock } from '../components/landing/AppMocks';
+import { TodayMock } from '../components/landing/AppMocks';
 
 // Login form: authenticates via AuthContext.login and redirects to the dashboard on
 // success. Accounts that haven't confirmed their email get a resend option instead.
@@ -41,7 +41,7 @@ function Login() {
                 <>
                     <h2>Your deadlines are right where you left them.</h2>
                     <p>See what's due today, what's overdue and what's coming up next, all in one place.</p>
-                    <PriorityMock />
+                    <TodayMock />
                 </>
             }
         >
