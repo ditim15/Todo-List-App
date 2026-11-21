@@ -266,8 +266,26 @@ html:has(.landing) {
 
 /* ---------- Hero ---------- */
 .hero {
+    /* The section under the hero is inverted, so the hero either fills the whole first
+       screen (nothing of the ink section shows) or, on tall windows, leaves a real chunk
+       of it in view (at least ~200px, the heading and its first lines), never a thin
+       strip. Below 1100px tall it fills the screen; the hero's content is 700-830px on
+       two-column widths, and taller than the screen on one-column widths. */
+    display: grid;
+    align-content: center;
+    min-height: calc(100vh - var(--nav-height));
+    min-height: calc(100svh - var(--nav-height));
+    box-sizing: border-box;
     padding: var(--space-9) var(--gutter) var(--space-9);
-    border-bottom: var(--border) solid var(--line);
+}
+
+/* Tall two-column windows (e.g. 1280x1440, 2560x1440, 4K): stop at 880px and keep at
+   least 320px of the next section in view, so big monitors aren't mostly empty hero. */
+@media (min-width: 961px) and (min-height: 1100px) {
+    .hero {
+        min-height: min(calc(100vh - var(--nav-height) - 320px), 880px);
+        min-height: min(calc(100svh - var(--nav-height) - 320px), 880px);
+    }
 }
 
 .hero-inner {
@@ -336,13 +354,13 @@ html:has(.landing) {
 /* ---------- Week sheet (hero preview): a printed handout being marked up ---------- */
 .planner {
     position: relative;
-    padding: var(--space-5) 0 var(--space-3);
-    background: var(--surface);
-    border: 0;
-    border-top: var(--border-thick) solid var(--rule);
-    border-bottom: var(--border) solid var(--line);
-    border-radius: 0;
+    padding: var(--space-5) var(--space-5) var(--space-3);
+    background: var(--sheet-surface);
+    border: var(--border-thick) solid var(--sheet-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--sheet-shadow);
     font-size: var(--text-sm);
+    transform: rotate(1.2deg);
 }
 
 .planner-head {
@@ -435,11 +453,15 @@ html:has(.landing) {
 }
 
 /* ---------- Shared mock pieces ---------- */
+/* Previews are sheets laid on the page: a clear ink border, softly rounded corners, a
+   flat offset shadow and (on the landing page) a slight tilt. They take the colours of
+   the section they sit in, so a preview in an ink section is an ink sheet, lifted one
+   step from the ground, never a white block cut into a dark section. */
 .mock-window {
-    background: var(--surface);
-    border: var(--border) solid var(--line);
-    border-top: var(--border-thick) solid var(--rule);
-    border-radius: 0;
+    background: var(--sheet-surface);
+    border: var(--border-thick) solid var(--sheet-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--sheet-shadow);
     font-size: var(--text-sm);
     overflow: hidden;
 }
@@ -785,11 +807,45 @@ html:has(.landing) {
     color: var(--ink-2);
 }
 
-/* Inverted ink band. */
-/* Was an inverted ink band; on tall screens it peeked under the first screen as a dark
-   strip. Now it sits on the page ground, ruled off like the other sections. */
-.section--band {
-    border-top: var(--border) solid var(--line);
+/* Inverted sections: the page alternates paper and ink, starting with a paper hero
+   (features, the two previews and the closing CTA are ink). Instead of restyling every
+   element, an ink section swaps the page tokens for the band ones; previews inside it
+   become ink sheets (see the sheet look below), so they belong to the section. */
+.section--ink {
+    --ink: var(--band-ink);
+    --ink-2: var(--band-ink-2);
+    --ink-3: var(--band-ink-2);
+    --line: var(--band-line);
+    --line-strong: color-mix(in srgb, var(--band-ink) 35%, var(--band));
+    --rule: var(--band-ink);
+    --surface: var(--band);
+    --accent: var(--band-accent);
+    --accent-hover: color-mix(in srgb, var(--band-accent) 82%, var(--band-ink));
+    --on-accent: var(--band);
+    --focus-ring: 0 0 0 3px var(--band-accent);
+    --hl-band: var(--band-hl-band);
+    --hl-y: var(--band-hl-y);
+    --biro: var(--band-biro);
+    --track: var(--band-track);
+    background: var(--band);
+    color: var(--ink-2);
+}
+
+/* Sheet look for previews (see .mock-window). On paper: a white sheet with an ink
+   border and a grey offset shadow. In an ink section: an ink sheet one step lighter
+   than the ground, a pale border and a green offset shadow. */
+.mock-window,
+.planner {
+    --sheet-surface: var(--surface);
+    --sheet-border: var(--rule);
+    --sheet-shadow: 8px 8px 0 var(--line-strong);
+}
+
+.section--ink .mock-window {
+    --surface: color-mix(in srgb, var(--band-ink) 7%, var(--band));
+    --sheet-surface: var(--surface);
+    --sheet-border: var(--band-ink-2);
+    --sheet-shadow: 8px 8px 0 color-mix(in srgb, var(--band-accent) 70%, var(--band));
 }
 
 .band {
@@ -808,6 +864,7 @@ html:has(.landing) {
 .band-visual .mock-window {
     max-width: 480px;
     margin-left: auto;
+    transform: rotate(-1deg);
 }
 
 /* Two previews side by side. */
@@ -822,8 +879,22 @@ html:has(.landing) {
     margin: 0;
 }
 
+/* The two sheets lean opposite ways and the narrow one sits lower, like two handouts
+   dropped on a desk rather than tiles in a grid. */
+.lane--wide .mock-window {
+    transform: rotate(-0.8deg);
+}
+
+.lane--narrow {
+    margin-top: var(--space-8);
+}
+
+.lane--narrow .mock-window {
+    transform: rotate(1.2deg);
+}
+
 .lane figcaption {
-    margin-top: var(--space-5);
+    margin-top: var(--space-6);
 }
 
 .lane figcaption p {
@@ -832,10 +903,6 @@ html:has(.landing) {
 }
 
 /* How it works: three numbered steps along one rule. */
-.section--steps {
-    border-top: var(--border) solid var(--line);
-}
-
 .steps-heading {
     margin-bottom: var(--space-7);
 }
@@ -869,10 +936,12 @@ html:has(.landing) {
     margin-top: var(--space-2) !important;
 }
 
-/* Closing call to action. */
+/* Closing call to action: steps out of the paper/ink alternation onto the pale accent
+   wash, so the last three bands (steps, CTA, footer) step down softly instead of
+   flipping black-white-black. The change of tone is its edge: no rule on top, so it
+   meets the steps as quietly as the footer's hairline meets it below. */
 .section--cta {
     background: var(--accent-soft);
-    border-top: var(--border-thick) solid var(--rule);
 }
 
 .cta {
@@ -926,6 +995,10 @@ html:has(.landing) {
         margin-left: 0;
     }
 
+    .lane--narrow {
+        margin-top: 0;
+    }
+
     .section {
         padding-top: var(--space-8);
         padding-bottom: var(--space-8);
@@ -974,7 +1047,7 @@ html:has(.landing) {
     }
 
     .planner {
-        padding: var(--space-4) 0 var(--space-2);
+        padding: var(--space-4) var(--space-4) var(--space-2);
     }
 
     .section {

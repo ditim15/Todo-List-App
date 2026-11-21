@@ -8,7 +8,7 @@ import { CheckIcon } from '../components/landing/FeatureIcons';
 import './static/Splash.css';
 
 // Design direction: "Highlighted Handout" (see .impeccable/surfaces). Ruled handout
-// sections on one page ground, and two hand marks: the biro strike for what is done
+// sections, one inverted ink band, and two hand marks: the biro strike for what is done
 // and the highlighter swipe for what is next (both used once in the headline).
 
 // Only features the sections below don't already show (deadlines, lists, priorities
@@ -112,7 +112,7 @@ function Splash() {
                     </div>
                 </section>
 
-                <section id="features" className="section section--features">
+                <section id="features" className="section section--features section--ink">
                     <div className="section-inner features">
                         <div className="features-heading">
                             <h2>Built for how a student week actually goes</h2>
@@ -155,7 +155,7 @@ function Splash() {
                     </div>
                 </section>
 
-                <section className="section">
+                <section className="section section--lanes section--ink">
                     <div className="section-inner lanes">
                         <figure className="lane lane--wide">
                             <ListsMock />

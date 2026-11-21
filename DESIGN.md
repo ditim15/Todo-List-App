@@ -2,7 +2,7 @@
 name: DoneYet?
 description: A crisp printed handout you mark up, with a highlighter for what's next and a biro strike for what's done.
 colors:
-  canvas: "#ffffff"
+  canvas: "#eceee9"
   surface: "#ffffff"
   surface-hover: "#f1f3ef"
   line: "#dadfd8"
@@ -202,12 +202,12 @@ Paper, ink and two pens, plus one action green. Each light value has a dark coun
 - **Biro Blue** (`biro`; dark `dark-biro`): only for hand marks. It draws the strike across finished tasks and ticked checklist items, and it draws the tick inside a checked task box. It is never used for text, links or controls.
 
 ### Neutral
-- **Handout White** (`canvas`, `surface`): page and sheet. In light mode both are white, because sheets are separated by rules and not by tone. Dark mode lifts sheets one step (`dark-surface` on `dark-canvas`).
+- **Desk and Handout White** (`canvas` #eceee9, `surface` #ffffff): the app page is a faint grey-green desk and every sheet on it is white, so panels read by tone in light mode just as they do in dark mode (`dark-surface` one step above `dark-canvas`). The landing page sits on `surface` throughout.
 - **Ruled Ink** (`rule`, `ink`): heading text and the 2px rules that head sheets and bars.
 - **Body Graphite** (`ink-2`) is the default body text. **Margin Grey** (`ink-3`) is for meta, counts, hints and the struck title of a done task.
 - **Hairline** (`line`) for row dividers and quiet borders. **Pencil Line** (`line-strong`) for input borders, the theme toggle and the scrollbar.
 - **Wash** (`surface-hover`): the hover state for rows, tabs and ghost controls.
-- **Ink Band** (`band`, `band-ink`, `band-ink-2`, `band-line`, `band-accent`): the inverted ink surface for small floating things, the notes "Moved … Undo" toast and the theme button's hover. It inverts in dark mode, where it becomes light paper and `band-accent` becomes ink green. It is not used for whole page sections: on tall screens an inverted section peeked under the first screen as a strip, so landing sections all sit on the page ground.
+- **Ink Band** (`band`, `band-ink`, `band-ink-2`, `band-line`, `band-accent`): the landing page alternates paper and ink section by section: paper hero, ink features, paper "A gentle nudge toward what's next", ink previews row, paper steps, then the closing CTA steps out of the pattern onto the `accent-soft` wash (no rule on top; the change of tone is its edge) so the last three bands step down softly instead of flipping black-white-black, then the paper footer. An ink section (`.section--ink`) swaps the page tokens (`ink`, `line`, `rule`, `surface`, `accent`, `focus-ring`) for the band ones, so its primary button becomes a `band-accent` button. It also takes the band versions of the marks (`band-hl-band`, `band-hl-y`, `band-biro`, `band-track`), so the highlighter, biro and progress bars read on the inverted ground. Previews inside it stay in the section's colours (see Landing previews under Elevation). The band is also the surface of the notes "Moved … Undo" toast and the theme button's hover. It inverts in dark mode, where it becomes light paper and `band-accent` becomes ink green. Because the section under the hero is ink, the hero either fills the first screen or leaves a real chunk of the next section in view, never a thin strip: it fills the screen below 1100px tall (and at one-column widths), and on taller two-column windows stops at `min(100svh - nav - 320px, 880px)`.
 
 ### Status and priority
 - **Critical** (`critical`, `critical-text`): errors and the danger button. Overdue tasks use only a 6px `critical` dot beside ink text.
@@ -260,7 +260,9 @@ The spacing scale is on a 4px grid: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 1
 
 ## Elevation & Depth
 
-The system is flat. Sheets sit on the page and are separated by a 2px ink rule along their top edge, by hairline row dividers, and in dark mode by one tonal step from canvas to surface. `--shadow` and `--shadow-paper` are both `none`. Only UI that floats above the sheet casts a shadow, and it is one soft shadow.
+The system is flat. Sheets sit on the page and are separated by a 2px ink rule along their top edge, by hairline row dividers, and by one tonal step from canvas to surface in both themes. `--shadow` and `--shadow-paper` are both `none`. Only UI that floats above the sheet casts a shadow, and it is one soft shadow.
+
+**Landing previews** are the one exception: the week sheet and the mock windows are handouts dropped on the desk. Each has a 2px border, 6px corners and a flat 8px offset shadow, and on the landing page each leans slightly: week sheet +1.2°, Today preview −1°, lists −0.8°, filters +1.2°. The filters sheet also sits lower than the lists one. On paper a preview is a `surface` sheet with an ink border and a `line-strong` shadow. In an ink section it is an ink sheet 7% lighter than the band, with a `band-ink-2` border and a `band-accent` shadow, so it never shows as a white block in a dark section or a dark block in a light one. The login page's preview gets the border and shadow without the tilt.
 
 ### Shadow Vocabulary
 - **Floating** (`box-shadow: 0 18px 40px -12px rgba(17, 20, 17, 0.28), 0 2px 6px rgba(17, 20, 17, 0.08)`; dark `0 18px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.4)`): the account menu, the assistant button and panel, and Notes popovers and dialogs.
@@ -268,7 +270,7 @@ The system is flat. Sheets sit on the page and are separated by a 2px ink rule a
 - **Inset selection** (`box-shadow: inset 0 0 0 2px var(--accent)`): selected calendar days, the account menu's current item, and drop targets in Notes.
 
 ### Named Rules
-**The Flat Sheet Rule.** A sheet never has a shadow, a box border or a rounded frame. Use a 2px `rule` line on top. Shadow is allowed only on something that floats over the page and can be dismissed.
+**The Flat Sheet Rule.** A sheet never has a shadow, a box border or a rounded frame. Use a 2px `rule` line on top. Shadow is allowed only on something that floats over the page and can be dismissed. The one exception is the landing previews (see Landing previews below).
 
 ## Shapes
 

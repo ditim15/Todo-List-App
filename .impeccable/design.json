@@ -7,7 +7,7 @@
       "canvas": {
         "role": "neutral",
         "displayName": "Handout White",
-        "canonical": "#ffffff",
+        "canonical": "#eceee9",
         "tonalRamp": [
           "#0b0b0b",
           "#242424",
@@ -1081,7 +1081,7 @@
       },
       {
         "name": "The Flat Sheet Rule",
-        "body": "A sheet never has a shadow, a box border or a rounded frame. Use a 2px `rule` line on top. Shadow is allowed only on something that floats over the page and can be dismissed.",
+        "body": "A sheet never has a shadow, a box border or a rounded frame. Use a 2px `rule` line on top. Shadow is allowed only on something that floats over the page and can be dismissed. The one exception is the landing previews (see Landing previews below).",
         "section": "elevation"
       }
     ],

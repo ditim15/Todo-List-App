@@ -12,7 +12,7 @@
    Every colour pair used for text was checked for contrast: body text >= 4.5:1. */
 :root {
   /* Paper, ink and rules. */
-  --canvas: #ffffff;
+  --canvas: #eceee9;
   --surface: #ffffff;
   --surface-hover: #f1f3ef;
   --line: #dadfd8;
@@ -52,6 +52,11 @@
   --band-ink-2: #b9c0b7;
   --band-line: #2b312b;
   --band-accent: #3fe08c;
+  /* Marks drawn on the band take the opposite theme's geometry and colours. */
+  --band-hl-band: 1.2em;
+  --band-hl-y: 50%;
+  --band-biro: #92a8ff;
+  --band-track: #2b3a30;
 
   /* Type: Archivo for everything. Scale jumps hard: 12/14/16/20/28/40/64. */
   --font-display: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -165,6 +170,10 @@
     --band-ink-2: #3f463e;
     --band-line: #c9cfc5;
     --band-accent: #1d6a45;
+    --band-hl-band: 0.76em;
+    --band-hl-y: 74%;
+    --band-biro: #2746d0;
+    --band-track: #d5e6db;
     --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
     color-scheme: dark;
   }
@@ -203,6 +212,10 @@
   --band-ink-2: #3f463e;
   --band-line: #c9cfc5;
   --band-accent: #1d6a45;
+  --band-hl-band: 0.76em;
+  --band-hl-y: 74%;
+  --band-biro: #2746d0;
+  --band-track: #d5e6db;
   --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
