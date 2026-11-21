@@ -1,0 +1,1106 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-21T15:53:34.915Z",
+  "title": "Design System: DoneYet?",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Handout White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Handout White (sheet)",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "surface-hover": {
+        "role": "neutral",
+        "displayName": "Wash",
+        "canonical": "#f1f3ef",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#232422",
+          "#3f403d",
+          "#5d5e5b",
+          "#7f817d",
+          "#a3a5a2",
+          "#cacbc9",
+          "#eeeeee"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#dadfd8",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222521",
+          "#3d413b",
+          "#5b5f59",
+          "#7d827b",
+          "#a2a6a0",
+          "#c9cbc8",
+          "#eeefed"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Pencil Line",
+        "canonical": "#a2a9a0",
+        "tonalRamp": [
+          "#0a0c09",
+          "#212620",
+          "#3c423a",
+          "#596058",
+          "#7c827a",
+          "#a0a79f",
+          "#c8ccc7",
+          "#eeefed"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Ruled Ink",
+        "canonical": "#111411",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222522",
+          "#3d413d",
+          "#5b5f5b",
+          "#7d817d",
+          "#a2a6a2",
+          "#c9cbc9",
+          "#eeefee"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ruled Ink (text)",
+        "canonical": "#111411",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222522",
+          "#3d413d",
+          "#5b5f5b",
+          "#7d817d",
+          "#a2a6a2",
+          "#c9cbc9",
+          "#eeefee"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Body Graphite",
+        "canonical": "#394039",
+        "tonalRamp": [
+          "#090c09",
+          "#202620",
+          "#3b423b",
+          "#586058",
+          "#7b837b",
+          "#a0a79f",
+          "#c7ccc7",
+          "#edefed"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Margin Grey",
+        "canonical": "#5b635a",
+        "tonalRamp": [
+          "#090c09",
+          "#20261f",
+          "#3b423a",
+          "#586057",
+          "#7b837a",
+          "#9fa79e",
+          "#c7ccc7",
+          "#edefed"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Ledger Ink Green",
+        "canonical": "#1d6a45",
+        "tonalRamp": [
+          "#001005",
+          "#002d18",
+          "#024d2e",
+          "#226e48",
+          "#49926a",
+          "#75b590",
+          "#b1d5bf",
+          "#e7f2eb"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep Ledger Green",
+        "canonical": "#145235",
+        "tonalRamp": [
+          "#001006",
+          "#002c19",
+          "#0b4c2f",
+          "#316b4d",
+          "#548f6e",
+          "#7eb394",
+          "#b5d3c1",
+          "#e8f1eb"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Pale Ledger Wash",
+        "canonical": "#e1efe6",
+        "tonalRamp": [
+          "#080c0a",
+          "#1e2621",
+          "#38433c",
+          "#556159",
+          "#77847c",
+          "#9ca8a0",
+          "#c6ccc8",
+          "#edefee"
+        ]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "On Ledger Green",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "track": {
+        "role": "primary",
+        "displayName": "Ledger Track",
+        "canonical": "#d5e6db",
+        "tonalRamp": [
+          "#070d09",
+          "#1c2720",
+          "#36443b",
+          "#536258",
+          "#75857b",
+          "#9aa99f",
+          "#c4cdc7",
+          "#ecefed"
+        ]
+      },
+      "hl": {
+        "role": "secondary",
+        "displayName": "Fluorescent Highlighter",
+        "canonical": "#3fe08c",
+        "tonalRamp": [
+          "#001004",
+          "#002d16",
+          "#004d2a",
+          "#00703f",
+          "#079959",
+          "#35c178",
+          "#9addb1",
+          "#e0f5e6"
+        ],
+        "derived": {
+          "hl-soft": "color-mix(in srgb, var(--hl) 40%, transparent)"
+        }
+      },
+      "on-hl": {
+        "role": "secondary",
+        "displayName": "Highlighter Ink",
+        "canonical": "#0b120d",
+        "tonalRamp": [
+          "#090c0a",
+          "#202621",
+          "#3a423c",
+          "#57605a",
+          "#7a837c",
+          "#9fa7a1",
+          "#c7ccc8",
+          "#edefee"
+        ]
+      },
+      "biro": {
+        "role": "tertiary",
+        "displayName": "Biro Blue",
+        "canonical": "#2746d0",
+        "tonalRamp": [
+          "#020035",
+          "#090077",
+          "#1421ae",
+          "#294ad4",
+          "#4771fe",
+          "#7ca0fe",
+          "#b4cafe",
+          "#e8eefe"
+        ]
+      },
+      "critical": {
+        "role": "status",
+        "displayName": "Critical",
+        "canonical": "#c42b1c",
+        "tonalRamp": [
+          "#210000",
+          "#4b0000",
+          "#7c0400",
+          "#b00e01",
+          "#db4332",
+          "#fd7461",
+          "#ffb5a9",
+          "#ffe9e5"
+        ]
+      },
+      "critical-text": {
+        "role": "status",
+        "displayName": "Critical Text",
+        "canonical": "#a8251a",
+        "tonalRamp": [
+          "#210000",
+          "#4c0000",
+          "#7d0100",
+          "#a8251a",
+          "#d24f3f",
+          "#f47c6b",
+          "#feb6aa",
+          "#ffe9e5"
+        ]
+      },
+      "warning": {
+        "role": "status",
+        "displayName": "Warning Marker",
+        "canonical": "#c98a0c",
+        "tonalRamp": [
+          "#140800",
+          "#331f00",
+          "#573900",
+          "#7e5401",
+          "#ab7400",
+          "#d1993d",
+          "#e6c596",
+          "#f7edde"
+        ]
+      },
+      "prio-high": {
+        "role": "status",
+        "displayName": "Priority High",
+        "canonical": "#c42b1c",
+        "tonalRamp": [
+          "#210000",
+          "#4b0000",
+          "#7c0400",
+          "#b00e01",
+          "#db4332",
+          "#fd7461",
+          "#ffb5a9",
+          "#ffe9e5"
+        ]
+      },
+      "prio-medium": {
+        "role": "status",
+        "displayName": "Priority Medium",
+        "canonical": "#d9940f",
+        "tonalRamp": [
+          "#140800",
+          "#331f00",
+          "#573900",
+          "#7e5402",
+          "#ab7300",
+          "#d59734",
+          "#e8c493",
+          "#f8eddd"
+        ]
+      },
+      "prio-low": {
+        "role": "status",
+        "displayName": "Priority Low",
+        "canonical": "#3567c9",
+        "tonalRamp": [
+          "#00062b",
+          "#001a61",
+          "#053593",
+          "#2657b7",
+          "#487ce0",
+          "#72a3ff",
+          "#afcbff",
+          "#e7effe"
+        ]
+      },
+      "band": {
+        "role": "neutral",
+        "displayName": "Ink Band",
+        "canonical": "#111411",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222522",
+          "#3d413d",
+          "#5b5f5b",
+          "#7d817d",
+          "#a2a6a2",
+          "#c9cbc9",
+          "#eeefee"
+        ]
+      },
+      "band-ink": {
+        "role": "neutral",
+        "displayName": "Ink Band Heading",
+        "canonical": "#f3f4f1",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242422",
+          "#3f403e",
+          "#5d5e5b",
+          "#80817e",
+          "#a4a5a2",
+          "#cacbc9",
+          "#eeeeee"
+        ]
+      },
+      "band-ink-2": {
+        "role": "neutral",
+        "displayName": "Ink Band Body",
+        "canonical": "#b9c0b7",
+        "tonalRamp": [
+          "#0a0c09",
+          "#212620",
+          "#3c423a",
+          "#5a6058",
+          "#7c827a",
+          "#a1a79f",
+          "#c8ccc7",
+          "#eeefed"
+        ]
+      },
+      "band-line": {
+        "role": "neutral",
+        "displayName": "Ink Band Rule",
+        "canonical": "#2b312b",
+        "tonalRamp": [
+          "#090c09",
+          "#212621",
+          "#3b423b",
+          "#596059",
+          "#7b827b",
+          "#a0a7a0",
+          "#c8ccc8",
+          "#edefed"
+        ]
+      },
+      "band-accent": {
+        "role": "secondary",
+        "displayName": "Ink Band Mark",
+        "canonical": "#3fe08c",
+        "tonalRamp": [
+          "#001004",
+          "#002d16",
+          "#004d2a",
+          "#00703f",
+          "#079959",
+          "#35c178",
+          "#9addb1",
+          "#e0f5e6"
+        ]
+      },
+      "dark-canvas": {
+        "role": "neutral",
+        "displayName": "Handout White (dark)",
+        "canonical": "#0d0f0d",
+        "tonalRamp": [
+          "#0a0b0a",
+          "#232523",
+          "#3e403e",
+          "#5c5e5c",
+          "#7e817e",
+          "#a3a5a3",
+          "#c9cbc9",
+          "#eeeeee"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Handout White (sheet) (dark)",
+        "canonical": "#161916",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222522",
+          "#3d413d",
+          "#5b5f5b",
+          "#7d817d",
+          "#a2a6a2",
+          "#c9cbc9",
+          "#eeefee"
+        ]
+      },
+      "dark-surface-hover": {
+        "role": "neutral",
+        "displayName": "Wash (dark)",
+        "canonical": "#1f231f",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222522",
+          "#3d413d",
+          "#5a5f5a",
+          "#7d827d",
+          "#a1a6a1",
+          "#c9cbc8",
+          "#eeefee"
+        ]
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "#2a2f29",
+        "tonalRamp": [
+          "#0a0c09",
+          "#212521",
+          "#3c413b",
+          "#5a5f59",
+          "#7c827b",
+          "#a1a6a0",
+          "#c8ccc8",
+          "#eeefed"
+        ]
+      },
+      "dark-line-strong": {
+        "role": "neutral",
+        "displayName": "Pencil Line (dark)",
+        "canonical": "#4f574e",
+        "tonalRamp": [
+          "#090c09",
+          "#20261f",
+          "#3b423a",
+          "#586057",
+          "#7a8379",
+          "#9fa79e",
+          "#c7ccc7",
+          "#edefed"
+        ]
+      },
+      "dark-rule": {
+        "role": "neutral",
+        "displayName": "Ruled Ink (dark)",
+        "canonical": "#e9ece5",
+        "tonalRamp": [
+          "#0b0c09",
+          "#232521",
+          "#3e413b",
+          "#5c5f59",
+          "#7f817b",
+          "#a3a6a0",
+          "#cacbc8",
+          "#eeefed"
+        ]
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Ruled Ink (text) (dark)",
+        "canonical": "#eef1ea",
+        "tonalRamp": [
+          "#0b0c09",
+          "#232521",
+          "#3e413b",
+          "#5c5f59",
+          "#7f817b",
+          "#a3a6a0",
+          "#cacbc8",
+          "#eeefed"
+        ]
+      },
+      "dark-ink-2": {
+        "role": "neutral",
+        "displayName": "Body Graphite (dark)",
+        "canonical": "#c3c9bf",
+        "tonalRamp": [
+          "#0a0c09",
+          "#22251f",
+          "#3d4239",
+          "#5a6057",
+          "#7d8279",
+          "#a1a69e",
+          "#c8ccc6",
+          "#eeefed"
+        ]
+      },
+      "dark-ink-3": {
+        "role": "neutral",
+        "displayName": "Margin Grey (dark)",
+        "canonical": "#979f94",
+        "tonalRamp": [
+          "#090c08",
+          "#21261f",
+          "#3b4239",
+          "#596056",
+          "#7b8378",
+          "#a0a79d",
+          "#c8ccc6",
+          "#edefed"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Ledger Ink Green (dark)",
+        "canonical": "#5fd394",
+        "tonalRamp": [
+          "#001005",
+          "#002d17",
+          "#004d2c",
+          "#017043",
+          "#0d985d",
+          "#57bc85",
+          "#a4d9b8",
+          "#e3f3e9"
+        ]
+      },
+      "dark-accent-hover": {
+        "role": "primary",
+        "displayName": "Deep Ledger Green (dark)",
+        "canonical": "#82e0ac",
+        "tonalRamp": [
+          "#001005",
+          "#002d18",
+          "#004d2e",
+          "#027045",
+          "#339565",
+          "#67b98c",
+          "#aad7bc",
+          "#e5f3ea"
+        ]
+      },
+      "dark-accent-soft": {
+        "role": "primary",
+        "displayName": "Pale Ledger Wash (dark)",
+        "canonical": "#15281c",
+        "tonalRamp": [
+          "#060d08",
+          "#19281e",
+          "#314538",
+          "#4f6455",
+          "#718778",
+          "#96ab9d",
+          "#c2cec6",
+          "#ecf0ed"
+        ]
+      },
+      "dark-on-accent": {
+        "role": "primary",
+        "displayName": "On Ledger Green (dark)",
+        "canonical": "#06140b",
+        "tonalRamp": [
+          "#070d09",
+          "#1b271f",
+          "#344439",
+          "#526357",
+          "#748579",
+          "#99a99e",
+          "#c4cdc6",
+          "#ecefed"
+        ]
+      },
+      "dark-track": {
+        "role": "primary",
+        "displayName": "Ledger Track (dark)",
+        "canonical": "#213a2a",
+        "tonalRamp": [
+          "#050e08",
+          "#15291d",
+          "#2d4736",
+          "#4b6553",
+          "#6d8875",
+          "#93ac9a",
+          "#c0cfc4",
+          "#ebf0ec"
+        ]
+      },
+      "dark-hl": {
+        "role": "secondary",
+        "displayName": "Fluorescent Highlighter (dark)",
+        "canonical": "#34c97b",
+        "tonalRamp": [
+          "#001004",
+          "#002d15",
+          "#014d29",
+          "#00703e",
+          "#079958",
+          "#43bf7a",
+          "#9edcb2",
+          "#e1f4e7"
+        ]
+      },
+      "dark-on-hl": {
+        "role": "secondary",
+        "displayName": "Highlighter Ink (dark)",
+        "canonical": "#050a06",
+        "tonalRamp": [
+          "#090c0a",
+          "#202621",
+          "#3b423c",
+          "#58605a",
+          "#7a837c",
+          "#9fa7a1",
+          "#c7ccc8",
+          "#edefee"
+        ]
+      },
+      "dark-biro": {
+        "role": "tertiary",
+        "displayName": "Biro Blue (dark)",
+        "canonical": "#92a8ff",
+        "tonalRamp": [
+          "#050724",
+          "#151b56",
+          "#2a3682",
+          "#4656a5",
+          "#6679cc",
+          "#8ca0ed",
+          "#bbc9f6",
+          "#e9eefd"
+        ]
+      },
+      "dark-critical": {
+        "role": "status",
+        "displayName": "Critical (dark)",
+        "canonical": "#ef6b5d",
+        "tonalRamp": [
+          "#210000",
+          "#4c0001",
+          "#7d0003",
+          "#a72720",
+          "#d14f44",
+          "#f37c6e",
+          "#fdb6ac",
+          "#ffe9e5"
+        ]
+      },
+      "dark-critical-text": {
+        "role": "status",
+        "displayName": "Critical Text (dark)",
+        "canonical": "#f48b7f",
+        "tonalRamp": [
+          "#1f0000",
+          "#4c0002",
+          "#751614",
+          "#993a32",
+          "#c25e54",
+          "#e4877c",
+          "#f3bbb3",
+          "#fceae7"
+        ]
+      },
+      "dark-warning": {
+        "role": "status",
+        "displayName": "Warning Marker (dark)",
+        "canonical": "#f0b33c",
+        "tonalRamp": [
+          "#130900",
+          "#322000",
+          "#553a00",
+          "#7a5602",
+          "#a67606",
+          "#cf9a32",
+          "#e5c693",
+          "#f7eddd"
+        ]
+      },
+      "dark-prio-low": {
+        "role": "status",
+        "displayName": "Priority Low (dark)",
+        "canonical": "#7aa0f0",
+        "tonalRamp": [
+          "#020824",
+          "#091e55",
+          "#1c3a81",
+          "#395aa3",
+          "#5a7ecb",
+          "#81a3eb",
+          "#b6cbf5",
+          "#e8effc"
+        ]
+      },
+      "dark-band": {
+        "role": "neutral",
+        "displayName": "Ink Band (dark)",
+        "canonical": "#eef1ea",
+        "tonalRamp": [
+          "#0b0c09",
+          "#232521",
+          "#3e413b",
+          "#5c5f59",
+          "#7f817b",
+          "#a3a6a0",
+          "#cacbc8",
+          "#eeefed"
+        ]
+      },
+      "dark-band-ink": {
+        "role": "neutral",
+        "displayName": "Ink Band Heading (dark)",
+        "canonical": "#0d0f0d",
+        "tonalRamp": [
+          "#0a0b0a",
+          "#232523",
+          "#3e403e",
+          "#5c5e5c",
+          "#7e817e",
+          "#a3a5a3",
+          "#c9cbc9",
+          "#eeeeee"
+        ]
+      },
+      "dark-band-ink-2": {
+        "role": "neutral",
+        "displayName": "Ink Band Body (dark)",
+        "canonical": "#3f463e",
+        "tonalRamp": [
+          "#090c09",
+          "#202620",
+          "#3b423a",
+          "#596058",
+          "#7b837a",
+          "#a0a79f",
+          "#c8ccc7",
+          "#edefed"
+        ]
+      },
+      "dark-band-line": {
+        "role": "neutral",
+        "displayName": "Ink Band Rule (dark)",
+        "canonical": "#c9cfc5",
+        "tonalRamp": [
+          "#0a0c09",
+          "#22251f",
+          "#3d4239",
+          "#5a6057",
+          "#7d8279",
+          "#a1a69e",
+          "#c8ccc6",
+          "#eeefed"
+        ]
+      },
+      "dark-band-accent": {
+        "role": "secondary",
+        "displayName": "Ink Band Mark (dark)",
+        "canonical": "#1d6a45",
+        "tonalRamp": [
+          "#001005",
+          "#002d18",
+          "#024d2e",
+          "#226e48",
+          "#49926a",
+          "#75b590",
+          "#b1d5bf",
+          "#e7f2eb"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing hero headline only; grows to 84px at 1600px+."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Dashboard greeting carrying the highlighted count; auth/legal titles at 800, 40px."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel and section headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Landing, auth and legal prose at a fixed 16px base."
+      },
+      "body-app": {
+        "displayName": "Body (app)",
+        "purpose": "Dashboard and Notes shell base size."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, tabs, form labels, chips."
+      },
+      "label-caps": {
+        "displayName": "Caps label",
+        "purpose": "Column and field labels only (calendar weekdays, task-edit fields, planner days)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow",
+        "value": "none",
+        "purpose": "Resting sheets are flat."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 18px 40px -12px rgba(17, 20, 17, 0.28), 0 2px 6px rgba(17, 20, 17, 0.08)",
+        "purpose": "Floating UI only: account menu, assistant, Notes popovers and dialogs. Dark: 0 18px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.4)."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent)",
+        "purpose": "Focus on inputs, buttons and links."
+      },
+      {
+        "name": "inset-select",
+        "value": "inset 0 0 0 2px var(--accent)",
+        "purpose": "Selected calendar day, current menu item, drop targets."
+      }
+    ],
+    "motion": [
+      {
+        "name": "dur-fast",
+        "value": "150ms",
+        "purpose": "Colour, border and ring state changes."
+      },
+      {
+        "name": "dur-base",
+        "value": "250ms",
+        "purpose": "Checkbox tick, theme toggle."
+      },
+      {
+        "name": "dur-slow",
+        "value": "600ms",
+        "purpose": "Landing biro strike draw."
+      },
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default easing for everything tokenised."
+      },
+      {
+        "name": "hl-draw",
+        "value": "700ms var(--ease) 250ms",
+        "purpose": "Highlighter sweep (.hl--draw); text stays ink until the band arrives."
+      },
+      {
+        "name": "task-strike",
+        "value": "450ms var(--ease)",
+        "purpose": "Biro strike unclips left to right when a task is ticked."
+      },
+      {
+        "name": "theme-switch",
+        "value": "0.45s ease-in-out (View Transitions); 0.4s colour fade fallback",
+        "purpose": "Light/dark switch."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "xs",
+        "value": "360px",
+        "purpose": "Smallest phone tweaks (logo size, landing)."
+      },
+      {
+        "name": "phone",
+        "value": "600px",
+        "purpose": "Bottom tab bar; assistant lifts above it."
+      },
+      {
+        "name": "compact",
+        "value": "720px",
+        "purpose": "Dashboard single column in task-first order; lists strip; filters fold; --field becomes --tap."
+      },
+      {
+        "name": "notes-compact",
+        "value": "860px",
+        "purpose": "Notes swipeable toolbar; tree rows become --tap."
+      },
+      {
+        "name": "tablet",
+        "value": "1099px",
+        "purpose": "Dashboard two columns with side column beneath."
+      },
+      {
+        "name": "desktop",
+        "value": "1100px",
+        "purpose": "Dashboard three columns, viewport height."
+      },
+      {
+        "name": "wide",
+        "value": "1600px",
+        "purpose": "Type scale grows (2xl 48px, 3xl 84px)."
+      }
+    ],
+    "marks": {
+      "highlighter": {
+        "background": "linear-gradient(100deg, transparent 0.1em, var(--hl) 0.26em, var(--hl) calc(100% - 0.26em), transparent calc(100% - 0.06em))",
+        "size": "100% var(--hl-band)",
+        "position": "0 var(--hl-y)",
+        "hlBand": {
+          "light": "0.76em",
+          "dark": "1.2em"
+        },
+        "hlY": {
+          "light": "74%",
+          "dark": "50%"
+        },
+        "bleed": "0 0.16em padding, -0.16em margin",
+        "decorationBreak": "clone"
+      },
+      "biroStrike": {
+        "mask": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+        "color": "var(--biro)",
+        "height": "10px",
+        "overhang": "3px"
+      }
+    },
+    "touch": {
+      "tap": "44px",
+      "field": "40px with a mouse; var(--tap) under 720px or (pointer: coarse)",
+      "treeRow": "34px; var(--tap) under 860px or (pointer: coarse)"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink-green action button; the only filled control colour.",
+      "html": "<button class=\"ds-btn-primary\">Add task</button>",
+      "css": ".ds-btn-primary { min-height: var(--tap, 44px); padding: 0 24px; background: var(--accent, #1d6a45); color: var(--on-accent, #fff); border: 2px solid var(--accent, #1d6a45); border-radius: 4px; font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); font-weight: 700; font-size: 15px; cursor: pointer; transition: background-color 150ms cubic-bezier(0.16,1,0.3,1), box-shadow 150ms cubic-bezier(0.16,1,0.3,1), transform 150ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-primary:hover { background: var(--accent-hover, #145235); border-color: var(--accent-hover, #145235); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1d6a45) 40%, transparent); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action: 2px ink frame that inverts to ink on hover.",
+      "html": "<button class=\"ds-btn-ghost\">See how it works</button>",
+      "css": ".ds-btn-ghost { min-height: var(--tap, 44px); padding: 0 16px; background: transparent; color: var(--ink, #111411); border: 2px solid var(--ink, #111411); border-radius: 4px; font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); font-weight: 700; font-size: 15px; cursor: pointer; transition: background-color 150ms cubic-bezier(0.16,1,0.3,1), color 150ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-ghost:hover { background: var(--ink, #111411); color: var(--surface, #fff); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1d6a45) 40%, transparent); }"
+    },
+    {
+      "name": "Text Link",
+      "kind": "custom",
+      "refersTo": "text-link",
+      "description": "Inline action underlined with a 2px highlighter line.",
+      "html": "<a class=\"ds-text-link\" href=\"#\">Log in</a>",
+      "css": ".ds-text-link { display: inline-flex; align-items: center; min-height: var(--tap, 44px); color: var(--ink, #111411); font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-decoration-color: var(--hl, #3fe08c); text-underline-offset: 0.3em; border-radius: 2px; transition: color 150ms cubic-bezier(0.16,1,0.3,1), text-decoration-color 150ms cubic-bezier(0.16,1,0.3,1); } .ds-text-link:hover { color: var(--accent, #1d6a45); text-decoration-color: currentColor; } .ds-text-link:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1d6a45) 40%, transparent); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Pencil-line field that turns ink green with a ring on focus.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Add a task\">",
+      "css": ".ds-input { height: var(--tap, 44px); padding: 0 12px; background: var(--surface, #fff); color: var(--ink, #111411); border: 1px solid var(--line-strong, #a2a9a0); border-radius: 4px; font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); font-size: 16px; transition: border-color 150ms cubic-bezier(0.16,1,0.3,1), box-shadow 150ms cubic-bezier(0.16,1,0.3,1); } .ds-input:hover { border-color: var(--ink-3, #5b635a); } .ds-input:focus-visible { outline: none; border-color: var(--accent, #1d6a45); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1d6a45) 40%, transparent); }"
+    },
+    {
+      "name": "Top Bar Tabs",
+      "kind": "nav",
+      "refersTo": "nav-tab",
+      "description": "Ruled top bar; the active section carries the highlighter swipe.",
+      "html": "<nav class=\"ds-topbar\"><strong class=\"ds-topbar-brand\">DoneYet?</strong><a class=\"ds-tab is-active\" href=\"#\"><span class=\"ds-tab-label\">Tasks</span></a><a class=\"ds-tab\" href=\"#\"><span class=\"ds-tab-label\">Notes</span></a></nav>",
+      "css": ".ds-topbar { display: flex; align-items: center; gap: 8px; height: 60px; padding: 0 24px; background: var(--surface, #fff); border-bottom: 2px solid var(--rule, #111411); font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); } .ds-topbar-brand { margin-right: 24px; font-size: 26px; font-weight: 850; letter-spacing: -0.035em; color: var(--ink, #111411); } .ds-tab { display: inline-flex; align-items: center; min-height: var(--tap, 44px); padding: 0 12px; color: var(--ink-2, #394039); font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 4px; transition: color 150ms cubic-bezier(0.16,1,0.3,1), background-color 150ms cubic-bezier(0.16,1,0.3,1); } .ds-tab:hover { color: var(--ink, #111411); background: var(--surface-hover, #f1f3ef); } .ds-tab-label { padding: 0 0.16em; } .ds-tab.is-active { color: var(--on-hl, #0b120d); } .ds-tab.is-active:hover { background: transparent; } .ds-tab.is-active .ds-tab-label { background-image: linear-gradient(100deg, transparent 0.1em, var(--hl, #3fe08c) 0.26em, var(--hl, #3fe08c) calc(100% - 0.26em), transparent calc(100% - 0.06em)); background-repeat: no-repeat; background-size: 100% var(--hl-band, 0.76em); background-position: 0 var(--hl-y, 74%); } .ds-tab:focus-visible { outline: 2px solid var(--accent, #1d6a45); outline-offset: 0; }"
+    },
+    {
+      "name": "Panel Sheet",
+      "kind": "card",
+      "refersTo": "panel-sheet",
+      "description": "A flat sheet ruled across the top in ink; no box, radius or shadow.",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-panel-header\"><h2>Today</h2><span class=\"ds-panel-meta\">3 tasks</span></header><p class=\"ds-panel-hint\">Rows sit on hairlines.</p></section>",
+      "css": ".ds-panel { padding: 16px 24px 24px; background: var(--surface, #fff); border-top: 2px solid var(--rule, #111411); font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); color: var(--ink-2, #394039); font-size: 15px; } .ds-panel-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; } .ds-panel-header h2 { margin: 0; font-size: 1.15em; font-weight: 800; letter-spacing: -0.02em; color: var(--ink, #111411); } .ds-panel-meta { font-size: 0.85em; font-weight: 600; color: var(--ink-3, #5b635a); font-variant-numeric: tabular-nums; } .ds-panel-hint { margin: 0; font-size: 0.88em; color: var(--ink-3, #5b635a); }"
+    },
+    {
+      "name": "Task Row",
+      "kind": "custom",
+      "refersTo": "task-row",
+      "description": "Signature row: the next task is highlighted; a done task is crossed out with the biro strike.",
+      "html": "<ul class=\"ds-tasks\"><li class=\"ds-task\"><span class=\"ds-check\"></span><span class=\"ds-task-title ds-is-next\">Draft lab report</span></li><li class=\"ds-task ds-is-done\"><span class=\"ds-check ds-checked\"></span><span class=\"ds-task-title\">Email group</span></li></ul>",
+      "css": ".ds-tasks { margin: 0; padding: 0; list-style: none; font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); font-size: 15px; } .ds-task { display: flex; align-items: center; gap: 12px; min-height: var(--tap, 44px); border-top: 1px solid var(--line, #dadfd8); } .ds-check { position: relative; width: 22px; height: 22px; border: 2px solid var(--line-strong, #a2a9a0); border-radius: 4px; background: var(--surface, #fff); cursor: pointer; transition: background-color 150ms cubic-bezier(0.16,1,0.3,1); } .ds-check:hover { background: color-mix(in srgb, var(--hl, #3fe08c) 40%, transparent); } .ds-check.ds-checked { border-color: var(--ink, #111411); } .ds-check.ds-checked::after { content: \"\"; position: absolute; left: 6px; top: 1px; width: 6px; height: 11px; border: solid var(--biro, #2746d0); border-width: 0 3px 3px 0; transform: rotate(45deg); } .ds-task-title { position: relative; font-weight: 650; color: var(--ink, #111411); } .ds-is-next { color: var(--on-hl, #0b120d); background: linear-gradient(100deg, transparent 0.1em, var(--hl, #3fe08c) 0.26em, var(--hl, #3fe08c) calc(100% - 0.26em), transparent calc(100% - 0.06em)) 0 var(--hl-y, 74%) / 100% var(--hl-band, 0.76em) no-repeat; padding: 0 0.16em; margin: 0 -0.16em; } .ds-is-done .ds-task-title { color: var(--ink-3, #5b635a); } .ds-is-done .ds-task-title::after { content: \"\"; position: absolute; left: -3px; right: -3px; top: calc(50% - 5px); height: 10px; background: var(--biro, #2746d0); -webkit-mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat; mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat; animation: ds-strike 450ms cubic-bezier(0.16,1,0.3,1) both; } @keyframes ds-strike { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } } @media (prefers-reduced-motion: reduce) { .ds-is-done .ds-task-title::after { animation: none; } }"
+    },
+    {
+      "name": "View Toggle",
+      "kind": "chip",
+      "refersTo": "view-toggle-active",
+      "description": "Segmented List/Calendar switch in a 2px ink frame; active inverts to ink.",
+      "html": "<div class=\"ds-toggle\"><button class=\"ds-toggle-opt is-active\">List</button><button class=\"ds-toggle-opt\">Calendar</button></div>",
+      "css": ".ds-toggle { display: inline-flex; background: var(--surface, #fff); border: 2px solid var(--ink, #111411); border-radius: 4px; } .ds-toggle-opt { height: 36px; padding: 0 10px; background: transparent; color: var(--ink-3, #5b635a); border: none; border-radius: 4px; font-family: var(--sans, \"Archivo Variable\", system-ui, sans-serif); font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; } .ds-toggle-opt:hover { color: var(--ink, #111411); } .ds-toggle-opt.is-active { background: var(--ink, #111411); color: var(--surface, #fff); } .ds-toggle-opt:focus-visible { outline: 2px solid var(--accent, #1d6a45); outline-offset: 1px; }"
+    },
+    {
+      "name": "Highlighter Mark",
+      "kind": "custom",
+      "refersTo": "highlighter-mark",
+      "description": "The .hl swipe: a slanted fluorescent band behind the lower part of the text, wrapping across lines.",
+      "html": "<h1 class=\"ds-headline\">You have <span class=\"ds-hl\">3 things today.</span></h1>",
+      "css": ".ds-headline { margin: 0; font-family: var(--font-display, \"Archivo Variable\", system-ui, sans-serif); font-size: 40px; font-weight: 850; line-height: 1.02; letter-spacing: -0.04em; color: var(--ink, #111411); } .ds-hl { color: var(--on-hl, #0b120d); background-image: linear-gradient(100deg, transparent 0.12em, var(--hl, #3fe08c) 0.28em, var(--hl, #3fe08c) calc(100% - 0.3em), transparent calc(100% - 0.08em)); background-repeat: no-repeat; background-size: 100% var(--hl-band, 0.76em); background-position: 0 var(--hl-y, 74%); padding: 0 0.16em; margin: 0 -0.16em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Highlighted Handout",
+    "overview": "DoneYet? looks like a crisp printed handout that the person is marking up with two pens. Light mode is bright white stock; dark mode is a lamp-lit black sheet. Type is ink-black and set in one heavy grotesque, Archivo, from the 84px landing headline down to 12px field labels. Structure comes from rules: a 2px ink line heads every sheet and the top bar, and hairline dividers separate rows. There are no cards, no tinted panels and no resting shadows.\n\nTwo hand marks carry the personality. A fluorescent green highlighter swipe says \"this next\": the next task, the active section, the open list or note, the landing promise. A blue biro line crosses out finished work, drawn left to right as the task is ticked. Brand ink green is the colour of actions (buttons, links, focus). Everything else stays in ink and paper, so the marks stand out.\n\nThe world rejects the cream-paper planner it replaced, and it rejects the grey SaaS sidebar app. Density is moderate. Panels are generous on desktop and stack in task-first order on phones, and every control is at least a thumb tall on touch.",
+    "keyCharacteristics": [
+      "White or near-black sheets ruled in ink. No boxes, no resting shadows.",
+      "One family, Archivo Variable, at heavy display weights (800 to 850) with tight negative tracking.",
+      "Highlighter green (`--hl`) marks what's next; biro blue (`--biro`) crosses out what's done.",
+      "Ink green (`--accent`) is reserved for actions and focus.",
+      "Near-square corners (2 to 6px). Sheets themselves are square.",
+      "44px touch targets everywhere, with 40px fields kept only for mouse pointers."
+    ],
+    "rules": [
+      {
+        "name": "The Two Pens Rule",
+        "body": "Highlighter green marks what's next and biro blue marks what's done. Nothing else may borrow either colour. A green button is ink green (`accent`), never highlighter.",
+        "section": "colors"
+      },
+      {
+        "name": "The Fact, Not Alarm Rule",
+        "body": "Overdue and urgent states are stated in ink with a small red marker. Red never fills a row, a banner or a heading.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Archivo Variable is the only face. Hierarchy comes from weight (400, 600, 650, 700, 800, 850) and size jumps, never from a second family.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Count Rule",
+        "body": "Every count and stat uses `font-variant-numeric: tabular-nums`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "A sheet never has a shadow, a box border or a rounded frame. Use a 2px `rule` line on top. Shadow is allowed only on something that floats over the page and can be dismissed.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** head every sheet and bar with a 2px `rule` line and separate rows with 1px `line` hairlines.",
+      "**Do** mark exactly the next thing (next task, active tab, open list or note, the landing promise) with the highlighter swipe, and set its text in `on-hl`.",
+      "**Do** cross out finished work with the biro strike mask in `--biro`, drawn left to right.",
+      "**Do** use `accent` ink green for every action, link and focus state.",
+      "**Do** keep every tappable target at least `--tap` (44px) on touch and use `--field` for app controls.",
+      "**Do** use the tokenised durations and `--ease`, with a reduced-motion switch that leaves marks fully drawn.",
+      "**Do** pair every priority colour with a text label."
+    ],
+    "donts": [
+      "**Don't** put shadows, box borders or rounded frames on sheets. Shadows belong to floating UI only.",
+      "**Don't** use highlighter green or biro blue for buttons, text or backgrounds.",
+      "**Don't** fill rows, banners or headings with red for overdue or urgent states.",
+      "**Don't** bring back the cream-paper planner look or a second serif display face.",
+      "**Don't** build a grey SaaS sidebar with tinted card panels.",
+      "**Don't** round corners past 6px, except for small circular markers."
+    ]
+  }
+}

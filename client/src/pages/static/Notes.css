@@ -50,12 +50,12 @@
     gap: 6px;
     flex: 1 1 100%;
     justify-content: center;
-    height: 34px;
+    height: var(--field);
 }
 
 .notes-sidebar-actions .button-ghost {
     flex: 1 1 0;
-    height: 32px;
+    height: var(--field);
     white-space: nowrap;
 }
 
@@ -63,12 +63,12 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    height: 34px;
+    height: var(--field);
     margin-bottom: 10px;
     padding: 0 10px;
     background: var(--canvas);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: var(--ink-3);
 }
 
@@ -104,7 +104,7 @@
     display: flex;
     align-items: center;
     padding-left: calc(var(--depth, 0) * 14px);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
 }
 
 .notes-row:hover {
@@ -119,8 +119,8 @@
     display: inline-grid;
     place-items: center;
     flex-shrink: 0;
-    width: 24px;
-    height: 30px;
+    width: 28px;
+    height: var(--tree-row);
     padding: 0;
     background: none;
     border: none;
@@ -149,11 +149,11 @@
     gap: 8px;
     flex: 1;
     min-width: 0;
-    height: 30px;
+    height: var(--tree-row);
     padding: 0 8px 0 2px;
     background: none;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: var(--ink);
     font: inherit;
     font-size: 0.92em;
@@ -233,10 +233,12 @@
 }
 
 .notes-crumbs button {
-    padding: 2px 4px;
+    min-height: var(--field);
+    margin: calc((var(--field) - 1.5em) / -2) 0;
+    padding: 0 4px;
     background: none;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     color: var(--ink-2);
     font: inherit;
     cursor: pointer;
@@ -245,7 +247,8 @@
 .notes-crumbs button:hover {
     color: var(--ink);
     text-decoration: underline;
-    text-decoration-color: var(--accent);
+    text-decoration-color: var(--hl);
+    text-decoration-thickness: 2px;
 }
 
 .notes-crumbs button:focus-visible {
@@ -285,7 +288,7 @@
     margin-left: -6px;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     line-height: 1.2;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
@@ -306,13 +309,14 @@
 
 .notes-section-label {
     display: block;
-    margin: 20px 0 10px;
+    margin: 28px 0 10px;
+    padding-bottom: 6px;
     font-family: var(--font-text);
-    font-size: 0.75em;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
+    font-size: 1em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
 }
 
 .notes-cards {
@@ -327,9 +331,9 @@
     gap: 6px;
     min-height: 108px;
     padding: 14px 16px;
-    background: var(--canvas);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
     color: inherit;
     font: inherit;
     text-align: left;
@@ -374,7 +378,7 @@
 }
 
 .notes-card--task {
-    border-left: 3px solid var(--accent);
+    border-top: var(--border-thick) solid var(--accent);
 }
 
 /* ---------- Task card ---------- */
@@ -385,7 +389,7 @@
     margin-bottom: 16px;
     padding: 14px 16px;
     background: var(--accent-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .notes-task > .notes-icon {
@@ -480,7 +484,7 @@
 .notes-folder-actions .button-ghost,
 .notes-folder-actions .button-primary,
 .notes-note-footer .button-ghost {
-    height: 34px;
+    height: var(--field);
     padding: 0 14px;
 }
 
@@ -493,13 +497,13 @@
 }
 
 .notes-move select {
-    height: 34px;
+    height: var(--field);
     max-width: 220px;
     padding: 0 8px;
     background: var(--canvas);
     color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font: inherit;
     font-size: 1.05em;
 }
@@ -548,7 +552,7 @@
 }
 
 .notes-empty-actions button {
-    height: 38px;
+    height: var(--field);
     padding: 0 16px;
 }
 
@@ -606,11 +610,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px 10px;
-    padding: 6px;
+    padding: 4px 0;
     margin-bottom: 12px;
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: var(--border-thick) solid var(--rule);
+    border-radius: 0;
 }
 
 .note-tool-group {
@@ -630,12 +636,12 @@
 .note-tool {
     display: inline-grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
+    width: var(--field);
+    height: var(--field);
     padding: 0;
     background: none;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: var(--ink-2);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -765,8 +771,6 @@
 
 .note-editor-content ul[data-type="taskList"] li[data-checked="true"] > div {
     color: var(--ink-3);
-    text-decoration: line-through;
-    text-decoration-color: var(--accent);
 }
 
 .note-editor-content blockquote {
@@ -779,7 +783,7 @@
 .note-editor-content code {
     padding: 1px 5px;
     background: var(--surface-hover);
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     font-size: 0.9em;
 }
 
@@ -787,7 +791,7 @@
     padding: 12px 14px;
     background: var(--canvas);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     overflow-x: auto;
 }
 
@@ -811,7 +815,7 @@
     max-width: 100%;
     height: auto;
     margin: 0.6em 0;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--line);
 }
 
@@ -831,7 +835,7 @@
     padding: 8px 12px;
     background: var(--canvas);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: var(--ink);
     text-decoration: none;
     cursor: pointer;
@@ -846,7 +850,7 @@
     padding: 2px 6px;
     background: var(--critical);
     color: #fff;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     font-size: 0.7em;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -883,7 +887,7 @@
     background: var(--surface);
     color: var(--ink-2);
     border: 1px solid var(--line-strong);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
 }
 
@@ -915,12 +919,12 @@
 }
 
 .notes-dialog-search {
-    height: 36px;
+    height: var(--field);
     padding: 0 10px;
     background: var(--canvas);
     color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font: inherit;
 }
 
@@ -944,7 +948,7 @@
     padding: 10px 8px;
     background: none;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: inherit;
     font: inherit;
     text-align: left;
@@ -1070,7 +1074,7 @@
     padding: 12px 14px;
     background: var(--folder-bg);
     border: 1px solid var(--folder-line);
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
 }
 
 .notes-color-dot {
@@ -1088,7 +1092,7 @@
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
-    height: 34px;
+    height: var(--field);
     background: var(--surface);
 }
 
@@ -1126,7 +1130,7 @@
 }
 
 .notes-folder {
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     transition: box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 
@@ -1148,7 +1152,7 @@
     padding: 10px 16px;
     background: var(--band);
     color: var(--band-ink);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     font-size: 0.88em;
     transform: translateX(-50%);
@@ -1192,11 +1196,11 @@
 }
 
 .folder-settings-nav button {
-    height: 36px;
+    height: var(--field);
     padding: 0 10px;
     background: none;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: var(--ink-2);
     font: inherit;
     font-size: 0.92em;
@@ -1239,7 +1243,7 @@
     padding: 0 10px;
     background: var(--folder-bg, var(--canvas));
     border: 1px solid var(--folder-line, var(--line));
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: var(--ink);
     font: inherit;
     font-size: 0.85em;
@@ -1283,7 +1287,7 @@
     margin: 12px 0 0;
     padding: 0;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .folder-sync-row {
@@ -1362,7 +1366,7 @@
 
 .folder-sync-actions .button-primary,
 .folder-sync-actions .button-ghost {
-    height: 34px;
+    height: var(--field);
     padding: 0 14px;
 }
 
@@ -1389,8 +1393,8 @@
         border-bottom: 1px solid var(--line);
     }
 
-    .notes-settings-button {
-        width: 34px;
+    .dash .notes-settings-button {
+        width: var(--field);
         padding: 0;
         justify-content: center;
         font-size: 0;
@@ -1414,7 +1418,7 @@
 .notes-edit-diff del,
 .notes-edit-diff ins {
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     text-decoration: none;
     overflow-wrap: anywhere;
 }
@@ -1436,7 +1440,7 @@
     overflow-y: auto;
     padding: 6px 10px;
     background: var(--accent-soft);
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     font-size: 0.88em;
 }
 
@@ -1513,4 +1517,115 @@
     .notes-toast {
         animation: none;
     }
+}
+
+/* ---------- Handout layer: tap sizes, sheets and marks ---------- */
+.notes-app {
+    --tree-row: 34px;
+}
+
+@media (max-width: 860px), (pointer: coarse) {
+    .notes-app {
+        --tree-row: var(--tap);
+    }
+}
+
+/* The open folder or note in the tree gets the highlighter. */
+.notes-row.is-selected {
+    background: transparent;
+}
+
+.notes-row.is-selected > .notes-row-main .notes-row-name {
+    color: var(--on-hl);
+    background: linear-gradient(100deg, transparent 0.1em, var(--hl) 0.26em, var(--hl) calc(100% - 0.26em), transparent calc(100% - 0.06em)) 0 var(--hl-y) / 100% var(--hl-band) no-repeat;
+    padding: 0 0.16em;
+    margin: 0 -0.16em;
+    font-weight: 700;
+}
+
+/* Phones: the formatting toolbar is one row you swipe sideways, so it never eats
+   half the screen above the text. */
+@media (max-width: 860px) {
+    .note-toolbar {
+        flex-wrap: nowrap;
+        gap: 2px 8px;
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 12px;
+        padding-right: 12px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .note-toolbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .note-tool-group {
+        flex-shrink: 0;
+    }
+}
+
+.notes-row.is-selected > .notes-row-main .notes-row-name {
+    flex: 0 1 auto;
+}
+
+.notes-row-count {
+    margin-left: auto;
+}
+
+/* Ticked checklist items are crossed off with the biro strike, like finished tasks. */
+.note-editor-content ul[data-type="taskList"] li[data-checked="true"] > div {
+    text-decoration: none;
+}
+
+.note-editor-content ul[data-type="taskList"] li[data-checked="true"] > div > p {
+    display: inline;
+    background: var(--strike-img) 0 58% / 100% 0.55em no-repeat;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* Highlighted text in notes uses the same highlighter as the rest of the app. */
+.note-editor-content mark {
+    background: var(--hl);
+    color: var(--on-hl);
+    padding: 0 0.1em;
+}
+
+/* Room under the last controls so the assistant button never sits on them. */
+@media (max-width: 600px) {
+    .notes-main,
+    .dash-main {
+        padding-bottom: 88px;
+    }
+}
+
+/* Checklist boxes match the task list: inked box, biro tick when done. */
+.note-editor-content ul[data-type="taskList"] li > label input {
+    appearance: none;
+    -webkit-appearance: none;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    background: var(--surface);
+    border: var(--border-thick) solid var(--ink);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.note-editor-content ul[data-type="taskList"] li > label input::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    margin-top: -2px;
+    border: solid var(--biro);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform var(--dur-base) var(--ease);
+}
+
+.note-editor-content ul[data-type="taskList"] li > label input:checked::after {
+    transform: rotate(45deg) scale(1);
 }

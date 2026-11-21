@@ -39,7 +39,6 @@ function Login() {
         <AuthLayout
             aside={
                 <>
-                    <span className="eyebrow">Welcome back</span>
                     <h2>Your deadlines are right where you left them.</h2>
                     <p>See what's due today, what's overdue and what's coming up next, all in one place.</p>
                     <PriorityMock />

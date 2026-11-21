@@ -51,7 +51,6 @@ function Contact() {
 
     const aside = (
         <>
-            <p className="eyebrow">Support</p>
             <h2>Questions, bugs and ideas all land in the same inbox.</h2>
             <p>A real person reads every message and replies by email.</p>
             <ul className="check-list">

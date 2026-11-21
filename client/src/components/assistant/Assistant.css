@@ -13,7 +13,7 @@
     background: var(--accent);
     color: var(--on-accent);
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     cursor: pointer;
     transition: background-color 0.15s ease, transform 0.15s ease;
@@ -92,6 +92,22 @@
     }
 }
 
+/* Phones with the app tab bar (AppTopbar.css): sit above it. */
+@media (max-width: 600px) {
+    body:has(.topbar) .assistant-toggle {
+        bottom: calc(62px + var(--space-3) + env(safe-area-inset-bottom));
+    }
+
+    body:has(.topbar) .assistant-panel:not(.assistant-panel--expanded) {
+        bottom: calc(62px + 76px + env(safe-area-inset-bottom));
+        height: calc(100dvh - 62px - 76px - 72px - env(safe-area-inset-bottom));
+    }
+
+    .assistant-panel--expanded {
+        z-index: 50;
+    }
+}
+
 @media (prefers-reduced-motion: no-preference) {
     .assistant-panel {
         animation: assistant-in 0.18s ease-out;
@@ -149,7 +165,7 @@
     background: none;
     color: var(--ink-2);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     cursor: pointer;
 }
 
@@ -198,7 +214,7 @@
 
 .assistant-bubble {
     padding: 9px 12px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     line-height: 1.45;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
@@ -303,7 +319,7 @@
     height: 7px;
     background: var(--ink-3);
     border-radius: 50%;
-    animation: assistant-dot-bounce 1.2s infinite ease-in-out both;
+    animation: assistant-dot-pulse 1.2s infinite ease-in-out both;
 }
 
 .assistant-typing span:nth-child(2) {
@@ -314,7 +330,7 @@
     animation-delay: 0.3s;
 }
 
-@keyframes assistant-dot-bounce {
+@keyframes assistant-dot-pulse {
     0%, 60%, 100% {
         opacity: 0.35;
         transform: translateY(0);
@@ -397,8 +413,8 @@
     padding: 10px;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
+    border-top: var(--border-thick) solid var(--accent);
+    border-radius: var(--radius-md);
 }
 
 .assistant-card input,
@@ -410,7 +426,7 @@
     background: var(--canvas);
     color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font: inherit;
     font-size: 0.9em;
     box-sizing: border-box;
@@ -468,7 +484,7 @@
     background: var(--accent);
     color: var(--on-accent);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
 }
@@ -520,7 +536,7 @@
     background: var(--canvas);
     color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font: inherit;
     line-height: 1.35;
     resize: none;
@@ -543,7 +559,7 @@
     background: var(--accent);
     color: var(--on-accent);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
 }
 

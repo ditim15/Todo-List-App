@@ -7,9 +7,18 @@
     min-height: 100vh;
     background: var(--canvas);
     color: var(--ink-2);
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--sans);
     font-size: 15px;
     line-height: 1.45;
+    /* Form control height: 40px with a mouse, the full 44px tap size on touch screens
+       and phones. */
+    --field: 40px;
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+    .dash {
+        --field: var(--tap);
+    }
 }
 
 .dash h1,
@@ -28,27 +37,34 @@
 /* The top bar's styles live in components/AppTopbar.css. */
 
 .button-ghost {
-    padding: 6px 12px;
+    min-height: var(--field);
+    padding: 0 var(--space-4);
     background: transparent;
-    color: var(--ink-2);
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    color: var(--ink);
+    border: var(--border-thick) solid var(--ink);
+    border-radius: var(--radius-md);
+    font-weight: 700;
     cursor: pointer;
 }
 
 .button-ghost:hover {
     background: var(--surface-hover);
-    color: var(--ink);
 }
 
 .button-primary {
-    padding: 6px 16px;
+    min-height: var(--field);
+    padding: 0 var(--space-5);
     background: var(--accent);
     color: var(--on-accent);
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    font-weight: 600;
+    border: var(--border-thick) solid var(--accent);
+    border-radius: var(--radius-md);
+    font-weight: 700;
     cursor: pointer;
+}
+
+.button-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
 }
 
 .button-primary:disabled {
@@ -56,21 +72,26 @@
     cursor: not-allowed;
 }
 
-/* Text-style button for small secondary actions (Edit/Done, Clear). */
+/* Text-style button for small secondary actions (Edit/Done, Clear). The negative
+   margin keeps the visual size small while the hit area stays a full tap target. */
 .link-button {
-    padding: 2px 4px;
-    margin: -2px -4px;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--field);
+    padding: 0 var(--space-2);
+    margin: calc((var(--field) - 1.4em) / -2) calc(-1 * var(--space-2));
     background: transparent;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     color: var(--accent);
-    font-size: 0.85em;
-    font-weight: 600;
+    font-size: 0.9em;
+    font-weight: 700;
     cursor: pointer;
 }
 
 .link-button:hover {
     text-decoration: underline;
+    text-decoration-thickness: var(--border-thick);
 }
 
 .link-button:focus-visible {
@@ -80,142 +101,91 @@
 .dash-main {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--space-5);
     flex: 1;
     min-height: 0;
     width: 100%;
     max-width: var(--app-max);
     margin: 0 auto;
-    padding: 24px;
+    padding: var(--space-6) var(--space-5) var(--space-5);
     box-sizing: border-box;
 }
 
-/* ---------- Greeting + stat tiles ---------- */
+/* ---------- Heading ---------- */
 .intro {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 24px;
+    gap: var(--space-5);
     flex-wrap: wrap;
 }
 
 .intro h1 {
-    font-size: 1.6em;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: clamp(28px, 3.2vw, 44px);
+    line-height: 1.02;
+    font-weight: 850;
+    letter-spacing: -0.04em;
 }
 
 .intro-summary {
-    margin-top: 4px;
-    font-size: 0.98em;
-}
-
-.stat-tiles {
-    /* Equal-width tiles, as wide as the widest one needs. */
-    display: grid;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-    gap: 12px;
-}
-
-.stat-tile {
-    display: flex;
-    flex-direction: column;
-    min-width: 116px;
-    padding: 10px 16px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-}
-
-.stat-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.78em;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-3);
-}
-
-.stat-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.stat-dot--warning { background: var(--warning); }
-.stat-dot--critical { background: var(--critical); }
-
-.stat-value {
-    font-size: 1.5em;
-    font-weight: 700;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.25;
-}
-
-.stat-detail {
-    font-size: 0.8em;
-    color: var(--ink-3);
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+    font-size: 1.05em;
 }
 
 .dash-error {
     margin: 0;
     padding: 10px 14px;
     color: var(--critical-text);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--critical);
-    border-radius: 6px;
+    background: color-mix(in srgb, var(--critical) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--critical) 40%, transparent);
+    border-radius: var(--radius-md);
 }
 
 /* ---------- Three-column grid ---------- */
 .dash-grid {
     display: grid;
     /* Side columns give up width before the task panel does. */
-    /* Upper bounds let the sidebars widen a little on very large screens too. */
     grid-template-columns: clamp(220px, 18%, 320px) minmax(0, 1fr) clamp(240px, 20%, 360px);
-    gap: 20px;
+    gap: var(--space-5);
     flex: 1;
     min-height: 420px;
 }
 
+/* A panel is a sheet: white, ruled across the top in ink, no box or shadow. */
 .panel {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: 18px;
+    padding: var(--space-4) var(--space-5) var(--space-5);
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    border-top: var(--border-thick) solid var(--rule);
 }
 
 .panel-header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
 .panel-header h2 {
-    font-size: 0.98em;
-    font-weight: 650;
+    font-size: 1.15em;
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
 .panel-meta {
-    font-size: 0.82em;
+    font-size: 0.85em;
+    font-weight: 600;
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
 }
 
 .panel-hint {
-    margin-top: 12px;
-    font-size: 0.85em;
+    margin-top: var(--space-3);
+    font-size: 0.88em;
     color: var(--ink-3);
 }
 
@@ -226,7 +196,7 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
     overflow-y: auto;
 }
 
@@ -238,7 +208,7 @@
     padding: 10px;
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     text-align: left;
     color: inherit;
     cursor: pointer;
@@ -248,12 +218,17 @@
     background: var(--surface-hover);
 }
 
-.list-row--active {
-    background: var(--accent-soft);
+.list-row--active,
+.list-row--active:hover {
+    background: transparent;
 }
 
-.list-row--active:hover {
-    background: var(--accent-soft);
+/* The selected list gets the highlighter. */
+.list-row--active .list-row-name {
+    color: var(--on-hl);
+    background: linear-gradient(100deg, transparent 0.1em, var(--hl) 0.26em, var(--hl) calc(100% - 0.26em), transparent calc(100% - 0.06em)) 0 var(--hl-y) / 100% var(--hl-band) no-repeat;
+    padding: 0 0.16em;
+    margin: 0 -0.16em;
 }
 
 .list-row-top {
@@ -263,7 +238,7 @@
 }
 
 .list-row-name {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -291,12 +266,12 @@
 .list-rename input {
     flex: 1;
     min-width: 0;
-    height: 34px;
+    height: var(--field);
     padding: 0 10px;
     background: var(--canvas);
     color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     box-sizing: border-box;
     font-weight: 600;
 }
@@ -311,16 +286,16 @@
 }
 
 .progress {
-    height: 6px;
+    height: 4px;
     background: var(--track);
-    border-radius: 3px;
+    border-radius: 0;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
     background: var(--accent);
-    border-radius: 3px;
+    border-radius: 0;
     transition: width 0.3s ease;
 }
 
@@ -357,12 +332,12 @@
 .add-task select {
     width: 100%;
     min-width: 0;
-    height: 36px;
+    height: var(--field);
     padding: 0 10px;
-    background: var(--canvas);
+    background: var(--surface);
     color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
     box-sizing: border-box;
 }
 
@@ -373,12 +348,12 @@
 }
 
 .add-task button {
-    height: 36px;
+    height: var(--field);
     padding: 0 18px;
     background: var(--accent);
     color: var(--on-accent);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
 }
@@ -446,12 +421,12 @@
 }
 
 .filters input {
-    height: 32px;
+    height: var(--field);
     padding: 0 10px;
-    background: var(--canvas);
+    background: var(--surface);
     color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
     box-sizing: border-box;
     min-width: 0;
 }
@@ -474,11 +449,11 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 32px;
-    padding: 0 10px;
+    height: var(--field);
+    padding: 0 var(--space-3);
     background: transparent;
     color: var(--ink-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-strong);
     border-radius: 999px;
     font-size: 0.85em;
     cursor: pointer;
@@ -489,14 +464,14 @@
 }
 
 .filter-chip--on {
-    background: var(--accent-soft);
-    border-color: var(--accent);
+    background: var(--surface);
+    border: var(--border-thick) solid var(--ink);
     color: var(--ink);
     font-weight: 600;
 }
 
 .filter-chip--on:hover {
-    background: var(--accent-soft);
+    background: var(--surface-hover);
 }
 
 .filter-dates {
@@ -550,8 +525,8 @@
 .task {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px 2px;
+    gap: var(--space-2);
+    padding: var(--space-2) 2px;
     border-bottom: 1px solid var(--line);
 }
 
@@ -562,11 +537,12 @@
 /* Edit button appears on hover/focus with a mouse; always visible on touch screens. */
 .task-edit-button {
     flex-shrink: 0;
-    padding: 3px 10px;
+    min-height: var(--field);
+    padding: 0 var(--space-3);
     background: transparent;
     color: var(--ink-2);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-size: 0.82em;
     cursor: pointer;
     opacity: 0;
@@ -588,20 +564,20 @@
     display: inline-grid;
     place-items: center;
     flex-shrink: 0;
-    width: 28px;
-    height: 26px;
+    width: var(--field);
+    height: var(--field);
     padding: 0;
     background: transparent;
     color: var(--ink-3);
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     opacity: 0;
 }
 
 .task-notes-button svg {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
 }
 
 .task-notes-button.has-notes {
@@ -659,6 +635,10 @@
 }
 
 .notes-panel-heading-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--field);
+    margin: calc((var(--field) - 1.4em) / -2) 0;
     color: inherit;
     text-decoration: none;
 }
@@ -671,10 +651,11 @@
 .notes-panel-expand {
     display: inline-grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
+    width: var(--field);
+    height: var(--field);
+    margin: calc((var(--field) - 26px) / -2);
     color: var(--ink-3);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
 }
 
 .notes-panel-expand svg {
@@ -692,7 +673,7 @@
 .notes-panel-note:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
 }
 
 .notes-panel-list {
@@ -706,7 +687,7 @@
     flex-direction: column;
     gap: 1px;
     padding: 7px 8px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: inherit;
     text-decoration: none;
 }
@@ -769,7 +750,7 @@
     background: var(--canvas);
     margin: 4px 0;
     padding: 12px 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border-bottom-color: transparent;
 }
 
@@ -790,13 +771,13 @@
     background: var(--surface);
     color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     box-sizing: border-box;
 }
 
 .task-edit input,
 .task-edit select {
-    height: 34px;
+    height: var(--field);
 }
 
 .task-edit textarea {
@@ -865,7 +846,7 @@
 
 .reminder-picker .reminder-field {
     max-width: 340px;
-    height: 34px;
+    height: var(--field);
     background: var(--surface);
 }
 
@@ -876,10 +857,10 @@
     display: flex;
     align-items: center;
     min-width: 0;
-    height: 36px;
-    background: var(--canvas);
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    height: var(--field);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
     box-sizing: border-box;
     overflow: hidden;
     transition: border-color 0.15s ease;
@@ -995,7 +976,8 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 12px 2px 6px;
+    min-height: var(--tap);
+    padding: var(--space-2) 2px;
     background: transparent;
     border: none;
     color: var(--ink-2);
@@ -1056,13 +1038,53 @@
     border-bottom: none;
 }
 
-.task-check {
-    width: 18px;
-    height: 18px;
-    margin: 2px 0 0;
+/* Checkbox: a 22px inked box inside a label that pads it out to a tap target. */
+.task-check-hit {
+    display: inline-grid;
+    place-items: center;
     flex-shrink: 0;
-    accent-color: var(--accent);
+    width: var(--field);
+    height: var(--field);
     cursor: pointer;
+}
+
+.task-check {
+    appearance: none;
+    -webkit-appearance: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    background: var(--surface);
+    border: var(--border-thick) solid var(--ink);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.task-check::after {
+    content: '';
+    width: 6px;
+    height: 11px;
+    margin-top: -2px;
+    border: solid var(--on-accent);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform var(--dur-base) var(--ease);
+}
+
+.task-check:hover {
+    background: var(--hl-soft);
+}
+
+.task-check:checked::after {
+    transform: rotate(45deg) scale(1);
+}
+
+.task-check:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .task-body {
@@ -1070,16 +1092,19 @@
     flex-direction: column;
     gap: 3px;
     min-width: 0;
+    padding-top: calc((var(--field) - 1.45em) / 2);
 }
 
 .task-title {
-    font-weight: 600;
+    position: relative;
+    align-self: flex-start;
+    font-weight: 650;
     color: var(--ink);
     overflow-wrap: anywhere;
 }
 
 .task-description {
-    font-size: 0.88em;
+    font-size: 0.9em;
     overflow-wrap: anywhere;
 }
 
@@ -1087,16 +1112,14 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px 14px;
-    font-size: 0.8em;
+    gap: 4px 14px;
+    font-size: 0.82em;
     color: var(--ink-3);
 }
 
 .task-chip {
-    padding: 1px 8px;
-    background: var(--surface-hover);
-    border-radius: 999px;
     color: var(--ink-2);
+    font-weight: 700;
 }
 
 .task-priority {
@@ -1107,12 +1130,31 @@
 
 .is-overdue {
     color: var(--critical-text);
-    font-weight: 600;
+    font-weight: 700;
 }
 
+/* Done: the biro strike draws across the title. The mask is the same hand-drawn path
+   as the landing page's Strike; its colour comes from --biro. */
 .task--done .task-title {
-    text-decoration: line-through;
     color: var(--ink-3);
+}
+
+.task--done .task-title-text {
+    background: var(--strike-img) 0 58% / 100% 0.55em no-repeat;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    animation: task-strike 450ms var(--ease) both;
+}
+
+@keyframes task-strike {
+    from { background-size: 0% 0.55em; }
+    to { background-size: 100% 0.55em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task--done .task-title-text {
+        animation: none;
+    }
 }
 
 .tasks-empty {
@@ -1125,7 +1167,7 @@
     min-height: 140px;
     margin: 14px 0 10px;
     border: 1px dashed var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     text-align: center;
     font-size: 0.9em;
 }
@@ -1287,33 +1329,75 @@
 
 @media (max-width: 720px) {
     .dash-main {
-        padding: 16px;
+        gap: var(--space-4);
+        padding: var(--space-5) var(--space-4) var(--space-4);
     }
 
-    .stat-tiles {
-        width: 100%;
-    }
-
-    .stat-tile {
-        flex: 1;
-        min-width: 0;
-        padding: 10px 12px;
-    }
-
-    .stat-label {
-        font-size: 0.72em;
-        letter-spacing: 0.02em;
+    .intro {
+        align-items: stretch;
     }
 
     .dash-grid {
         grid-template-columns: minmax(0, 1fr);
         min-height: 0;
+        gap: var(--space-4);
         /* Stacked panels keep their natural height instead of stretching to fill. */
         align-content: start;
     }
 
+    /* Phones lead with the work: list picker, then tasks, then the rest. */
+    .lists-column {
+        display: contents;
+    }
+
+    .lists-panel { order: 1; }
+    .tasks-panel { order: 2; }
+    .side-column { order: 3; }
+    .notes-panel { order: 4; }
+
     .side-column {
         flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .panel {
+        padding: var(--space-3) var(--space-4) var(--space-4);
+    }
+
+    /* Lists become a horizontal strip you swipe through. */
+    .lists-panel .list-rows:not(.list-rows--editing) {
+        flex-direction: row;
+        gap: var(--space-2);
+        margin: 0 calc(-1 * var(--space-4));
+        padding: 0 var(--space-4) var(--space-1);
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .lists-panel .list-rows:not(.list-rows--editing)::-webkit-scrollbar {
+        display: none;
+    }
+
+    .lists-panel .list-rows:not(.list-rows--editing) > li {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+
+    .lists-panel .list-row {
+        width: 150px;
+        min-height: var(--tap);
+        padding: var(--space-2) var(--space-3);
+        border: var(--border) solid var(--line);
+    }
+
+    .lists-panel .list-row--active {
+        border: var(--border-thick) solid var(--ink);
+    }
+
+    .lists-panel .panel-hint {
+        display: none;
     }
 
     .tasks-empty {
@@ -1336,22 +1420,22 @@
 
 .view-toggle {
     display: inline-flex;
-    padding: 2px;
-    background: var(--canvas);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    padding: 0;
+    background: var(--surface);
+    border: var(--border-thick) solid var(--ink);
+    border-radius: var(--radius-md);
 }
 
 .view-toggle-option {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 28px;
+    height: calc(var(--field) - 4px);
     padding: 0 10px;
     background: transparent;
     color: var(--ink-3);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font: inherit;
     font-size: 0.82em;
     font-weight: 600;
@@ -1364,9 +1448,8 @@
 }
 
 .view-toggle-option.is-active {
-    background: var(--surface);
-    color: var(--ink);
-    box-shadow: var(--shadow);
+    background: var(--ink);
+    color: var(--surface);
 }
 
 .view-toggle-option:focus-visible {
@@ -1380,71 +1463,217 @@
     }
 }
 
-/* ---------- Clickable stat tiles (jump to those tasks) ---------- */
-.stat-tile--button {
-    position: relative;
-    /* Room for the chevron so it never sits on the label. */
-    padding-right: 36px;
-    font: inherit;
-    text-align: left;
-    color: inherit;
+/* ---------- Quick add starts as one line ----------
+   Until a title is typed (or the form is in use), only the title and Add show; the
+   list, priority, date and reminder fields unfold as soon as you start. */
+.add-task:has(.add-task-title:placeholder-shown):not(:focus-within) {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.add-task:has(.add-task-title:placeholder-shown):not(:focus-within) > :not(.add-task-title, button, .form-error) {
+    display: none;
+}
+
+.add-task:has(.add-task-title:placeholder-shown):not(:focus-within) > .add-task-title,
+.add-task:has(.add-task-title:placeholder-shown):not(:focus-within) > button {
+    grid-column: auto;
+}
+
+/* Room under the last panel so the assistant button never sits on it. */
+@media (max-width: 600px) {
+    .dash-main {
+        padding-bottom: 88px;
+    }
+}
+
+/* The next task to do carries the highlighter. */
+.task--next .task-title {
+    color: var(--on-hl);
+    background-image: linear-gradient(100deg, transparent 0.1em, var(--hl) 0.26em, var(--hl) calc(100% - 0.26em), transparent calc(100% - 0.06em));
+    background-repeat: no-repeat;
+    background-size: 100% var(--hl-band);
+    background-position: 0 var(--hl-y);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding: 0 0.16em;
+    margin: 0 -0.16em;
+}
+
+/* Ticked: a biro tick on the white box, matching the biro strike. */
+.task-check:checked {
+    background: var(--surface);
+    border-color: var(--ink);
+}
+
+.task-check::after {
+    border-color: var(--biro);
+    border-width: 0 3px 3px 0;
+}
+
+/* Overdue reads as a fact, not an alarm: ink text with a small red marker. */
+.is-overdue {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.is-overdue::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--critical);
+}
+
+/* Filters: one row (search + Filters) on phones; the rest folds open on demand. */
+.filters-toggle {
+    display: none;
+    flex: none;
+    min-height: var(--field);
+    padding: 0 var(--space-4);
+    background: var(--surface);
+    color: var(--ink);
+    border: var(--border-thick) solid var(--ink);
+    border-radius: var(--radius-md);
+    font-weight: 700;
     cursor: pointer;
-    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
 }
 
-.stat-tile--button:hover {
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-    background: var(--surface-hover);
+.filters-toggle[aria-expanded="true"] {
+    background: var(--ink);
+    color: var(--surface);
 }
 
-.stat-tile--button:active {
-    transform: translateY(1px);
-}
-
-.stat-tile--button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-.stat-tile--active,
-.stat-tile--active:hover {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .stat-tile--button {
-        transition: none;
+@media (max-width: 720px) {
+    .filters-toggle {
+        display: inline-flex;
+        align-items: center;
     }
 
-    .stat-tile--button:active {
-        transform: none;
+    .filters .filters-search {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .filters:not(.filters--open) .filter-chips,
+    .filters:not(.filters--open) .filter-dates {
+        display: none;
     }
 }
 
-/* Breathing room above the spot a stat tile scrolls to. */
-.tasks-panel,
-.completed-section {
-    scroll-margin-top: 12px;
+/* ---------- Task sections: Today, Coming up, No due date ----------
+   Like a handout's sections: a bold title ruled off under it, rows below. */
+.task-group + .task-group {
+    margin-top: var(--space-4);
 }
 
-/* Hints that a stat tile can be tapped (there's no hover on phones). */
-.stat-chevron {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 14px;
-    height: 14px;
+.task-group-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 0;
+    padding-bottom: var(--space-1);
+    border-bottom: var(--border-thick) solid var(--rule);
+    color: var(--ink);
+    font-size: 1.05em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.task-group-count {
     color: var(--ink-3);
-    transition: transform 0.15s ease, color 0.15s ease;
+    font-size: 0.85em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
 
-.stat-tile--button:hover .stat-chevron {
-    color: var(--accent);
-    transform: translateX(2px);
+.task-group--undated .task-group-title,
+.task-group--upcoming .task-group-title {
+    border-bottom-width: var(--border);
+    border-bottom-color: var(--line-strong);
 }
 
-.stat-tile--active .stat-chevron {
-    color: var(--accent);
-    transform: rotate(90deg);
+/* The side "Coming up" panel repeats the main column below desktop width, where the
+   panels stack under the tasks; it stays as a cross-list glance on wide screens. */
+@media (max-width: 1099px) {
+    .upcoming-panel {
+        display: none;
+    }
+}
+
+/* Edit: a pencil plus the word on wider screens; the pencil alone on phones so titles
+   keep the room. The accessible name comes from aria-label either way. */
+.task-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.task-edit-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 720px) {
+    .task-edit-button {
+        width: var(--field);
+        padding: 0;
+    }
+
+    .task-edit-label {
+        display: none;
+    }
+
+    /* Tighter chrome so three rows of Today show in the first screen. */
+    .add-task {
+        padding-bottom: var(--space-2);
+    }
+
+    .filters {
+        padding: var(--space-2) 0;
+    }
+
+    .task-group-title {
+        margin-top: var(--space-2);
+    }
+
+    .task {
+        padding: 2px 0;
+    }
+
+    .task-meta {
+        gap: 2px 10px;
+    }
+
+    .intro h1 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 720px) {
+    .dash-main,
+    .dash-grid {
+        gap: var(--space-3);
+    }
+
+    .lists-panel {
+        padding-bottom: var(--space-3);
+    }
+
+    .lists-panel .panel-header {
+        margin-bottom: var(--space-2);
+    }
+
+    .tasks-panel .panel-header {
+        margin-bottom: var(--space-2);
+    }
+}
+
+/* Under the Today heading, "Due today" on each row says what the heading already
+   says; overdue dates still show. */
+.task-group--today .task-due:not(.is-overdue) {
+    display: none;
 }

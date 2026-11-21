@@ -267,7 +267,7 @@ function TaskCard({ folder, compact = false }) {
         <div className={`notes-task${compact ? ' notes-task--compact' : ''}`}>
             <Icon name="task" className="is-task" />
             <div className="notes-task-body">
-                <span className="notes-task-label">{compact ? 'Notes for task' : 'Linked task'}</span>
+                <span className="visually-hidden">{compact ? 'Notes for task' : 'Linked task'}</span>
                 <span className="notes-task-title">{folder.task_title}</span>
                 <span className="notes-task-meta">
                     {folder.task_due_date && <span>Due {formatDay(folder.task_due_date)}</span>}

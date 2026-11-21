@@ -7,8 +7,8 @@
 .account-button {
     display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: var(--tap);
+    height: var(--tap);
     padding: 0;
     overflow: hidden;
     background: var(--accent-soft);
@@ -21,9 +21,9 @@
 
 /* Silhouette sits low so the shoulders are cut off by the circle, like an avatar. */
 .account-button svg {
-    width: 26px;
-    height: 26px;
-    margin-top: 8px;
+    width: 32px;
+    height: 32px;
+    margin-top: 10px;
 }
 
 .account-button:hover,
@@ -52,7 +52,7 @@
     padding: 6px;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     box-sizing: border-box;
     transform-origin: top right;
@@ -127,11 +127,12 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 9px 10px;
+    min-height: var(--tap);
+    padding: 0 10px;
     background: transparent;
     color: var(--ink);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font: inherit;
     text-align: left;
     cursor: pointer;

@@ -1,8 +1,9 @@
 /* ---------- Design tokens ----------
-   Direction: "warm and decisive" — a paper planner, not a SaaS template. Warm paper
-   neutrals, one ink-green accent (the colour of a ticked box), a soft serif for
-   headlines over the system sans for reading. The one visual device is the hand-drawn
-   strike line that crosses finished work out (see .strike in pages/static/Splash.css).
+   Direction: "Highlighted Handout". DoneYet? reads like a crisp printed handout you
+   mark up: white stock (light) or a lamp-lit black sheet (dark), ink-black type, ruled
+   lines instead of shadows and cards, near-square corners. Two marks carry the brand:
+   a fluorescent green highlighter swipe for "this next" (.hl) and a biro strike that
+   crosses finished work out (.strike). Archivo does every job, display to labels.
 
    Light is the default. Dark applies when the user picks it (data-theme="dark" on
    <html>), or when they haven't picked and their system prefers dark. The saved choice
@@ -10,40 +11,52 @@
 
    Every colour pair used for text was checked for contrast: body text >= 4.5:1. */
 :root {
-  /* Colour: 1 accent, 3 neutrals (canvas/surface/line) plus 3 ink steps. */
-  --canvas: #f5f1e8;
-  --surface: #fffcf5;
-  --surface-hover: #efe9dc;
-  --line: #e2dac8;
-  --line-strong: #cfc5ae;
-  --ink: #1d1b16;
-  --ink-2: #4d483e;
-  --ink-3: #686254;
-  --accent: #1e6a48;
-  --accent-hover: #175539;
-  --accent-soft: #e3eee5;
+  /* Paper, ink and rules. */
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #f1f3ef;
+  --line: #dadfd8;
+  --line-strong: #a2a9a0;
+  --rule: #111411;
+  --ink: #111411;
+  --ink-2: #394039;
+  --ink-3: #5b635a;
+
+  /* Brand green: the ink colour of actions. */
+  --accent: #1d6a45;
+  --accent-hover: #145235;
+  --accent-soft: #e1efe6;
   --on-accent: #ffffff;
-  --track: #cfe2d4;
-  --critical: #c0392b;
-  --critical-text: #b3261e;
-  --warning: #d9940f;
+  --track: #d5e6db;
+
+  /* The two hand marks. Text on the highlighter is always --on-hl. */
+  --hl: #3fe08c;
+  --hl-soft: color-mix(in srgb, var(--hl) 40%, transparent);
+  --on-hl: #0b120d;
+  --biro: #2746d0;
+  --hl-band: 0.76em;
+  --hl-y: 74%;
+  /* The biro strike as an image, so it can sit behind each line of wrapped text. */
+  --strike-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5' fill='none' stroke='%232746d0' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+
+  --critical: #c42b1c;
+  --critical-text: #a8251a;
+  --warning: #c98a0c;
   /* Priority (severity) colors. Validated as a set; always shown with a text label. */
-  --prio-high: #c0392b;
+  --prio-high: #c42b1c;
   --prio-medium: #d9940f;
   --prio-low: #3567c9;
-  /* Inverted "ink" band used once per page for rhythm. */
-  --band: #1d1b16;
-  --band-ink: #f5f1e8;
-  --band-ink-2: #c9c2b2;
-  --band-line: #3a362d;
-  --band-accent: #82d3a4;
+  /* Inverted ink band used once per page for rhythm. */
+  --band: #111411;
+  --band-ink: #f3f4f1;
+  --band-ink-2: #b9c0b7;
+  --band-line: #2b312b;
+  --band-accent: #3fe08c;
 
-  /* Type: one display face, one text face. Scale jumps hard: 12/14/16/20/28/40/64. */
-  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Type: Archivo for everything. Scale jumps hard: 12/14/16/20/28/40/64. */
+  --font-display: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-text: var(--sans);
-  /* The wordmark (components/brand/NudgeLogo) uses the display face, so the whole
-     site stays at two families. */
   --brand-font: var(--font-display);
   --text-xs: 12px;
   --text-sm: 14px;
@@ -52,8 +65,8 @@
   --text-xl: 28px;
   --text-2xl: 40px;
   --text-3xl: 64px;
-  --leading-tight: 1.05;
-  --leading-snug: 1.2;
+  --leading-tight: 1;
+  --leading-snug: 1.15;
   --leading-body: 1.6;
 
   /* Spacing: 4px grid. */
@@ -68,132 +81,188 @@
   --space-9: 96px;
   --space-10: 128px;
 
-  /* Shape, depth, motion, layout. */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  /* Shape, depth, motion, layout. Printed sheets have crisp corners and sit flat;
+     only floating things (menus, dialogs, the assistant) cast a soft shadow. */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
   --radius-pill: 999px;
   --radius: var(--radius-md);
   --border: 1px;
   --border-thick: 2px;
-  --shadow: 0 1px 2px rgba(29, 27, 22, 0.06);
-  --shadow-lg: 0 12px 32px rgba(29, 27, 22, 0.1);
-  /* Flat offset shadow, like a card sitting on a desk. Hero/preview cards only. */
-  --shadow-paper: 8px 8px 0 var(--line);
-  /* Flat "press" shadow under the primary button, and the ruled-paper line colour. */
+  --shadow: none;
+  --shadow-lg: 0 18px 40px -12px rgba(17, 20, 17, 0.28), 0 2px 6px rgba(17, 20, 17, 0.08);
+  --shadow-paper: none;
   --press: var(--ink);
-  --rule: color-mix(in srgb, var(--line) 60%, transparent);
   --dur-fast: 150ms;
   --dur-base: 250ms;
   --dur-slow: 600ms;
-  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
-  /* Page width caps. Wide enough that a 1920px+ screen isn't mostly empty margin; the
-     side gutter also grows with the viewport so content never touches the edge. */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent);
   --container: 1600px;
   --app-max: 1760px;
   --measure: 560px;
-  --gutter: clamp(var(--space-5), 4vw, var(--space-8));
+  --gutter: clamp(var(--space-4), 4vw, var(--space-8));
   --nav-height: 64px;
-  --control-sm: 36px;
+  /* Every tappable thing is at least --tap tall. */
+  --tap: 44px;
+  --control-sm: 40px;
   --control-height: 44px;
   --control-lg: 52px;
 
-  /* Native controls (date pickers, scrollbars, checkboxes) follow the theme. */
   color-scheme: light;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  font: 17px/150% var(--sans);
   color: var(--ink-2);
   background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 
   @media (max-width: 1024px) {
     font-size: 16px;
   }
 
-  @media (max-width: 640px) {
-    --gutter: var(--space-4);
-  }
-
-  /* Big screens: the top two steps of the type scale grow so headlines keep their
-     weight in the wider layout. */
   @media (min-width: 1600px) {
     --text-2xl: 48px;
-    --text-3xl: 80px;
+    --text-3xl: 84px;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --canvas: #14130f;
-    --surface: #1d1b16;
-    --surface-hover: #28251e;
-    --line: #353128;
-    --line-strong: #4a4539;
-    --ink: #f2eee4;
-    --ink-2: #bcb5a5;
-    --ink-3: #a0988a;
-    --accent: #82d3a4;
-    --accent-hover: #9fdfba;
-    --accent-soft: #1e3227;
-    --on-accent: #0c1d13;
-    --track: #2a4535;
-    --critical: #e5675a;
-    --critical-text: #f08a7e;
+    --canvas: #0d0f0d;
+    --surface: #161916;
+    --surface-hover: #1f231f;
+    --line: #2a2f29;
+    --line-strong: #4f574e;
+    --rule: #e9ece5;
+    --ink: #eef1ea;
+    --ink-2: #c3c9bf;
+    --ink-3: #979f94;
+    --accent: #5fd394;
+    --accent-hover: #82e0ac;
+    --accent-soft: #15281c;
+    --on-accent: #06140b;
+    --track: #213a2a;
+    --hl: #34c97b;
+    --on-hl: #050a06;
+    --biro: #92a8ff;
+    --hl-band: 1.2em;
+    --hl-y: 50%;
+    --strike-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5' fill='none' stroke='%2392a8ff' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+    --critical: #ef6b5d;
+    --critical-text: #f48b7f;
     --warning: #f0b33c;
-    --prio-high: #e5675a;
+    --prio-high: #ef6b5d;
     --prio-medium: #f0b33c;
-    --prio-low: #6b95ec;
-    --band: #10241a;
-    --band-ink: #f2eee4;
-    --band-ink-2: #bcb5a5;
-    --band-line: #24402f;
-    --band-accent: #82d3a4;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
-    --shadow-paper: 8px 8px 0 #0a0907;
-    --press: #2f5a42;
-    --rule: color-mix(in srgb, var(--line) 45%, transparent);
+    --prio-low: #7aa0f0;
+    --band: #eef1ea;
+    --band-ink: #0d0f0d;
+    --band-ink-2: #3f463e;
+    --band-line: #c9cfc5;
+    --band-accent: #1d6a45;
+    --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
     color-scheme: dark;
   }
 }
 
 /* Same values as above, for an explicit dark choice. Keep the two blocks in sync. */
 :root[data-theme="dark"] {
-  --canvas: #14130f;
-  --surface: #1d1b16;
-  --surface-hover: #28251e;
-  --line: #353128;
-  --line-strong: #4a4539;
-  --ink: #f2eee4;
-  --ink-2: #bcb5a5;
-  --ink-3: #a0988a;
-  --accent: #82d3a4;
-  --accent-hover: #9fdfba;
-  --accent-soft: #1e3227;
-  --on-accent: #0c1d13;
-  --track: #2a4535;
-  --critical: #e5675a;
-  --critical-text: #f08a7e;
+  --canvas: #0d0f0d;
+  --surface: #161916;
+  --surface-hover: #1f231f;
+  --line: #2a2f29;
+  --line-strong: #4f574e;
+  --rule: #e9ece5;
+  --ink: #eef1ea;
+  --ink-2: #c3c9bf;
+  --ink-3: #979f94;
+  --accent: #5fd394;
+  --accent-hover: #82e0ac;
+  --accent-soft: #15281c;
+  --on-accent: #06140b;
+  --track: #213a2a;
+  --hl: #34c97b;
+  --on-hl: #050a06;
+  --biro: #92a8ff;
+  --hl-band: 1.2em;
+  --hl-y: 50%;
+  --strike-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 7.5C18 5 34 8.5 52 6.2S84 4.8 99 6.5' fill='none' stroke='%2392a8ff' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --critical: #ef6b5d;
+  --critical-text: #f48b7f;
   --warning: #f0b33c;
-  --prio-high: #e5675a;
+  --prio-high: #ef6b5d;
   --prio-medium: #f0b33c;
-  --prio-low: #6b95ec;
-  --band: #10241a;
-  --band-ink: #f2eee4;
-  --band-ink-2: #bcb5a5;
-  --band-line: #24402f;
-  --band-accent: #82d3a4;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --shadow-paper: 8px 8px 0 #0a0907;
-  --press: #2f5a42;
-  --rule: color-mix(in srgb, var(--line) 45%, transparent);
+  --prio-low: #7aa0f0;
+  --band: #eef1ea;
+  --band-ink: #0d0f0d;
+  --band-ink-2: #3f463e;
+  --band-line: #c9cfc5;
+  --band-accent: #1d6a45;
+  --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
+}
+
+/* ---------- The two hand marks ---------- */
+/* Highlighter swipe: a slightly slanted fluorescent band behind the lower two thirds of
+   the text. Wraps cleanly across lines. Add .hl--draw to sweep it in once. */
+.hl {
+  color: var(--on-hl);
+  background-image: linear-gradient(100deg,
+      transparent 0.12em,
+      var(--hl) 0.28em,
+      var(--hl) calc(100% - 0.3em),
+      transparent calc(100% - 0.08em));
+  background-repeat: no-repeat;
+  background-size: 100% var(--hl-band);
+  background-position: 0 var(--hl-y);
+  padding: 0 0.16em;
+  margin: 0 -0.16em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.hl--draw {
+  animation: hl-draw 700ms var(--ease) 250ms both;
+}
+
+/* The text keeps its normal ink until the band arrives, so it stays readable if the
+   animation never runs. */
+@keyframes hl-draw {
+  from { background-size: 0% var(--hl-band); color: var(--ink); }
+  60% { color: var(--ink); }
+  to { background-size: 100% var(--hl-band); color: var(--on-hl); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl--draw { animation: none; }
+}
+
+/* ---------- Browser surfaces ---------- */
+::selection {
+  background: var(--hl);
+  color: var(--on-hl);
+}
+
+html {
+  caret-color: var(--accent);
+  accent-color: var(--accent);
+  scrollbar-color: var(--line-strong) transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
 }
 
 /* ---------- Theme switch animation (see ThemeContext toggleTheme) ---------- */
@@ -238,14 +307,24 @@ h3 {
   color: var(--ink);
 }
 
-/* Page-level headings use the display face everywhere; h3 stays in the text face
-   inside the app so dense UI labels remain crisp. Landing/auth opt h3 in. */
+/* Headings are heavy and tight, like a handout's printed titles. */
 h1,
 h2 {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
 }
 
 p {
@@ -272,16 +351,25 @@ a {
   max-width: 400px;
   padding: var(--space-6);
   background: var(--surface);
-  border: var(--border) solid var(--line-strong);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-paper);
+  border-top: var(--border-thick) solid var(--rule);
+  border-radius: 0;
   box-sizing: border-box;
 }
 
 .auth-card h1 {
   margin: 0 0 var(--space-2);
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   line-height: var(--leading-snug);
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .auth-card h1 {
+    font-size: var(--text-xl);
+  }
 }
 
 .auth-subtitle {
@@ -306,7 +394,7 @@ a {
 .auth-form input {
   height: var(--control-height);
   padding: 0 var(--space-3);
-  background: var(--canvas);
+  background: var(--surface);
   color: var(--ink);
   border: var(--border) solid var(--line-strong);
   border-radius: var(--radius-md);
@@ -320,7 +408,7 @@ a {
 .auth-form select,
 .auth-form textarea {
   padding: 0 var(--space-3);
-  background: var(--canvas);
+  background: var(--surface);
   color: var(--ink);
   border: var(--border) solid var(--line-strong);
   border-radius: var(--radius-md);
@@ -388,7 +476,7 @@ a {
   padding: var(--space-2) var(--space-3);
   color: var(--critical-text);
   background: var(--canvas);
-  border-left: var(--border-thick) solid var(--critical);
+  border: var(--border) solid color-mix(in srgb, var(--critical) 45%, transparent);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
 }
@@ -409,7 +497,7 @@ a {
   padding: var(--space-2) var(--space-3);
   color: var(--ink-2);
   background: var(--accent-soft);
-  border-left: var(--border-thick) solid var(--accent);
+  border: var(--border) solid color-mix(in srgb, var(--accent) 40%, transparent);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
 }

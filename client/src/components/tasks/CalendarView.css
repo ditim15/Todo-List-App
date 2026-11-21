@@ -35,7 +35,7 @@
     background: transparent;
     color: var(--ink-2);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font: inherit;
     font-size: 0.85em;
     cursor: pointer;
@@ -67,7 +67,7 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     overflow: hidden;
 }
 
@@ -178,12 +178,14 @@
 }
 
 .calendar-task {
-    display: block;
+    --prio: var(--prio-medium);
+    display: flex;
+    align-items: center;
+    gap: 5px;
     min-width: 0;
     padding: 1px 6px;
     background: var(--canvas);
-    border-left: 3px solid var(--prio-medium);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font-size: 0.72em;
     line-height: 1.5;
     color: var(--ink);
@@ -196,15 +198,25 @@
     }
 }
 
+.calendar-task::before {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--prio);
+}
+
 .calendar-task--high {
-    border-left-color: var(--prio-high);
+    --prio: var(--prio-high);
 }
 
 .calendar-task--low {
-    border-left-color: var(--prio-low);
+    --prio: var(--prio-low);
 }
 
 .calendar-task-title {
+    min-width: 0;
     display: block;
     overflow: hidden;
     white-space: nowrap;
@@ -213,7 +225,7 @@
 
 /* Completed tasks are greyed and struck through, like in the list. */
 .calendar-task--done {
-    border-left-color: var(--line);
+    --prio: var(--line-strong);
     color: var(--ink-3);
 }
 
@@ -275,6 +287,10 @@
     }
 
     .calendar-task-title {
+        display: none;
+    }
+
+    .calendar-task::before {
         display: none;
     }
 

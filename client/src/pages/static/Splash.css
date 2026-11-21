@@ -1,16 +1,15 @@
-/* Landing page. Every value comes from the tokens in src/index.css (colour, type scale,
-   4px spacing grid, radii, motion). The base is a fixed 16px so sizes don't jump at
-   index.css's 1024px root-size change.
-
-   Layout idea: an asymmetric editorial grid. Rhythm comes from changing width,
-   alignment and background per section, not from stacking identical card rows. */
+/* Landing page, "Highlighted Handout". The page reads like a printed handout: heavy
+   tight headings, ruled lines between sections and rows, and the two hand marks
+   (highlighter swipe for what's next, biro strike for what's done). Values come from the
+   tokens in src/index.css. The base is a fixed 16px so sizes don't jump at index.css's
+   1024px root-size change. */
 
 .landing {
     font-family: var(--font-text);
     font-size: var(--text-md);
     line-height: var(--leading-body);
     color: var(--ink-2);
-    background: var(--canvas);
+    background: var(--surface);
     overflow-x: clip;
 }
 
@@ -20,14 +19,13 @@
     margin: 0;
     color: var(--ink);
     font-family: var(--font-display);
-    font-optical-sizing: auto;
 }
 
 .landing h3 {
     font-size: var(--text-lg);
     line-height: var(--leading-snug);
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.015em;
 }
 
 .landing p {
@@ -50,12 +48,13 @@ html:has(.landing) {
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
+    min-height: var(--tap);
     border-radius: var(--radius-md);
     font-family: var(--font-text);
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
-    border: var(--border) solid transparent;
+    border: var(--border-thick) solid transparent;
     cursor: pointer;
     transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
         color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
@@ -67,7 +66,7 @@ html:has(.landing) {
 }
 
 .btn-sm {
-    height: var(--control-sm);
+    height: var(--tap);
     padding: 0 var(--space-4);
     font-size: var(--text-sm);
 }
@@ -78,56 +77,50 @@ html:has(.landing) {
     font-size: var(--text-md);
 }
 
-/* The one dominant action. Solid accent with a flat offset shadow that "presses". */
 .btn-primary {
     background: var(--accent);
+    border-color: var(--accent);
     color: var(--on-accent);
-    box-shadow: var(--space-1) var(--space-1) 0 var(--press);
 }
 
 .btn-primary:hover {
     background: var(--accent-hover);
-    transform: translate(calc(-1 * var(--space-1)), calc(-1 * var(--space-1)));
-    box-shadow: var(--space-2) var(--space-2) 0 var(--press);
+    border-color: var(--accent-hover);
 }
 
 .btn-primary:active {
-    transform: translate(var(--space-1), var(--space-1));
-    box-shadow: 0 0 0 var(--press);
-}
-
-.btn-primary:focus-visible {
-    box-shadow: var(--space-1) var(--space-1) 0 var(--press), var(--focus-ring);
+    transform: translateY(1px);
 }
 
 .btn-ghost {
     background: transparent;
     color: var(--ink);
-    border-color: var(--line-strong);
+    border-color: var(--ink);
 }
 
 .btn-ghost:hover {
-    background: var(--surface);
-    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--surface);
 }
 
 /* Inline text action: underlined, quieter than any button. */
 .text-link {
     display: inline-flex;
     align-items: center;
-    min-height: var(--control-height);
+    min-height: var(--tap);
     color: var(--ink);
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: underline;
     text-decoration-thickness: var(--border-thick);
-    text-decoration-color: var(--accent);
-    text-underline-offset: var(--space-1);
+    text-decoration-color: var(--hl);
+    text-underline-offset: 0.3em;
     border-radius: var(--radius-sm);
     transition: color var(--dur-fast) var(--ease), text-decoration-color var(--dur-fast) var(--ease);
 }
 
 .text-link:hover {
     color: var(--accent);
+    text-decoration-color: currentColor;
 }
 
 .text-link:focus-visible {
@@ -136,54 +129,57 @@ html:has(.landing) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .btn-primary:hover,
     .btn-primary:active {
         transform: none;
     }
 }
 
-/* ---------- Strike line (the visual device) ---------- */
+/* ---------- Biro strike (the done mark) ---------- */
 .strike {
     position: absolute;
-    left: -2%;
+    left: -3%;
     top: 50%;
-    width: 104%;
+    width: 106%;
     height: var(--space-3);
     overflow: visible;
     transform: translateY(-40%);
     pointer-events: none;
-    /* Drawn left to right by unclipping. Staggered via --strike-step (set inline). */
-    clip-path: inset(0 100% 0 0);
-    animation: strike-draw var(--dur-slow) var(--ease) forwards;
-    animation-delay: calc(400ms + var(--strike-step, 0) * 350ms);
+    /* Drawn left to right by unclipping, staggered via --strike-step (set inline). The
+       resting state is fully drawn, so it shows even if the animation never runs. */
+    animation: strike-draw var(--dur-slow) var(--ease) backwards;
+    animation-delay: calc(900ms + var(--strike-step, 0) * 320ms);
 }
 
 .strike path {
     fill: none;
-    stroke: var(--accent);
+    stroke: var(--biro);
     stroke-width: var(--border-thick);
     stroke-linecap: round;
 }
 
-/* Sits low through the letters so "crossed off" stays readable once drawn. */
 .strike--headline {
-    top: 68%;
+    top: 58%;
     height: var(--space-4);
-    animation-delay: 200ms;
+    animation-delay: 150ms;
+}
+
+/* Only the headline strike draws itself; the week sheet's marks rest fully drawn. */
+.planner .strike {
+    animation: none;
 }
 
 .strike--headline path {
-    stroke-width: 3px;
+    stroke-width: 4px;
 }
 
 @keyframes strike-draw {
+    from { clip-path: inset(0 100% 0 0); }
     to { clip-path: inset(0 0 0 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .strike {
         animation: none;
-        clip-path: none;
     }
 }
 
@@ -192,10 +188,8 @@ html:has(.landing) {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: color-mix(in srgb, var(--canvas) 88%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: var(--border) solid var(--line);
+    background: var(--surface);
+    border-bottom: var(--border-thick) solid var(--rule);
 }
 
 .landing-nav-inner {
@@ -212,16 +206,10 @@ html:has(.landing) {
 .landing-brand {
     display: inline-flex;
     align-items: center;
+    min-height: var(--tap);
     font-size: var(--text-xl);
     text-decoration: none;
     border-radius: var(--radius-sm);
-}
-
-/* Narrow phones: a smaller wordmark leaves room for the 44px toggle and a button. */
-@media (max-width: 400px) {
-    .landing-brand {
-        font-size: var(--text-lg);
-    }
 }
 
 .landing-brand:focus-visible {
@@ -236,13 +224,12 @@ html:has(.landing) {
 }
 
 .landing-links a {
-    /* 44px tap height without changing the visual size of the text. */
     display: inline-flex;
     align-items: center;
-    min-height: var(--control-height);
+    min-height: var(--tap);
     color: var(--ink-2);
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: 600;
     text-decoration: none;
     border-radius: var(--radius-sm);
     transition: color var(--dur-fast) var(--ease);
@@ -251,8 +238,8 @@ html:has(.landing) {
 .landing-links a:hover {
     color: var(--ink);
     text-decoration: underline;
-    text-decoration-color: var(--accent);
-    text-underline-offset: var(--space-1);
+    text-decoration-color: var(--hl);
+    text-decoration-thickness: var(--border-thick);
 }
 
 .landing-links a:focus-visible {
@@ -263,49 +250,24 @@ html:has(.landing) {
 .landing-actions {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
+    margin-left: auto;
+}
+
+.landing-links + .landing-actions {
+    margin-left: 0;
 }
 
 .landing-login {
+    padding: 0 var(--space-2);
     font-size: var(--text-sm);
-    text-decoration-thickness: var(--border);
     text-decoration-color: transparent;
-}
-
-/* ---------- Eyebrow ---------- */
-/* A short ruled lead-in rather than a pill badge. */
-.eyebrow {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4) !important;
-    color: var(--accent);
-    font-family: var(--font-text);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
-.eyebrow::before {
-    content: '';
-    flex: 0 0 var(--space-6);
-    height: var(--border-thick);
-    background: currentColor;
 }
 
 /* ---------- Hero ---------- */
 .hero {
-    padding: var(--space-9) var(--gutter) var(--space-10);
-    /* Faint ruled lines, like a notebook page. */
-    background:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent calc(var(--space-7) - var(--border)),
-            var(--rule) calc(var(--space-7) - var(--border)),
-            var(--rule) var(--space-7)
-        );
+    padding: var(--space-9) var(--gutter) var(--space-9);
+    border-bottom: var(--border) solid var(--line);
 }
 
 .hero-inner {
@@ -318,23 +280,22 @@ html:has(.landing) {
 }
 
 .hero h1 {
-    max-width: 16ch;
-    text-wrap: balance;
-    font-size: clamp(var(--text-2xl), 6vw, var(--text-3xl));
-    line-height: var(--leading-tight);
-    font-weight: 600;
-    letter-spacing: -0.035em;
+    max-width: 14ch;
+    font-size: clamp(42px, 6.4vw, var(--text-3xl));
+    line-height: 0.98;
+    font-weight: 850;
+    letter-spacing: -0.04em;
 }
 
 .hero-strike {
     position: relative;
     display: inline-block;
-    color: var(--accent);
+    color: var(--ink-3);
 }
 
 .hero-lead {
-    max-width: var(--measure);
-    margin-top: var(--space-5) !important;
+    max-width: 34em;
+    margin-top: var(--space-6) !important;
     font-size: var(--text-lg);
     line-height: var(--leading-body);
     color: var(--ink-2);
@@ -344,7 +305,7 @@ html:has(.landing) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-5) var(--space-6);
+    gap: var(--space-4) var(--space-6);
     margin-top: var(--space-7);
 }
 
@@ -356,6 +317,7 @@ html:has(.landing) {
     padding: 0;
     list-style: none;
     font-size: var(--text-sm);
+    font-weight: 600;
     color: var(--ink-3);
 }
 
@@ -365,48 +327,46 @@ html:has(.landing) {
     gap: var(--space-2);
 }
 
-/* A short accent tick before each point; wraps cleanly unlike inline separators. */
-.hero-points li::before {
-    content: '';
-    width: var(--space-2);
-    height: var(--border-thick);
-    background: var(--accent);
+.hero-points svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
 }
 
-/* ---------- Planner (hero preview) ---------- */
+/* ---------- Week sheet (hero preview): a printed handout being marked up ---------- */
 .planner {
     position: relative;
-    padding: var(--space-5);
+    padding: var(--space-5) 0 var(--space-3);
     background: var(--surface);
-    border: var(--border) solid var(--line-strong);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-paper);
+    border: 0;
+    border-top: var(--border-thick) solid var(--rule);
+    border-bottom: var(--border) solid var(--line);
+    border-radius: 0;
     font-size: var(--text-sm);
-    transform: rotate(1.2deg);
 }
 
 .planner-head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    padding-bottom: var(--space-4);
-    border-bottom: var(--border-thick) solid var(--ink);
+    gap: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: var(--border-thick) solid var(--rule);
 }
 
 .planner-title {
     color: var(--ink);
     font-family: var(--font-display);
     font-size: var(--text-xl);
-    font-weight: 600;
-    line-height: var(--leading-snug);
+    font-weight: 850;
+    letter-spacing: -0.03em;
 }
 
 .planner-progress {
-    color: var(--accent);
+    color: var(--ink-3);
     font-size: var(--text-xs);
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
 }
 
 .planner-rows {
@@ -417,7 +377,7 @@ html:has(.landing) {
 
 .planner-row {
     display: grid;
-    grid-template-columns: var(--space-7) auto minmax(0, 1fr) auto;
+    grid-template-columns: 2.6em auto minmax(0, 1fr);
     align-items: start;
     gap: var(--space-3);
     padding: var(--space-3) 0;
@@ -426,16 +386,15 @@ html:has(.landing) {
 
 .planner-row:last-child {
     border-bottom: none;
-    padding-bottom: 0;
 }
 
 .planner-day {
+    padding-top: 1px;
     color: var(--ink-3);
     font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-weight: 800;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    line-height: var(--text-lg);
 }
 
 .planner-task {
@@ -449,63 +408,60 @@ html:has(.landing) {
     position: relative;
     align-self: flex-start;
     color: var(--ink);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .planner-row.is-done .planner-task-title {
     color: var(--ink-3);
 }
 
-.planner-next {
-    padding: 0 var(--space-2);
-    background: var(--accent-soft);
-    color: var(--accent);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    line-height: var(--text-lg);
+/* The next one gets the highlighter, swept in after the strikes land. */
+.planner-row.is-next .planner-task-title {
+    color: var(--on-hl);
 }
 
-/* ---------- App previews (mocks, also used on Login/Register) ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .planner-row.is-next .planner-task-title {
+        animation: none;
+    }
+}
+
+.planner-next {
+    grid-column: 3;
+    justify-self: start;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+/* ---------- Shared mock pieces ---------- */
 .mock-window {
-    overflow: hidden;
     background: var(--surface);
-    border: var(--border) solid var(--line-strong);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-paper);
+    border: var(--border) solid var(--line);
+    border-top: var(--border-thick) solid var(--rule);
+    border-radius: 0;
     font-size: var(--text-sm);
-    text-align: left;
-    color: var(--ink-2);
+    overflow: hidden;
 }
 
 .mock-window-bar {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    height: var(--space-7);
-    padding: 0 var(--space-4);
+    padding: var(--space-3) var(--space-4);
     border-bottom: var(--border) solid var(--line);
 }
 
 .mock-window-bar > span {
-    width: var(--space-2);
-    height: var(--space-2);
-    border-radius: 50%;
-    background: var(--line-strong);
+    display: none;
 }
 
 .mock-window-bar strong {
-    margin-left: var(--space-2);
     color: var(--ink);
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    font-weight: 600;
+    font-weight: 800;
+    letter-spacing: -0.01em;
 }
 
 .mock-window-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
     padding: var(--space-4);
 }
 
@@ -521,18 +477,32 @@ html:has(.landing) {
 }
 
 .mock-check {
-    flex-shrink: 0;
-    width: var(--space-4);
-    height: var(--space-4);
+    flex: none;
+    width: 16px;
+    height: 16px;
     margin-top: 2px;
-    border: var(--border-thick) solid var(--ink-3);
+    border: var(--border-thick) solid var(--ink);
     border-radius: var(--radius-sm);
     box-sizing: border-box;
 }
 
 .mock-check--on {
-    background: var(--accent);
-    border-color: var(--accent);
+    position: relative;
+    background: var(--surface);
+    border-color: var(--ink);
+}
+
+/* Biro tick. */
+.mock-check--on::after {
+    content: "";
+    position: absolute;
+    left: 3.5px;
+    top: -1px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--biro);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
 }
 
 .mock-task-body {
@@ -544,14 +514,14 @@ html:has(.landing) {
 
 .mock-task-title {
     color: var(--ink);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .mock-task--done .mock-task-title {
     color: var(--ink-3);
     text-decoration: line-through;
-    text-decoration-color: var(--accent);
-    text-decoration-thickness: var(--border-thick);
+    text-decoration-color: var(--biro);
+    text-decoration-thickness: 2px;
 }
 
 .mock-task-meta {
@@ -559,14 +529,12 @@ html:has(.landing) {
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1) var(--space-3);
-    font-size: var(--text-xs);
     color: var(--ink-3);
+    font-size: var(--text-xs);
 }
 
 .mock-chip {
-    padding: 0 var(--space-2);
-    background: var(--surface-hover);
-    border-radius: var(--radius-sm);
+    font-weight: 700;
     color: var(--ink-2);
 }
 
@@ -578,9 +546,9 @@ html:has(.landing) {
 
 .mock-dot {
     display: inline-block;
-    flex-shrink: 0;
-    width: var(--space-2);
-    height: var(--space-2);
+    flex: none;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
 }
 
@@ -591,55 +559,56 @@ html:has(.landing) {
 .mock-lists {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
 }
 
 .mock-list {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    padding: var(--space-3);
-    border-radius: var(--radius-md);
+    padding: var(--space-3) 0;
+    border-top: var(--border) solid var(--line);
 }
 
-.mock-list--active {
-    background: var(--accent-soft);
+.mock-list:first-child {
+    border-top: none;
+}
+
+.mock-list--active .mock-list-top span:first-child {
+    color: var(--on-hl);
+    background: linear-gradient(100deg, transparent 0.1em, var(--hl) 0.25em, var(--hl) calc(100% - 0.25em), transparent) 0 var(--hl-y) / 100% var(--hl-band) no-repeat;
+    padding: 0 0.15em;
+    margin: 0 -0.15em;
 }
 
 .mock-list-top {
     display: flex;
     justify-content: space-between;
+    gap: var(--space-3);
     color: var(--ink);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .mock-list-top span:last-child {
-    color: var(--ink-2);
-    font-weight: 400;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
 }
 
 .mock-progress {
     display: block;
-    height: var(--space-2);
+    height: 4px;
     background: var(--track);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
 }
 
 .mock-progress span {
     display: block;
     height: 100%;
     background: var(--accent);
-    border-radius: var(--radius-sm);
 }
 
 .mock-priority-bar {
     display: flex;
     gap: 2px;
-    height: var(--space-3);
-    margin: var(--space-1) 0 var(--space-4);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
+    height: 10px;
 }
 
 .mock-seg--high { background: var(--prio-high); }
@@ -650,7 +619,7 @@ html:has(.landing) {
 .mock-upcoming {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    margin-top: var(--space-3);
 }
 
 .mock-legend span,
@@ -658,26 +627,28 @@ html:has(.landing) {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-bottom: var(--border) solid var(--line);
     color: var(--ink);
 }
 
 .mock-legend strong {
     margin-left: auto;
+    font-variant-numeric: tabular-nums;
 }
 
 .mock-upcoming em {
     margin-left: auto;
+    color: var(--ink-3);
     font-style: normal;
     font-size: var(--text-xs);
-    color: var(--ink-3);
+    white-space: nowrap;
 }
 
 .mock-subhead {
-    margin: var(--space-4) 0 var(--space-2);
-    padding-top: var(--space-3);
-    border-top: var(--border) solid var(--line);
+    margin-top: var(--space-5);
     color: var(--ink);
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .mock-filters {
@@ -687,13 +658,10 @@ html:has(.landing) {
 }
 
 .mock-search {
-    flex: 1 1 120px;
-    height: var(--space-6);
-    padding: 0 var(--space-3);
-    line-height: var(--space-6);
-    background: var(--canvas);
-    border: var(--border) solid var(--accent);
-    border-radius: var(--radius-sm);
+    flex: 1 1 100%;
+    padding: var(--space-2) var(--space-3);
+    border: var(--border) solid var(--line-strong);
+    border-radius: var(--radius-md);
     color: var(--ink);
 }
 
@@ -701,31 +669,30 @@ html:has(.landing) {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
-    height: var(--space-6);
-    padding: 0 var(--space-3);
+    padding: var(--space-1) var(--space-3);
     border: var(--border) solid var(--line-strong);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
+    border-radius: var(--radius-pill);
     color: var(--ink-2);
-}
-
-.mock-filter-chip--on {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    color: var(--ink);
+    font-size: var(--text-xs);
     font-weight: 600;
 }
 
+.mock-filter-chip--on {
+    border-color: var(--ink);
+    color: var(--ink);
+    font-weight: 800;
+}
+
 .mock-result-count {
-    margin: var(--space-3) 0 0;
-    font-size: var(--text-xs);
+    margin-top: var(--space-4);
     color: var(--ink-3);
+    font-size: var(--text-xs);
+    font-weight: 700;
 }
 
 /* ---------- Sections ---------- */
 .section {
-    padding: var(--space-10) var(--gutter);
-    scroll-margin-top: var(--nav-height);
+    padding: var(--space-9) var(--gutter);
 }
 
 .section-inner {
@@ -734,92 +701,80 @@ html:has(.landing) {
 }
 
 .section h2 {
-    font-size: var(--text-2xl);
-    line-height: var(--leading-snug);
-    letter-spacing: -0.03em;
+    font-size: clamp(30px, 4vw, var(--text-2xl));
+    line-height: 1.05;
+    letter-spacing: -0.035em;
 }
 
-/* Bullets (shared with the auth asides). */
 .check-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    margin: var(--space-6) 0 0;
+    margin: var(--space-5) 0 0;
     padding: 0;
     list-style: none;
 }
 
 .check-list li {
     display: flex;
-    align-items: flex-start;
     gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-top: var(--border) solid var(--line);
 }
 
 .bullet-icon {
-    display: inline-flex;
-    flex-shrink: 0;
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
     margin-top: 2px;
     color: var(--accent);
 }
 
 .bullet-icon svg {
-    width: var(--space-5);
-    height: var(--space-5);
-    stroke-width: 2.4;
+    width: 18px;
+    height: 18px;
 }
 
-/* Features: narrow sticky heading column beside a two-column numbered index. */
-.section--features {
-    background: var(--surface);
-    border-block: var(--border) solid var(--line);
-}
-
+/* Features: a handout's definition list. Title left, text right, ruled rows. */
 .features {
     display: grid;
-    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: var(--space-8);
     align-items: start;
 }
 
 .features-heading {
     position: sticky;
-    top: calc(var(--nav-height) + var(--space-7));
+    top: calc(var(--nav-height) + var(--space-6));
 }
 
-.features-heading p:not(.eyebrow) {
-    margin-top: var(--space-4);
+.features-heading p {
+    max-width: 30em;
+    margin-top: var(--space-4) !important;
     font-size: var(--text-lg);
 }
 
 .feature-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-7) var(--space-6);
     margin: 0;
     padding: 0;
     list-style: none;
+    border-top: var(--border-thick) solid var(--rule);
 }
 
 .feature {
-    padding-top: var(--space-4);
-    border-top: var(--border-thick) solid var(--ink);
-}
-
-.feature-number {
-    display: block;
-    margin-bottom: var(--space-3);
-    color: var(--accent);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    font-variant-numeric: tabular-nums;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--space-2) var(--space-6);
+    padding: var(--space-5) 0;
+    border-bottom: var(--border) solid var(--line);
 }
 
 .feature p {
-    margin-top: var(--space-2);
+    color: var(--ink-2);
 }
 
-/* Band: the page's one inverted, ink-dark section. */
+/* Inverted ink band. */
 .section--band {
     background: var(--band);
     color: var(--band-ink-2);
@@ -829,21 +784,25 @@ html:has(.landing) {
     color: var(--band-ink);
 }
 
-.section--band .eyebrow,
-.section--band .bullet-icon {
-    color: var(--band-accent);
-}
-
 .band {
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-8);
     align-items: center;
-    gap: var(--space-9);
 }
 
-.band-copy > p:not(.eyebrow) {
-    margin-top: var(--space-4);
+.band-copy > p {
+    max-width: 32em;
+    margin-top: var(--space-4) !important;
     font-size: var(--text-lg);
+}
+
+.section--band .check-list li {
+    border-top-color: var(--band-line);
+}
+
+.section--band .bullet-icon {
+    color: var(--band-accent);
 }
 
 .section--band .check-list {
@@ -851,17 +810,16 @@ html:has(.landing) {
 }
 
 .band-visual .mock-window {
-    max-width: 560px;
+    max-width: 480px;
     margin-left: auto;
-    box-shadow: var(--space-2) var(--space-2) 0 var(--band-accent);
-    border-color: var(--band-line);
+    border-top-color: var(--hl);
 }
 
-/* Lanes: two previews side by side at unequal widths, captions below. */
+/* Two previews side by side. */
 .lanes {
     display: grid;
     grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: var(--space-8);
+    gap: var(--space-7);
     align-items: start;
 }
 
@@ -869,26 +827,21 @@ html:has(.landing) {
     margin: 0;
 }
 
-.lane--narrow {
-    margin-top: var(--space-9);
-}
-
 .lane figcaption {
-    max-width: var(--measure);
-    margin-top: var(--space-6);
+    margin-top: var(--space-5);
 }
 
 .lane figcaption p {
-    margin-top: var(--space-2);
+    max-width: 34em;
+    margin-top: var(--space-2) !important;
 }
 
-/* Steps: a ruled timeline, left aligned, big serif numerals instead of badges. */
+/* How it works: three numbered steps along one rule. */
 .section--steps {
-    padding-top: 0;
+    border-top: var(--border) solid var(--line);
 }
 
 .steps-heading {
-    max-width: var(--measure);
     margin-bottom: var(--space-7);
 }
 
@@ -899,7 +852,7 @@ html:has(.landing) {
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: var(--border-thick) solid var(--ink);
+    border-top: var(--border-thick) solid var(--rule);
 }
 
 .step {
@@ -909,82 +862,65 @@ html:has(.landing) {
 .step-number {
     display: block;
     margin-bottom: var(--space-3);
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 300;
+    color: var(--ink);
+    font-size: var(--text-2xl);
+    font-weight: 850;
     line-height: 1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
 }
 
 .step p {
-    margin-top: var(--space-2);
+    margin-top: var(--space-2) !important;
 }
 
-/* Closing call to action: one big statement, one button. */
+/* Closing call to action. */
 .section--cta {
     background: var(--accent-soft);
-    border-top: var(--border) solid var(--line);
+    border-top: var(--border-thick) solid var(--rule);
 }
 
 .cta {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    align-items: end;
-    gap: var(--space-7);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
 }
 
 .section--cta h2 {
-    font-size: clamp(var(--text-2xl), 5vw, var(--text-3xl));
-    line-height: var(--leading-tight);
+    max-width: 16ch;
+    font-size: clamp(32px, 5vw, 56px);
 }
 
 .cta-actions {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-4);
+    gap: var(--space-3);
     font-size: var(--text-sm);
 }
 
-/* ---------- Reveal on scroll ---------- */
-.reveal {
-    opacity: 0;
-    transform: translateY(var(--space-4));
-    transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
-}
+/* Sections are always visible. The page has one authored motion moment: the strike
+   and the highlighter landing in the hero headline and week sheet. */
 
-.reveal.is-visible {
-    opacity: 1;
-    transform: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .reveal {
-        opacity: 1;
-        transform: none;
-        transition: none;
-    }
-}
-
-/* ---------- Responsive: 1280 (base), 768–960, 360–640 ---------- */
+/* ---------- Responsive ---------- */
 @media (max-width: 960px) {
     .hero {
-        padding-top: var(--space-8);
-        padding-bottom: var(--space-9);
+        padding-top: var(--space-7);
+        padding-bottom: var(--space-8);
     }
 
     .hero-inner,
     .features,
     .band,
-    .lanes,
-    .cta {
+    .lanes {
         grid-template-columns: minmax(0, 1fr);
         gap: var(--space-7);
     }
 
     .hero-visual {
-        width: 100%;
-        max-width: 480px;
+        max-width: 520px;
     }
 
     .features-heading {
@@ -995,17 +931,33 @@ html:has(.landing) {
         margin-left: 0;
     }
 
-    .lane--narrow {
-        margin-top: 0;
-    }
-
     .section {
-        padding-top: var(--space-9);
-        padding-bottom: var(--space-9);
+        padding-top: var(--space-8);
+        padding-bottom: var(--space-8);
+    }
+}
+
+@media (max-width: 720px) {
+    .landing-links {
+        display: none;
     }
 
-    .section--steps {
-        padding-top: 0;
+    .landing-actions {
+        gap: var(--space-2);
+    }
+
+    .feature {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .steps {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .step {
+        padding: var(--space-5) 0;
+        border-bottom: var(--border) solid var(--line);
     }
 }
 
@@ -1014,34 +966,8 @@ html:has(.landing) {
         gap: var(--space-3);
     }
 
-    .landing-links {
-        display: none;
-    }
-
-    .landing-actions {
-        gap: var(--space-3);
-        margin-left: auto;
-    }
-
-    /* Keep the nav to one row on phones. Returning users need Log in here; new users
-       get the hero's sign-up button, so Sign up is the one that goes. */
-    .landing-signup {
-        display: none;
-    }
-
-    /* Touch targets: 44px tall on phones. */
-    .landing-actions .theme-toggle {
-        width: var(--control-height);
-        height: var(--control-height);
-    }
-
-    .landing-actions .btn-sm {
-        height: var(--control-height);
-    }
-
-    .hero {
-        padding-top: var(--space-7);
-        padding-bottom: var(--space-8);
+    .landing-brand {
+        font-size: var(--text-lg);
     }
 
     .hero-lead {
@@ -1053,43 +979,37 @@ html:has(.landing) {
     }
 
     .planner {
-        padding: var(--space-4);
-        transform: none;
-    }
-
-    .planner-row {
-        grid-template-columns: var(--space-6) auto minmax(0, 1fr);
-    }
-
-    .planner-next {
-        grid-column: 3;
-        justify-self: start;
+        padding: var(--space-4) 0 var(--space-2);
     }
 
     .section {
-        padding-top: var(--space-8);
-        padding-bottom: var(--space-8);
+        padding-top: var(--space-7);
+        padding-bottom: var(--space-7);
     }
 
-    .section h2 {
-        font-size: var(--text-xl);
+    .cta-actions,
+    .cta-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Small phones: the hero CTA sits right below, so the nav keeps only Log in. */
+@media (max-width: 420px) {
+    .landing-signup {
+        display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    .landing-nav-inner {
+        gap: var(--space-2);
     }
 
-    .section--cta h2 {
-        font-size: var(--text-2xl);
+    .landing-brand {
+        font-size: 17px;
     }
 
-    .feature-list,
-    .steps {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .steps {
-        gap: 0;
-    }
-
-    .step + .step {
-        margin-top: var(--space-5);
-        border-top: var(--border) solid var(--line);
+    .landing-actions .btn-sm {
+        padding: 0 10px;
     }
 }

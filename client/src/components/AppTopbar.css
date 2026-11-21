@@ -1,14 +1,19 @@
-/* Top bar for the signed-in app (components/AppTopbar), shared by Dashboard and Notes. */
+/* Top bar for the signed-in app (components/AppTopbar), shared by Dashboard and Notes.
+   Ruled off by a 2px ink line like a handout's header. The current section is marked
+   with the highlighter. On phones the Tasks / Notes tabs move to a bar along the
+   bottom edge, in thumb reach, and the top bar keeps the logo, theme and account. */
 .topbar {
+    position: relative;
+    z-index: 30;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    height: 56px;
+    gap: var(--space-3);
+    height: 60px;
     /* Lines up with the page content once it hits its max width (--app-max). */
     padding: 0 max(24px, calc((100% - var(--app-max)) / 2 + 24px));
     background: var(--surface);
-    border-bottom: 1px solid var(--line);
+    border-bottom: var(--border-thick) solid var(--rule);
     flex-shrink: 0;
     font-family: var(--font-text);
 }
@@ -16,15 +21,17 @@
 .topbar-start {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: var(--space-6);
     min-width: 0;
 }
 
 .topbar-brand {
     display: inline-flex;
-    font-size: 27px;
+    align-items: center;
+    min-height: var(--tap);
+    font-size: 26px;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
 }
 
 .topbar-brand:focus-visible {
@@ -32,84 +39,122 @@
     outline-offset: 4px;
 }
 
-/* Tasks / Notes: the current section gets an accent underline. */
 .topbar-tabs {
     display: flex;
-    align-self: stretch;
-    gap: 4px;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .topbar-tab {
-    position: relative;
     display: inline-flex;
     align-items: center;
-    padding: 0 10px;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--tap);
+    padding: 0 var(--space-3);
     color: var(--ink-2);
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     text-decoration: none;
-    transition: color 0.15s ease;
+    border-radius: var(--radius-md);
+    transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.topbar-tab svg {
+    display: none;
+    width: 22px;
+    height: 22px;
 }
 
 .topbar-tab:hover {
     color: var(--ink);
+    background: var(--surface-hover);
+}
+
+.topbar-tab-label {
+    padding: 0 0.16em;
 }
 
 .topbar-tab.active {
-    color: var(--ink);
+    color: var(--on-hl);
 }
 
-.topbar-tab.active::after {
-    content: '';
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: -1px;
-    height: 2px;
-    background: var(--accent);
-    border-radius: 2px;
+.topbar-tab.active:hover {
+    background: transparent;
+}
+
+.topbar-tab.active .topbar-tab-label {
+    background-image: linear-gradient(100deg, transparent 0.1em, var(--hl) 0.26em, var(--hl) calc(100% - 0.26em), transparent calc(100% - 0.06em));
+    background-repeat: no-repeat;
+    background-size: 100% var(--hl-band);
+    background-position: 0 var(--hl-y);
 }
 
 .topbar-tab:focus-visible {
-    outline: none;
-    box-shadow: inset var(--focus-ring);
-    border-radius: 6px;
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
 }
 
-/* Theme button + account menu, spaced like the landing page's nav actions. */
 .topbar-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-2);
     flex-shrink: 0;
 }
 
 @media (max-width: 720px) {
     .topbar {
-        padding: 0 16px;
-    }
-
-    .topbar-start {
-        gap: 8px;
+        height: 56px;
+        padding: 0 var(--space-4);
     }
 
     .topbar-brand {
-        font-size: 21px;
-    }
-
-    .topbar-tab {
-        padding: 0 6px;
-    }
-
-    .topbar-tab.active::after {
-        left: 6px;
-        right: 6px;
+        font-size: 22px;
     }
 }
 
-@media (max-width: 400px) {
-    /* The logo's arrow and box take room the tabs need on the narrowest phones. */
+/* Phones: Tasks / Notes become a bottom tab bar. */
+@media (max-width: 600px) {
+    .topbar-tabs {
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 40;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        padding: 0 var(--space-2) env(safe-area-inset-bottom);
+        background: var(--surface);
+        border-top: var(--border-thick) solid var(--rule);
+    }
+
+    .topbar-tab {
+        flex-direction: column;
+        gap: 2px;
+        min-height: 60px;
+        font-size: 13px;
+        border-radius: 0;
+    }
+
+    .topbar-tab svg {
+        display: block;
+    }
+
+    .topbar-tab.active svg {
+        color: var(--ink);
+    }
+
+    .topbar-tab.active {
+        color: var(--ink);
+    }
+
+    /* Room at the bottom of every app page so the tab bar never covers content. */
+    body:has(.topbar) {
+        padding-bottom: calc(62px + env(safe-area-inset-bottom));
+    }
+}
+
+@media (max-width: 360px) {
     .topbar-brand {
-        font-size: 18px;
+        font-size: 19px;
     }
 }

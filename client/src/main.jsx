@@ -1,8 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Display face for headlines and the DoneYet? wordmark (see --font-display in
-// index.css). opsz axis included.
-import '@fontsource-variable/fraunces/opsz.css'
+// Archivo: the one face for display, UI and reading (see --font-display in
+// index.css). Weight axis 100-900.
+import '@fontsource-variable/archivo'
 import './index.css'
 import App from './App.jsx'
 

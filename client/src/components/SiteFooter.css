@@ -43,7 +43,8 @@
 .site-footer a:hover {
     color: var(--ink);
     text-decoration: underline;
-    text-decoration-color: var(--accent);
+    text-decoration-color: var(--hl);
+    text-decoration-thickness: var(--border-thick);
     text-underline-offset: var(--space-1);
 }
 

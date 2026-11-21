@@ -4,7 +4,7 @@ import ThemeToggle from '../ThemeToggle';
 import NudgeLogo from '../brand/NudgeLogo';
 import SiteFooter from '../SiteFooter';
 import { CheckIcon } from '../landing/FeatureIcons';
-// Reuses the landing page's buttons, brand mark, eyebrow, check-list and app mocks.
+// Reuses the landing page's buttons, brand mark, check-list and app mocks.
 import '../../pages/static/Splash.css';
 import './AuthLayout.css';
 

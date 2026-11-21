@@ -53,7 +53,6 @@ function Register() {
         <AuthLayout
             aside={
                 <>
-                    <span className="eyebrow">Free for students</span>
                     <h2>Every class and deadline in one calm place.</h2>
                     <ul className="check-list">
                         <AuthBullet>A list and progress bar for each course</AuthBullet>

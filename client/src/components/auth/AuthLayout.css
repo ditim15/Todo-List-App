@@ -1,5 +1,5 @@
 /* Shell around the auth pages. Card and form styles live in src/index.css (.auth-*);
-   shared bits (.btn, .landing-brand, .eyebrow, mocks, footer) come from Splash.css.
+   shared bits (.btn, .landing-brand, mocks, footer) come from Splash.css.
    All values come from the tokens in src/index.css. */
 
 .auth-shell {
@@ -17,10 +17,8 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: color-mix(in srgb, var(--canvas) 88%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: var(--border) solid var(--line);
+    background: var(--surface);
+    border-bottom: var(--border-thick) solid var(--rule);
 }
 
 .auth-nav-inner {
@@ -47,7 +45,6 @@
 }
 
 /* ---------- Main area ---------- */
-/* Same faint ruled-notebook lines as the landing hero. */
 .auth-main {
     flex: 1;
     display: flex;
@@ -61,17 +58,6 @@
     box-sizing: border-box;
 }
 
-.auth-shell:has(.auth-main) {
-    background:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent calc(var(--space-7) - var(--border)),
-            var(--rule) calc(var(--space-7) - var(--border)),
-            var(--rule) var(--space-7)
-        ),
-        var(--canvas);
-}
 
 .auth-content {
     display: flex;
@@ -99,7 +85,7 @@
     color: var(--ink);
 }
 
-.auth-aside > p:not(.eyebrow) {
+.auth-aside > p {
     margin-top: var(--space-4);
     font-size: var(--text-lg);
 }
@@ -137,5 +123,24 @@
 
     .auth-card {
         padding: var(--space-5);
+    }
+}
+
+/* Narrowest phones (320px): logo, theme button and one action still fit on one row. */
+@media (max-width: 360px) {
+    .auth-nav-inner {
+        gap: var(--space-2);
+    }
+
+    .auth-nav-actions {
+        gap: 6px;
+    }
+
+    .auth-nav .landing-brand {
+        font-size: 17px;
+    }
+
+    .auth-nav-actions .btn-sm {
+        padding: 0 10px;
     }
 }

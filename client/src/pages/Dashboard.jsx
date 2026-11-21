@@ -11,7 +11,7 @@ import CalendarView from '../components/tasks/CalendarView';
 import { PRIORITIES, PrioritySelect } from '../components/tasks/PrioritySelect';
 import Assistant from '../components/assistant/Assistant';
 import SiteFooter from '../components/SiteFooter';
-import { addDays, isSameMonth, localeFirstDayOfWeek, monthGrid, monthOf } from '../components/tasks/calendarUtils';
+import { isSameMonth, localeFirstDayOfWeek, monthGrid, monthOf } from '../components/tasks/calendarUtils';
 import './static/Dashboard.css';
 
 const TASK_PAGE_SIZE = 50;
@@ -52,6 +52,10 @@ function hasActiveFilters(filters) {
 }
 
 // Time-of-day greeting based on the user's local clock.
+function getWeekday() {
+    return new Date().toLocaleDateString(undefined, { weekday: 'long' });
+}
+
 function getGreeting() {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -107,38 +111,6 @@ function ProgressBar({ value, max, label }) {
         >
             <div className="progress-fill" style={{ width: `${percent(value, max)}%` }} />
         </div>
-    );
-}
-
-// A summary number. With `onClick` it's a button that jumps to those tasks; `active`
-// marks the tile whose filter is currently applied (clicking it again clears it).
-function StatTile({ label, value, detail, tone, onClick, active = false, actionLabel }) {
-    const content = (
-        <>
-            <span className="stat-label">
-                {tone && <span className={`stat-dot stat-dot--${tone}`} aria-hidden="true" />}
-                {label}
-            </span>
-            <span className="stat-value">{value}</span>
-            {detail && <span className="stat-detail">{detail}</span>}
-        </>
-    );
-
-    if (!onClick) return <div className="stat-tile">{content}</div>;
-
-    return (
-        <button
-            type="button"
-            className={`stat-tile stat-tile--button${active ? ' stat-tile--active' : ''}`}
-            onClick={onClick}
-            aria-pressed={active}
-            title={actionLabel}
-        >
-            {content}
-            <svg className="stat-chevron" viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        </button>
     );
 }
 
@@ -352,6 +324,9 @@ const LISTS_DATALIST_ID = 'dashboard-lists';
 // `showDueRange` is off in the calendar, where the month itself is the date range.
 function TaskFilters({ filters, onChange, onClear, showDueRange = true }) {
     const update = (changes) => onChange({ ...filters, ...changes });
+    // Phones: priority and date filters fold away behind one button (Dashboard.css).
+    const [open, setOpen] = useState(false);
+    const activeCount = filters.priorities.length + (showDueRange && (filters.dueFrom || filters.dueTo) ? 1 : 0);
 
     function togglePriority(key) {
         const priorities = filters.priorities.includes(key)
@@ -361,7 +336,7 @@ function TaskFilters({ filters, onChange, onClear, showDueRange = true }) {
     }
 
     return (
-        <div className="filters" role="search" aria-label="Filter tasks">
+        <div className={`filters${open ? ' filters--open' : ''}`} role="search" aria-label="Filter tasks">
             <input
                 className="filters-search"
                 type="search"
@@ -370,6 +345,14 @@ function TaskFilters({ filters, onChange, onClear, showDueRange = true }) {
                 value={filters.search}
                 onChange={(e) => update({ search: e.target.value })}
             />
+            <button
+                type="button"
+                className="filters-toggle"
+                aria-expanded={open}
+                onClick={() => setOpen(!open)}
+            >
+                Filters{activeCount > 0 ? ` (${activeCount})` : ''}
+            </button>
             <div className="filter-chips" role="group" aria-label="Filter by priority">
                 {PRIORITIES.map((p) => {
                     const isOn = filters.priorities.includes(p.key);
@@ -677,29 +660,33 @@ function NotesIcon() {
     );
 }
 
-function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCancelEdit, onSave, onOpenNotes }) {
+function TaskItem({ todo, today, isEditing, isSettling, isNext, onToggle, onEdit, onCancelEdit, onSave, onOpenNotes }) {
     const isOverdue = !todo.completed && todo.due_date && todo.due_date < today;
     const priority = PRIORITIES.find((p) => p.key === todo.priority);
     const classes = ['task'];
     if (todo.completed) classes.push('task--done');
     if (isSettling) classes.push('task--settling');
+    if (isNext) classes.push('task--next');
     if (isEditing) classes.push('task--editing');
 
     return (
         <li className={classes.join(' ')}>
-            <input
-                type="checkbox"
-                className="task-check"
-                checked={todo.completed}
-                onChange={() => onToggle(todo)}
-                aria-label={`Mark "${todo.title}" as ${todo.completed ? 'not done' : 'done'}`}
-            />
+            {/* The label pads the small box out to a full tap target. */}
+            <label className="task-check-hit">
+                <input
+                    type="checkbox"
+                    className="task-check"
+                    checked={todo.completed}
+                    onChange={() => onToggle(todo)}
+                    aria-label={`Mark "${todo.title}" as ${todo.completed ? 'not done' : 'done'}`}
+                />
+            </label>
             {isEditing ? (
                 <TaskEditForm todo={todo} onSave={onSave} onCancel={onCancelEdit} />
             ) : (
                 <>
                     <div className="task-body">
-                        <span className="task-title">{todo.title}</span>
+                        <span className="task-title"><span className="task-title-text">{todo.title}</span></span>
                         {todo.description && <span className="task-description">{todo.description}</span>}
                         <span className="task-meta">
                             <span className="task-chip">{todo.category}</span>
@@ -733,7 +720,11 @@ function TaskItem({ todo, today, isEditing, isSettling, onToggle, onEdit, onCanc
                         onClick={() => onEdit(todo.todo_id)}
                         aria-label={`Edit "${todo.title}"`}
                     >
-                        Edit
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M4 20h4L19 9l-4-4L4 16z" />
+                            <path d="M13.5 6.5l4 4" />
+                        </svg>
+                        <span className="task-edit-label">Edit</span>
                     </button>
                 </>
             )}
@@ -801,11 +792,6 @@ function Dashboard() {
     const [error, setError] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [showCompleted, setShowCompleted] = useState(true);
-    // Scroll targets for the stat tiles, and which one to scroll to once the tasks the
-    // tile asked for have loaded ('tasks' | 'completed' | null).
-    const tasksPanelRef = useRef(null);
-    const completedRef = useRef(null);
-    const pendingScroll = useRef(null);
     const [filters, setFilters] = useState(EMPTY_FILTERS);
     // Search is applied after typing pauses, so each keystroke doesn't hit the server.
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -897,18 +883,6 @@ function Dashboard() {
         setEditingId(null);
     }
 
-    // A stat tile asked to scroll to its tasks: do it once they've rendered, meaning the
-    // new tasks loaded, or (with no reload coming) the Completed section expanded.
-    // scrollToPending only reads refs, so it's safe to leave out of the dependencies.
-    useEffect(() => {
-        if (pendingScroll.current) scrollToPending();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [todos]);
-    useEffect(() => {
-        if (pendingScroll.current && !pendingScroll.current.afterLoad) scrollToPending();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showCompleted]);
-
     function changeView(next) {
         setView(next);
         saveView(next);
@@ -970,57 +944,7 @@ function Dashboard() {
     }
 
     const today = localToday();
-    const yesterday = addDays(today, -1);
 
-    // Which stat tile's filter is applied right now, worked out from the filters so it
-    // stays correct when the user edits them by hand. Overdue = due before today; done
-    // ones among them sit in the Completed section, so the open list is just overdue.
-    const onlyDatesSet = !filters.search.trim() && filters.priorities.length === 0 && selectedList === null && view === 'list';
-    const activeTile = !onlyDatesSet
-        ? null
-        : filters.dueFrom === today && filters.dueTo === today
-            ? 'today'
-            : !filters.dueFrom && filters.dueTo === yesterday
-                ? 'overdue'
-                : null;
-
-    // Stat tiles jump to their tasks. The counts cover every list, so the jump clears
-    // the list and other filters to make what's shown match the number.
-    function handleTileClick(tile) {
-        setEditingId(null);
-        if (tile === activeTile) {
-            setFilters(EMPTY_FILTERS);
-            return;
-        }
-        const nextFilters = tile === 'today'
-            ? { ...EMPTY_FILTERS, dueFrom: today, dueTo: today }
-            : tile === 'overdue'
-                ? { ...EMPTY_FILTERS, dueTo: yesterday }
-                : EMPTY_FILTERS;
-        const willReload = view !== 'list'
-            || selectedList !== null
-            || JSON.stringify(nextFilters) !== JSON.stringify(filters);
-
-        if (view !== 'list') changeView('list');
-        setSelectedList(null);
-        setFilters(nextFilters);
-        if (tile === 'completed') setShowCompleted(true);
-
-        // Scroll once the new tasks are on screen (the effect below), or right away if
-        // nothing is about to change.
-        pendingScroll.current = { which: tile === 'completed' ? 'completed' : 'tasks', afterLoad: willReload };
-        const waitForRender = willReload || (tile === 'completed' && !showCompleted);
-        if (!waitForRender) scrollToPending();
-    }
-
-    function scrollToPending() {
-        const { which } = pendingScroll.current;
-        pendingScroll.current = null;
-        const target = (which === 'completed' && completedRef.current) || tasksPanelRef.current;
-        if (!target) return;
-        const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-    }
     const firstName = user?.name?.split(' ')[0];
     const isCalendar = view === 'calendar';
     // The calendar ignores the due-date range filter (the month is the range).
@@ -1030,6 +954,18 @@ function Dashboard() {
         : 0;
     const openTodos = todos.filter((t) => !t.completed || settlingIds.has(t.todo_id));
     const completedTodos = todos.filter((t) => t.completed && !settlingIds.has(t.todo_id));
+    // Open tasks grouped like a handout's sections: Today (overdue first), Coming up
+    // (dated, soonest first) and No due date. Each group keeps the server's order for ties.
+    const byDue = (a, b) => (a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0);
+    const taskGroups = [
+        { key: 'today', title: 'Today', todos: openTodos.filter((t) => t.due_date && t.due_date <= today).sort(byDue) },
+        { key: 'upcoming', title: 'Coming up', todos: openTodos.filter((t) => t.due_date && t.due_date > today).sort(byDue) },
+        { key: 'undated', title: 'No due date', todos: openTodos.filter((t) => !t.due_date) },
+    ].filter((group) => group.todos.length > 0);
+    // The one open task to do next (the first in Today) gets the highlighter.
+    const nextId = taskGroups[0]?.key === 'today'
+        ? taskGroups[0].todos.find((t) => !t.completed)?.todo_id
+        : undefined;
 
     function renderTask(todo) {
         return (
@@ -1039,6 +975,7 @@ function Dashboard() {
                 today={today}
                 isEditing={editingId === todo.todo_id}
                 isSettling={settlingIds.has(todo.todo_id)}
+                isNext={todo.todo_id === nextId}
                 onToggle={handleToggle}
                 onEdit={setEditingId}
                 onCancelEdit={() => setEditingId(null)}
@@ -1055,42 +992,22 @@ function Dashboard() {
             <main className="dash-main">
                 <section className="intro">
                     <div className="intro-text">
+                        {/* Date-led, like a handout's title: today's count carries the highlighter. */}
                         <h1>
-                            {getGreeting()}{firstName ? `, ${firstName}` : ''}
+                            {getWeekday()}.{' '}
+                            {stats && stats.dueToday > 0 && (
+                                <span className="hl">{stats.dueToday} {stats.dueToday === 1 ? 'thing' : 'things'} today.</span>
+                            )}
+                            {stats && stats.dueToday === 0 && 'Nothing due today.'}
                         </h1>
                         <p className="intro-summary">
+                            {getGreeting()}{firstName ? `, ${firstName}` : ''}.{' '}
                             {status === 'loading' && 'Loading your tasks...'}
                             {status === 'error' && !stats && "We couldn't load your tasks."}
-                            {stats && getSummary(stats)}
+                            {stats && stats.total === 0 && getSummary(stats)}
+                            {stats && stats.total > 0 && `${stats.completed} of ${stats.total} done.`}
                         </p>
                     </div>
-                    {stats && stats.total > 0 && (
-                        <div className="stat-tiles">
-                            <StatTile
-                                label="Due today"
-                                value={stats.dueToday}
-                                tone={stats.dueToday > 0 ? 'warning' : null}
-                                onClick={stats.dueToday > 0 || activeTile === 'today' ? () => handleTileClick('today') : undefined}
-                                active={activeTile === 'today'}
-                                actionLabel={activeTile === 'today' ? 'Show all tasks' : 'Show tasks due today'}
-                            />
-                            <StatTile
-                                label="Overdue"
-                                value={stats.overdue}
-                                tone={stats.overdue > 0 ? 'critical' : null}
-                                onClick={stats.overdue > 0 || activeTile === 'overdue' ? () => handleTileClick('overdue') : undefined}
-                                active={activeTile === 'overdue'}
-                                actionLabel={activeTile === 'overdue' ? 'Show all tasks' : 'Show overdue tasks'}
-                            />
-                            <StatTile
-                                label="Completed"
-                                value={`${percent(stats.completed, stats.total)}%`}
-                                detail={`${stats.completed} of ${stats.total}`}
-                                onClick={stats.completed > 0 ? () => handleTileClick('completed') : undefined}
-                                actionLabel="Jump to completed tasks"
-                            />
-                        </div>
-                    )}
                 </section>
 
                 {error && <p className="dash-error" role="alert">{error}</p>}
@@ -1107,7 +1024,7 @@ function Dashboard() {
                             <NotesPanel />
                         </div>
 
-                        <section ref={tasksPanelRef} className="panel tasks-panel" aria-labelledby="tasks-heading">
+                        <section className="panel tasks-panel" aria-labelledby="tasks-heading">
                             <div className="panel-header tasks-panel-header">
                                 <div className="tasks-panel-title">
                                     <h2 id="tasks-heading">{selectedList ?? 'All tasks'}</h2>
@@ -1189,7 +1106,15 @@ function Dashboard() {
                             ) : (
                                 <div className="task-scroll">
                                     {openTodos.length > 0 ? (
-                                        <ul className="task-list">{openTodos.map(renderTask)}</ul>
+                                        taskGroups.map((group) => (
+                                            <section key={group.key} className={`task-group task-group--${group.key}`} aria-labelledby={`task-group-${group.key}`}>
+                                                <h3 id={`task-group-${group.key}`} className="task-group-title">
+                                                    {group.title}
+                                                    <span className="task-group-count">{group.todos.length}</span>
+                                                </h3>
+                                                <ul className="task-list">{group.todos.map(renderTask)}</ul>
+                                            </section>
+                                        ))
                                     ) : (
                                         <p className="tasks-all-done">
                                             {filtersActive
@@ -1199,7 +1124,7 @@ function Dashboard() {
                                     )}
 
                                     {completedTodos.length > 0 && (
-                                        <section ref={completedRef} className="completed-section" aria-label="Completed tasks">
+                                        <section className="completed-section" aria-label="Completed tasks">
                                             <button
                                                 type="button"
                                                 className="completed-toggle"

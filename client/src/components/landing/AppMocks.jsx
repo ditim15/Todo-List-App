@@ -83,7 +83,7 @@ export function PlannerMock() {
                             <span className="planner-day">{row.day}</span>
                             <span className={`mock-check${row.done ? ' mock-check--on' : ''}`} />
                             <span className="planner-task">
-                                <span className="planner-task-title">
+                                <span className={`planner-task-title${row.next ? ' hl' : ''}`}>
                                     {row.title}
                                     {row.done && <Strike style={{ '--strike-step': delay }} />}
                                 </span>
@@ -95,7 +95,6 @@ export function PlannerMock() {
                                     </span>
                                 </span>
                             </span>
-                            {row.next && <span className="planner-next">Up next</span>}
                         </li>
                     );
                 })}

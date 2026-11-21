@@ -8,8 +8,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--control-sm);
-    height: var(--control-sm);
+    width: var(--tap);
+    height: var(--tap);
     padding: 0;
     background: transparent;
     color: var(--ink-2);
@@ -40,8 +40,7 @@
     background: var(--toggle-bg);
     color: var(--toggle-fg);
     border-color: var(--toggle-border);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--toggle-glow) 40%, transparent),
-        0 0 16px var(--toggle-glow);
+    box-shadow: none;
 }
 
 .theme-toggle:focus-visible {
