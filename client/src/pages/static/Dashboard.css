@@ -410,14 +410,18 @@
 }
 
 /* ---------- Filter toolbar ---------- */
-/* Wraps onto extra rows in narrow task panels. */
+/* One quiet row at every width: search, then a Filters button. Priority and due date
+   live in a panel that opens under the row on demand, each with a short label, so the
+   resting toolbar is a search field and one control rather than a strip of chips. */
 .filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
     padding: 12px 0;
     border-bottom: 1px solid var(--line);
+}
+
+.filters-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .filters input {
@@ -437,7 +441,87 @@
 }
 
 .filters-search {
-    flex: 1 1 160px;
+    flex: 1 1 0;
+}
+
+.filters-toggle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--field);
+    padding: 0 var(--space-3);
+    background: var(--surface);
+    color: var(--ink-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.filters-toggle:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+}
+
+.filters-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.filters-toggle[aria-expanded="true"] {
+    border-color: var(--ink);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.filters-toggle svg {
+    flex: none;
+}
+
+/* How many filters are on, so a closed panel still says the list is filtered. */
+.filters-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    background: var(--ink);
+    color: var(--surface);
+    border-radius: var(--radius-pill);
+    font-size: 0.75em;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.filters-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-6);
+    margin-top: var(--space-3);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.filter-label {
+    color: var(--ink-3);
+    font-size: 0.8em;
+    font-weight: 700;
+}
+
+/* Sits in the bar, so it is there whenever anything is filtered, panel open or not. */
+.filters .filters-clear {
+    flex: none;
+    margin: 0;
 }
 
 .filter-chips {
@@ -484,23 +568,28 @@
     width: 140px;
 }
 
-.filter-dates-label,
 .filter-dates-sep {
     font-size: 0.85em;
     color: var(--ink-3);
 }
 
-/* Narrow panel: search on its own row; the date range fills its row. */
+/* Narrow task panel: each group takes its own row, labels line up in one column, and
+   the date range fills its row. */
 @container tasks (max-width: 520px) {
-    .filters-search {
-        flex-basis: 100%;
+    .filters-panel {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--space-3);
+    }
+
+    .filter-group {
+        display: contents;
     }
 
     /* Grid, not flex: date inputs refuse to shrink below their content in a flex row. */
     .filter-dates {
-        flex: 1 1 100%;
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     }
 
     .filter-dates input {
@@ -1525,42 +1614,6 @@
     height: 6px;
     border-radius: 50%;
     background: var(--critical);
-}
-
-/* Filters: one row (search + Filters) on phones; the rest folds open on demand. */
-.filters-toggle {
-    display: none;
-    flex: none;
-    min-height: var(--field);
-    padding: 0 var(--space-4);
-    background: var(--surface);
-    color: var(--ink);
-    border: var(--border-thick) solid var(--ink);
-    border-radius: var(--radius-md);
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.filters-toggle[aria-expanded="true"] {
-    background: var(--ink);
-    color: var(--surface);
-}
-
-@media (max-width: 720px) {
-    .filters-toggle {
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .filters .filters-search {
-        flex: 1 1 0;
-        min-width: 0;
-    }
-
-    .filters:not(.filters--open) .filter-chips,
-    .filters:not(.filters--open) .filter-dates {
-        display: none;
-    }
 }
 
 /* ---------- Task sections: Today, Coming up, No due date ----------

@@ -250,7 +250,7 @@ The spacing scale is on a 4px grid: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 1
 
 **Dashboard.** At 1100px and wider there is a three-column grid: clamp(220px, 18%, 320px) / fluid / clamp(240px, 20%, 360px), 24px gaps, full viewport height, with each panel scrolling internally. Between 720px and 1099px it becomes 240px plus fluid, and the side column moves to a row beneath. Under 720px it is one column ordered for the work: lists, then tasks, then the side column, then notes. The lists panel becomes a horizontally swiped strip of 150px chips with scroll-snap. The heading is date-led ("Saturday. 2 things today.") with a quiet "1 of 9 done" line under it. Open tasks are grouped into Today (overdue first), Coming up and No due date. Below 1100px the side Coming up panel is hidden because the main column already shows it. On phones the Edit button is a pencil only, and Today rows drop the redundant "Due today", so three rows fit above the fold at 375px.
 
-**Quick add** shows only the title field and Add until the person types or focuses it. Then the list, priority, date and reminder fields unfold (`:has(:placeholder-shown):not(:focus-within)`). **Filters** fold behind a Filters toggle under 720px, so one row of search plus Filters remains.
+**Quick add** shows only the title field and Add until the person types or focuses it. Then the list, priority, date and reminder fields unfold (`:has(:placeholder-shown):not(:focus-within)`). **Filters** rest as one quiet row at every width: search, a Clear link only when something is filtered, and a Filters button with a small ink count badge for active filters. Priority and due date open in a panel under the row, each group led by a short ink-3 label (Priority, Due); in a narrow task panel the labels line up in one column.
 
 **Notes.** Under 860px the formatting toolbar stays on one row that scrolls sideways with its scrollbar hidden, bleeding to the edge.
 
@@ -292,7 +292,8 @@ Buttons are firm, inky and square-cornered.
 - **Focus:** the 3px accent ring.
 
 ### Segmented controls
-- **View toggle (List / Calendar) and Filters toggle:** a 2px ink frame. The active or expanded state inverts to an ink fill with paper text.
+- **View toggle (List / Calendar):** a 2px ink frame. The active state inverts to an ink fill with paper text.
+- **Filters toggle:** a quiet field-height button (1px `line-strong` border, `ink-2` text, a three-line sliders icon). Hover and expanded turn the frame and text to ink, with expanded thickening the frame to 2px; it never inverts.
 
 ### Cards / Containers
 - **Panel sheet:** `surface` background, 2px `rule` top border, no radius, no shadow. Padding is 16px 24px 24px (12px 16px 16px under 720px). The heading row sits on a baseline with tabular meta on the right.

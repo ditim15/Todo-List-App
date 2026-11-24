@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import AppTopbar from '../components/AppTopbar';
@@ -319,14 +319,18 @@ function UpcomingPanel({ upcoming, today }) {
 // Shared suggestions for every "List" input (the add form and edit forms).
 const LISTS_DATALIST_ID = 'dashboard-lists';
 
-// Toolbar above the task list: title search, priority toggles and a due-date range.
+// Toolbar above the task list: one quiet row (title search + a Filters button), with
+// priority and due-date filters in a panel that opens on demand, at every width.
 // Filters apply within the selected list.
 // `showDueRange` is off in the calendar, where the month itself is the date range.
 function TaskFilters({ filters, onChange, onClear, showDueRange = true }) {
     const update = (changes) => onChange({ ...filters, ...changes });
-    // Phones: priority and date filters fold away behind one button (Dashboard.css).
     const [open, setOpen] = useState(false);
+    const panelId = useId();
+    const priorityLabelId = useId();
+    const dueLabelId = useId();
     const activeCount = filters.priorities.length + (showDueRange && (filters.dueFrom || filters.dueTo) ? 1 : 0);
+    const canClear = showDueRange ? hasActiveFilters(filters) : hasActiveFilters({ ...filters, dueFrom: '', dueTo: '' });
 
     function togglePriority(key) {
         const priorities = filters.priorities.includes(key)
@@ -337,63 +341,84 @@ function TaskFilters({ filters, onChange, onClear, showDueRange = true }) {
 
     return (
         <div className={`filters${open ? ' filters--open' : ''}`} role="search" aria-label="Filter tasks">
-            <input
-                className="filters-search"
-                type="search"
-                placeholder="Search tasks"
-                aria-label="Search tasks by name"
-                value={filters.search}
-                onChange={(e) => update({ search: e.target.value })}
-            />
-            <button
-                type="button"
-                className="filters-toggle"
-                aria-expanded={open}
-                onClick={() => setOpen(!open)}
-            >
-                Filters{activeCount > 0 ? ` (${activeCount})` : ''}
-            </button>
-            <div className="filter-chips" role="group" aria-label="Filter by priority">
-                {PRIORITIES.map((p) => {
-                    const isOn = filters.priorities.includes(p.key);
-                    return (
-                        <button
-                            key={p.key}
-                            type="button"
-                            className={`filter-chip${isOn ? ' filter-chip--on' : ''}`}
-                            aria-pressed={isOn}
-                            onClick={() => togglePriority(p.key)}
-                        >
-                            <span className={`priority-dot priority-dot--${p.key}`} aria-hidden="true" />
-                            {p.label}
-                        </button>
-                    );
-                })}
-            </div>
-            {showDueRange && (
-                <div className="filter-dates" role="group" aria-label="Due date range">
-                    <span className="filter-dates-label">Due</span>
-                    <input
-                        type="date"
-                        aria-label="Due from"
-                        value={filters.dueFrom}
-                        max={filters.dueTo || undefined}
-                        onChange={(e) => update({ dueFrom: e.target.value })}
-                    />
-                    <span className="filter-dates-sep" aria-hidden="true">–</span>
-                    <input
-                        type="date"
-                        aria-label="Due to"
-                        value={filters.dueTo}
-                        min={filters.dueFrom || undefined}
-                        onChange={(e) => update({ dueTo: e.target.value })}
-                    />
-                </div>
-            )}
-            {(showDueRange ? hasActiveFilters(filters) : hasActiveFilters({ ...filters, dueFrom: '', dueTo: '' })) && (
-                <button type="button" className="link-button filters-clear" onClick={onClear}>
-                    Clear
+            <div className="filters-bar">
+                <input
+                    className="filters-search"
+                    type="search"
+                    placeholder="Search tasks"
+                    aria-label="Search tasks by name"
+                    value={filters.search}
+                    onChange={(e) => update({ search: e.target.value })}
+                />
+                {canClear && (
+                    <button type="button" className="link-button filters-clear" onClick={onClear}>
+                        Clear
+                    </button>
+                )}
+                <button
+                    type="button"
+                    className="filters-toggle"
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    onClick={() => setOpen(!open)}
+                >
+                    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                        <path d="M3 6h14M6 10h8M8.5 14h3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Filters
+                    {activeCount > 0 && (
+                        <span className="filters-count">
+                            {activeCount}
+                            <span className="visually-hidden"> active</span>
+                        </span>
+                    )}
                 </button>
+            </div>
+            {open && (
+                <div className="filters-panel" id={panelId}>
+                    <div className="filter-group" role="group" aria-labelledby={priorityLabelId}>
+                        <span className="filter-label" id={priorityLabelId}>Priority</span>
+                        <div className="filter-chips">
+                            {PRIORITIES.map((p) => {
+                                const isOn = filters.priorities.includes(p.key);
+                                return (
+                                    <button
+                                        key={p.key}
+                                        type="button"
+                                        className={`filter-chip${isOn ? ' filter-chip--on' : ''}`}
+                                        aria-pressed={isOn}
+                                        onClick={() => togglePriority(p.key)}
+                                    >
+                                        <span className={`priority-dot priority-dot--${p.key}`} aria-hidden="true" />
+                                        {p.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    {showDueRange && (
+                        <div className="filter-group" role="group" aria-labelledby={dueLabelId}>
+                            <span className="filter-label" id={dueLabelId}>Due</span>
+                            <div className="filter-dates">
+                                <input
+                                    type="date"
+                                    aria-label="Due from"
+                                    value={filters.dueFrom}
+                                    max={filters.dueTo || undefined}
+                                    onChange={(e) => update({ dueFrom: e.target.value })}
+                                />
+                                <span className="filter-dates-sep" aria-hidden="true">to</span>
+                                <input
+                                    type="date"
+                                    aria-label="Due to"
+                                    value={filters.dueTo}
+                                    min={filters.dueFrom || undefined}
+                                    onChange={(e) => update({ dueTo: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );
