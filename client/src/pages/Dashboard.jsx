@@ -8,6 +8,8 @@ import { createTodo, getTodoStats, getTodos, localToday, renameList, updateTodo 
 import { ReminderBadge, ReminderField, ReminderPicker } from '../components/tasks/reminders';
 import { DEFAULT_REMINDER_TIME, isDayPast, nextAvailableTime, reminderMoment } from '../components/tasks/reminderUtils';
 import CalendarView from '../components/tasks/CalendarView';
+import { RepeatBadge, RepeatField, RepeatPicker } from '../components/tasks/repeat';
+import { fitRepeatUntil, repeatPreviews } from '../components/tasks/repeatUtils';
 import { PRIORITIES, PrioritySelect } from '../components/tasks/PrioritySelect';
 import Assistant from '../components/assistant/Assistant';
 import SiteFooter from '../components/SiteFooter';
@@ -436,8 +438,18 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
     // field appears next to the reminder once one is picked.
     const [reminderDays, setReminderDays] = useState(null);
     const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
+    // Repeat: rule '' = doesn't repeat; `until` is the last date a copy may be due.
+    const [repeat, setRepeat] = useState({ rule: '', until: '' });
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+
+    // Keeps the repeat valid when the due date changes: no date means no repeat, and the
+    // end date stays on or after the due date and within a year of it.
+    function fitRepeat(nextDueDate) {
+        setRepeat((current) => (nextDueDate && current.rule
+            ? { rule: current.rule, until: fitRepeatUntil(nextDueDate, current.rule, current.until) }
+            : { rule: '', until: '' }));
+    }
 
     // Follow the selected list so new tasks land where the user is looking.
     useEffect(() => {
@@ -453,6 +465,7 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
         if (defaultDueDate === dueDateRef.current) return;
         setDueDate(defaultDueDate);
         setReminderDays(null);
+        fitRepeat(defaultDueDate);
     }, [defaultDueDate]);
 
     // Picking a reminder day keeps the chosen time when it's still ahead; for today, a
@@ -482,11 +495,14 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
                 due_date: dueDate || null,
                 reminder_days_before: dueDate ? reminderDays : null,
                 reminder_time: dueDate && reminderDays !== null ? reminderTime : null,
+                recurrence: dueDate && repeat.rule ? repeat.rule : null,
+                recurrence_until: dueDate && repeat.rule ? repeat.until : null,
             });
             setTitle('');
             setDueDate(defaultDueDate);
             setReminderDays(null);
             setReminderTime(DEFAULT_REMINDER_TIME);
+            setRepeat({ rule: '', until: '' });
             setPriority('medium');
         } catch (err) {
             setError(err.message);
@@ -531,6 +547,7 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
                     } else if (reminderDays !== null) {
                         setReminderTime((time) => nextAvailableTime(next, reminderDays, time));
                     }
+                    fitRepeat(next);
                     // Clearing the field doesn't move the calendar; there's no day to show.
                     if (next) onDueDateChange?.(next);
                 }}
@@ -544,6 +561,9 @@ function AddTaskForm({ defaultList, defaultDueDate = '', onDueDateChange, onCrea
                     onDaysChange={chooseReminderDays}
                     onTimeChange={setReminderTime}
                 />
+            </div>
+            <div className="add-task-repeat">
+                <RepeatField dueDate={dueDate} rule={repeat.rule} until={repeat.until} onChange={setRepeat} />
             </div>
             <button type="submit" disabled={isSaving || !title.trim()}>
                 {isSaving ? 'Adding...' : 'Add'}
@@ -565,6 +585,7 @@ function TaskEditForm({ todo, onSave, onCancel }) {
         // Postgres returns TIME as 'HH:MM:SS'; the time input wants 'HH:MM'.
         time: todo.reminder_time?.slice(0, 5) ?? DEFAULT_REMINDER_TIME,
     });
+    const [repeat, setRepeat] = useState({ rule: todo.recurrence ?? '', until: todo.recurrence_until ?? '' });
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -598,11 +619,20 @@ function TaskEditForm({ todo, onSave, onCancel }) {
                 due_date: dueDate || null,
                 reminder_days_before: activeReminder ? activeReminder.days : null,
                 reminder_time: activeReminder ? activeReminder.time : null,
+                recurrence: dueDate && repeat.rule ? repeat.rule : null,
+                recurrence_until: dueDate && repeat.rule ? repeat.until : null,
             });
         } catch (err) {
             setError(err.message);
             setIsSaving(false);
         }
+    }
+
+    function changeDueDate(next) {
+        setDueDate(next);
+        setRepeat((current) => (next && current.rule
+            ? { rule: current.rule, until: fitRepeatUntil(next, current.rule, current.until) }
+            : { rule: '', until: '' }));
     }
 
     function handleKeyDown(e) {
@@ -646,7 +676,7 @@ function TaskEditForm({ todo, onSave, onCancel }) {
                 </label>
                 <label>
                     <span>Due date</span>
-                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                    <input type="date" value={dueDate} onChange={(e) => changeDueDate(e.target.value)} />
                 </label>
                 <div className="task-edit-reminder">
                     <label htmlFor="reminder-days">
@@ -660,6 +690,12 @@ function TaskEditForm({ todo, onSave, onCancel }) {
                         sentAt={todo.reminder_sent_at}
                         checkPast={reminderChanged}
                     />
+                </div>
+                <div className="task-edit-reminder">
+                    <label htmlFor="repeat-rule">
+                        <span>Repeat</span>
+                    </label>
+                    <RepeatPicker dueDate={dueDate} rule={repeat.rule} until={repeat.until} onChange={setRepeat} />
                 </div>
             </div>
             {error && <p className="form-error">{error}</p>}
@@ -727,6 +763,7 @@ function TaskItem({ todo, today, isEditing, isSettling, isNext, onToggle, onEdit
                                 </span>
                             )}
                             <ReminderBadge todo={todo} />
+                            {!todo.completed && <RepeatBadge todo={todo} />}
                         </span>
                     </div>
                     {/* Opens the task's notes folder (adding the task to Notes the first time). */}
@@ -811,6 +848,9 @@ function Dashboard() {
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [todos, setTodos] = useState([]);
+    // Calendar only: the open copy of each repeating task, so the calendar can draw the
+    // series' later dates as previews (see repeatPreviews).
+    const [repeatingTodos, setRepeatingTodos] = useState([]);
     const [todoTotal, setTodoTotal] = useState(0);
     const [selectedList, setSelectedList] = useState(null);
     const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
@@ -872,10 +912,23 @@ function Dashboard() {
                 search: debouncedSearch,
                 ...range,
             });
+            // Due by the end of the grid: an open copy due before the month can still have
+            // later dates inside it. Same list and filters as the tasks themselves.
+            const repeatingData = view === 'calendar'
+                ? await getTodos(authFetch, {
+                    limit: CALENDAR_TASK_LIMIT,
+                    category: selectedList ?? undefined,
+                    priorities: filters.priorities,
+                    search: debouncedSearch,
+                    dueTo: range.dueTo,
+                    repeating: 'open',
+                })
+                : { todos: [] };
             if (requestId !== latestRequest.current) return;
 
             setStats(statsData);
             setTodos(todoData.todos);
+            setRepeatingTodos(repeatingData.todos);
             setTodoTotal(todoData.total);
             setError('');
             setStatus('ready');
@@ -972,6 +1025,10 @@ function Dashboard() {
 
     const firstName = user?.name?.split(' ')[0];
     const isCalendar = view === 'calendar';
+    // Later dates of repeating tasks inside the visible weeks, drawn as previews.
+    const calendarPreviews = isCalendar
+        ? (({ dueFrom, dueTo }) => repeatPreviews(repeatingTodos, dueFrom, dueTo))(calendarRange(calendarMonth, firstDayOfWeek))
+        : [];
     // The calendar ignores the due-date range filter (the month is the range).
     const filtersActive = hasActiveFilters(isCalendar ? { ...filters, dueFrom: '', dueTo: '' } : filters);
     const monthTaskCount = isCalendar
@@ -1089,6 +1146,7 @@ function Dashboard() {
                                         selectedDay={selectedDay}
                                         today={today}
                                         todos={todos}
+                                        previews={calendarPreviews}
                                         firstDayOfWeek={firstDayOfWeek}
                                         onMonthChange={setCalendarMonth}
                                         onSelectDay={selectCalendarDay}

@@ -130,3 +130,136 @@ describe('validation', () => {
         assert.equal(res.body.page, 1);
     });
 });
+
+describe('repeating tasks', () => {
+    // Ticks a task off the way the dashboard does: PUT the whole todo with completed set.
+    const tick = (api, todo, completed = true) => api.put(`/todos/${todo.todo_id}`, { ...todo, completed });
+
+    test('ticking a repeating task off creates the next copy, carrying its details over', async () => {
+        const api = as(await createUser());
+        const due = dateFromToday(2);
+        const created = await api.post('/todos', {
+            title: 'Problem set', description: 'Odd questions', due_date: due, priority: 'high', category: 'Calculus',
+            recurrence: 'weekly', recurrence_until: dateFromToday(60),
+            reminder_days_before: 1, reminder_time: '18:00', reminder_timezone: 'UTC',
+        });
+        assert.equal(created.status, 201);
+        assert.equal(created.body.todo.recurrence, 'weekly');
+
+        const res = await tick(api, created.body.todo);
+        assert.equal(res.status, 200);
+        assert.equal(res.body.todo.completed, true);
+        const next = res.body.next_todo;
+        assert.ok(next, 'a next copy is returned');
+        assert.equal(next.due_date, dateFromToday(9));
+        assert.equal(next.completed, false);
+        assert.equal(next.title, 'Problem set');
+        assert.equal(next.description, 'Odd questions');
+        assert.equal(next.priority, 'high');
+        assert.equal(next.category, 'Calculus');
+        assert.equal(next.recurrence, 'weekly');
+        assert.equal(next.recurrence_until, dateFromToday(60));
+        assert.equal(next.reminder_days_before, 1);
+        assert.ok(next.remind_at, 'the reminder moves with the new due date');
+        assert.equal(next.reminder_sent_at, null);
+
+        const list = await api.get('/todos?limit=50');
+        assert.equal(list.body.total, 2);
+    });
+
+    test('un-ticking and re-ticking does not create a second copy', async () => {
+        const api = as(await createUser());
+        const { todo } = (await api.post('/todos', {
+            title: 'Reading', due_date: dateFromToday(1), recurrence: 'daily', recurrence_until: dateFromToday(10),
+        })).body;
+
+        const first = await tick(api, todo);
+        assert.ok(first.body.next_todo);
+        await tick(api, first.body.todo, false);
+        const again = await tick(api, first.body.todo);
+        assert.equal(again.status, 200);
+        assert.equal(again.body.next_todo, null);
+        assert.equal((await api.get('/todos?limit=50')).body.total, 2);
+    });
+
+    test('the series stops at its end date', async () => {
+        const api = as(await createUser());
+        const { todo } = (await api.post('/todos', {
+            title: 'Lab', due_date: dateFromToday(3), recurrence: 'weekly', recurrence_until: dateFromToday(9),
+        })).body;
+
+        const res = await tick(api, todo);
+        assert.equal(res.body.next_todo, null, 'next one would be due after the end date');
+        assert.equal((await api.get('/todos?limit=50')).body.total, 1);
+    });
+
+    test('a copy due on the end date is still made', async () => {
+        const api = as(await createUser());
+        const { todo } = (await api.post('/todos', {
+            title: 'Quiz', due_date: dateFromToday(3), recurrence: 'biweekly', recurrence_until: dateFromToday(17),
+        })).body;
+        const res = await tick(api, todo);
+        assert.equal(res.body.next_todo?.due_date, dateFromToday(17));
+    });
+
+    test('saving other edits does not create a copy, and PUT without recurrence stops repeating', async () => {
+        const api = as(await createUser());
+        const { todo } = (await api.post('/todos', {
+            title: 'Club', due_date: dateFromToday(2), recurrence: 'weekly', recurrence_until: dateFromToday(30),
+        })).body;
+
+        const edited = await api.put(`/todos/${todo.todo_id}`, { ...todo, title: 'Club meeting' });
+        assert.equal(edited.body.next_todo, null);
+        assert.equal(edited.body.todo.recurrence, 'weekly');
+
+        const stopped = await api.put(`/todos/${todo.todo_id}`, { title: 'Club meeting', due_date: todo.due_date });
+        assert.equal(stopped.body.todo.recurrence, null);
+        assert.equal(stopped.body.todo.recurrence_until, null);
+        const ticked = await tick(api, stopped.body.todo);
+        assert.equal(ticked.body.next_todo, null);
+    });
+
+    test('next dates: weekdays skip the weekend and monthly keeps the day or clamps it', async () => {
+        const { nextOccurrence } = await import('../utils/validation.js');
+        assert.equal(nextOccurrence('2026-11-27', 'weekdays'), '2026-11-30', 'Friday -> Monday');
+        assert.equal(nextOccurrence('2026-11-24', 'weekdays'), '2026-11-25');
+        assert.equal(nextOccurrence('2026-11-30', 'daily'), '2026-12-01');
+        assert.equal(nextOccurrence('2026-01-15', 'monthly'), '2026-02-15');
+        assert.equal(nextOccurrence('2026-01-31', 'monthly'), '2026-02-28');
+        assert.equal(nextOccurrence('2026-12-31', 'monthly'), '2027-01-31');
+    });
+
+    test('?repeating=open lists only the open copy of each repeating task', async () => {
+        const api = as(await createUser());
+        const { todo } = (await api.post('/todos', {
+            title: 'Seminar', due_date: dateFromToday(1), recurrence: 'weekly', recurrence_until: dateFromToday(40),
+        })).body;
+        await api.post('/todos', { title: 'One-off', due_date: dateFromToday(2) });
+        await tick(api, todo);
+
+        const res = await api.get('/todos?repeating=open&limit=50');
+        assert.equal(res.status, 200);
+        assert.equal(res.body.total, 1);
+        assert.equal(res.body.todos[0].title, 'Seminar');
+        assert.equal(res.body.todos[0].completed, false);
+        assert.equal(res.body.todos[0].due_date, dateFromToday(8));
+    });
+
+    test('repeat settings are validated', async () => {
+        const api = as(await createUser());
+        const due = dateFromToday(3);
+        const cases = [
+            [{ title: 'ok', due_date: due, recurrence: 'hourly', recurrence_until: dateFromToday(10) }, /Repeat must be/],
+            [{ title: 'ok', recurrence: 'weekly', recurrence_until: dateFromToday(10) }, /due date to make a task repeat/],
+            [{ title: 'ok', due_date: due, recurrence: 'weekly' }, /stops repeating/],
+            [{ title: 'ok', due_date: due, recurrence: 'weekly', recurrence_until: '2026-02-30' }, /real date/],
+            [{ title: 'ok', due_date: due, recurrence: 'weekly', recurrence_until: dateFromToday(1) }, /on or after the due date/],
+            [{ title: 'ok', due_date: due, recurrence: 'weekly', recurrence_until: dateFromToday(400) }, /up to a year/],
+        ];
+        for (const [body, message] of cases) {
+            const res = await api.post('/todos', body);
+            assert.equal(res.status, 400, `expected 400 for ${JSON.stringify(body)}`);
+            assert.match(res.body.message, message);
+        }
+    });
+});

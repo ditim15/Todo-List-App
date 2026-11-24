@@ -12,14 +12,16 @@ export function localToday() {
 }
 
 // Optional filters: `category` (one list), `priorities` (array of 'low' | 'medium' |
-// 'high'), `search` (title contains), `dueFrom` / `dueTo` ('YYYY-MM-DD', inclusive).
-export function getTodos(authFetch, { page = 1, limit = 10, category, priorities = [], search, dueFrom, dueTo } = {}) {
+// 'high'), `search` (title contains), `dueFrom` / `dueTo` ('YYYY-MM-DD', inclusive), and
+// `repeating: 'open'` (only the open copy of each repeating task).
+export function getTodos(authFetch, { page = 1, limit = 10, category, priorities = [], search, dueFrom, dueTo, repeating } = {}) {
     const params = new URLSearchParams({ page, limit });
     if (category) params.set('category', category);
     if (priorities.length > 0) params.set('priority', priorities.join(','));
     if (search) params.set('search', search);
     if (dueFrom) params.set('dueFrom', dueFrom);
     if (dueTo) params.set('dueTo', dueTo);
+    if (repeating) params.set('repeating', repeating);
     return authFetch(`/todos?${params}`);
 }
 
@@ -53,22 +55,32 @@ function reminderFields({ reminder_days_before = null, reminder_time = null }) {
     };
 }
 
+// Repeat fields for the API: `recurrence` ('daily' | 'weekdays' | 'weekly' | 'biweekly' |
+// 'monthly', null = doesn't repeat) and `recurrence_until` ('YYYY-MM-DD', required when
+// it repeats).
+function recurrenceFields({ recurrence = null, recurrence_until = null }) {
+    return {
+        recurrence: recurrence || null,
+        recurrence_until: recurrence ? recurrence_until : null,
+    };
+}
+
 // `due_date` is an optional 'YYYY-MM-DD' string; `priority` is 'low' | 'medium' | 'high';
-// `category` is the list name (server defaults it to 'General'). See reminderFields for
-// the optional reminder.
+// `category` is the list name (server defaults it to 'General'). See reminderFields and
+// recurrenceFields for the optional reminder and repeat.
 export function createTodo(authFetch, { title, description, completed = false, due_date = null, priority = 'medium', category, ...rest }) {
     return authFetch('/todos', {
         method: 'POST',
-        body: JSON.stringify({ title, description, completed, due_date, priority, category, ...reminderFields(rest) }),
+        body: JSON.stringify({ title, description, completed, due_date, priority, category, ...reminderFields(rest), ...recurrenceFields(rest) }),
     });
 }
 
 // PUT replaces every field, so pass the whole todo (omitted fields reset to defaults,
-// including the reminder).
+// including the reminder and repeat). Ticking off a repeating task returns `next_todo`.
 export function updateTodo(authFetch, id, { title, description, completed, due_date = null, priority, category, ...rest }) {
     return authFetch(`/todos/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title, description, completed, due_date, priority, category, ...reminderFields(rest) }),
+        body: JSON.stringify({ title, description, completed, due_date, priority, category, ...reminderFields(rest), ...recurrenceFields(rest) }),
     });
 }
 

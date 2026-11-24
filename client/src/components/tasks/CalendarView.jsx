@@ -11,6 +11,8 @@ import {
     toISODate,
     weekdayLabels,
 } from './calendarUtils';
+import { RepeatIcon } from './repeat';
+import { REPEAT_OPTIONS } from './repeatUtils';
 import './CalendarView.css';
 
 // Tasks shown inside a day cell before it collapses to "+N more".
@@ -21,13 +23,20 @@ function taskCountLabel(count) {
     return `${count} ${count === 1 ? 'task' : 'tasks'}`;
 }
 
+function previewCountLabel(count) {
+    return `${count} upcoming ${count === 1 ? 'repeat' : 'repeats'}`;
+}
+
 // Month grid of tasks by due date, with the selected day's tasks listed underneath.
 //
 // `month` is 'YYYY-MM-01'; `selectedDay` a 'YYYY-MM-DD' inside the grid. `todos` are the
 // tasks due in the visible range. `renderTask` draws a full task row (same as the list
 // view) for the selected day, so checking off and editing work the same way.
+// `previews` are the later dates of repeating tasks (see repeatPreviews): drawn faintly
+// after a day's real tasks, and listed under them without a checkbox, because only the
+// open copy can be ticked off.
 // Keyboard: arrows move by day/week, Home/End to the week's ends, PageUp/PageDown by month.
-function CalendarView({ month, selectedDay, today, todos, firstDayOfWeek, onMonthChange, onSelectDay, renderTask, children }) {
+function CalendarView({ month, selectedDay, today, todos, previews = [], firstDayOfWeek, onMonthChange, onSelectDay, renderTask, children }) {
     const weeks = useMemo(() => monthGrid(month, firstDayOfWeek), [month, firstDayOfWeek]);
     const weekdays = useMemo(() => weekdayLabels(firstDayOfWeek), [firstDayOfWeek]);
     const weekdaysLong = useMemo(() => weekdayLabels(firstDayOfWeek, 'long'), [firstDayOfWeek]);
@@ -46,6 +55,15 @@ function CalendarView({ month, selectedDay, today, todos, firstDayOfWeek, onMont
         }
         return map;
     }, [todos]);
+
+    const previewsByDay = useMemo(() => {
+        const map = new Map();
+        for (const preview of previews) {
+            if (!map.has(preview.due_date)) map.set(preview.due_date, []);
+            map.get(preview.due_date).push(preview);
+        }
+        return map;
+    }, [previews]);
 
     // Move focus along with the selection when it changes from the keyboard.
     const cellRefs = useRef(new Map());
@@ -92,7 +110,20 @@ function CalendarView({ month, selectedDay, today, todos, firstDayOfWeek, onMont
     }
 
     const selectedTasks = tasksByDay.get(selectedDay) ?? [];
+    const selectedPreviews = previewsByDay.get(selectedDay) ?? [];
     const openCount = selectedTasks.filter((t) => !t.completed).length;
+
+    let agendaMeta = 'Nothing due';
+    if (selectedTasks.length > 0) {
+        agendaMeta = openCount === selectedTasks.length
+            ? taskCountLabel(openCount)
+            : `${openCount} open · ${selectedTasks.length - openCount} done`;
+    }
+    if (selectedPreviews.length > 0) {
+        agendaMeta = selectedTasks.length > 0
+            ? `${agendaMeta} · ${previewCountLabel(selectedPreviews.length)}`
+            : previewCountLabel(selectedPreviews.length);
+    }
 
     return (
         <div className="calendar">
@@ -129,6 +160,7 @@ function CalendarView({ month, selectedDay, today, todos, firstDayOfWeek, onMont
                     <div key={week[0]} className="calendar-row" role="row">
                         {week.map((day) => {
                             const tasks = tasksByDay.get(day) ?? [];
+                            const dayPreviews = previewsByDay.get(day) ?? [];
                             const open = tasks.filter((t) => !t.completed);
                             const overdue = day < today && open.length > 0;
                             const classes = ['calendar-day'];
@@ -149,12 +181,12 @@ function CalendarView({ month, selectedDay, today, todos, firstDayOfWeek, onMont
                                         tabIndex={day === selectedDay ? 0 : -1}
                                         onClick={() => select(day)}
                                         onKeyDown={(e) => handleKeyDown(e, day)}
-                                        aria-label={`${formatLongDate(day)}${day === today ? ' (today)' : ''}, ${taskCountLabel(tasks.length)}${overdue ? `, ${open.length} overdue` : ''}`}
+                                        aria-label={`${formatLongDate(day)}${day === today ? ' (today)' : ''}, ${taskCountLabel(tasks.length)}${overdue ? `, ${open.length} overdue` : ''}${dayPreviews.length > 0 ? `, ${previewCountLabel(dayPreviews.length)}` : ''}`}
                                     >
                                         <span className="calendar-date" aria-hidden="true">
                                             {parseISODate(day).getDate()}
                                         </span>
-                                        <DayTasks tasks={tasks} />
+                                        <DayTasks tasks={tasks} previews={dayPreviews} />
                                     </button>
                                 </div>
                             );
@@ -171,18 +203,25 @@ function CalendarView({ month, selectedDay, today, todos, firstDayOfWeek, onMont
                             <span className="calendar-agenda-date"> · {formatLongDate(selectedDay)}</span>
                         )}
                     </h3>
-                    <span className="panel-meta">
-                        {selectedTasks.length === 0
-                            ? 'Nothing due'
-                            : openCount === selectedTasks.length
-                                ? taskCountLabel(openCount)
-                                : `${openCount} open · ${selectedTasks.length - openCount} done`}
-                    </span>
+                    <span className="panel-meta">{agendaMeta}</span>
                 </div>
                 {children}
-                {selectedTasks.length > 0 ? (
-                    <ul className="task-list">{selectedTasks.map(renderTask)}</ul>
-                ) : (
+                {selectedTasks.length > 0 && <ul className="task-list">{selectedTasks.map(renderTask)}</ul>}
+                {selectedPreviews.length > 0 && (
+                    <div className="repeat-previews">
+                        <h4 className="repeat-previews-title">Repeats</h4>
+                        <ul className="repeat-previews-list">
+                            {selectedPreviews.map((preview) => (
+                                <RepeatPreviewItem
+                                    key={preview.key}
+                                    preview={preview}
+                                    onGoToOpenCopy={() => select(preview.source.due_date)}
+                                />
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                {selectedTasks.length === 0 && selectedPreviews.length === 0 && (
                     <p className="calendar-agenda-empty">
                         No tasks due{selectedDay === today ? ' today' : ' this day'}. Add one above.
                     </p>
@@ -202,23 +241,54 @@ function shiftMonthKeepDay(day, delta) {
 }
 
 // A day's tasks inside its cell: short titled pills on wide calendars, dots on narrow ones.
-function DayTasks({ tasks }) {
-    if (tasks.length === 0) return null;
-    const shown = tasks.slice(0, MAX_CELL_TASKS);
-    const hidden = tasks.length - shown.length;
+// Repeat previews come after the real tasks, drawn as hollow outlines.
+function DayTasks({ tasks, previews = [] }) {
+    const items = [
+        ...tasks.map((todo) => ({ key: todo.todo_id, todo, preview: false })),
+        ...previews.map((preview) => ({ key: preview.key, todo: preview, preview: true })),
+    ];
+    if (items.length === 0) return null;
+    const shown = items.slice(0, MAX_CELL_TASKS);
+    const hidden = items.length - shown.length;
 
     return (
         <span className="calendar-tasks" aria-hidden="true">
-            {shown.map((todo) => (
+            {shown.map(({ key, todo, preview }) => (
                 <span
-                    key={todo.todo_id}
-                    className={`calendar-task calendar-task--${todo.priority}${todo.completed ? ' calendar-task--done' : ''}`}
+                    key={key}
+                    className={`calendar-task calendar-task--${todo.priority}${todo.completed ? ' calendar-task--done' : ''}${preview ? ' calendar-task--preview' : ''}`}
                 >
                     <span className="calendar-task-title">{todo.title}</span>
                 </span>
             ))}
             {hidden > 0 && <span className="calendar-more">+{hidden} more</span>}
         </span>
+    );
+}
+
+// A future date of a repeating task in the selected day's list. No checkbox: it becomes
+// a real task when the open copy is ticked off, and the link jumps to that copy.
+function RepeatPreviewItem({ preview, onGoToOpenCopy }) {
+    const option = REPEAT_OPTIONS.find((o) => o.key === preview.recurrence);
+    const openDue = parseISODate(preview.source.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+    return (
+        <li className="repeat-preview">
+            <span className="repeat-preview-icon" aria-hidden="true"><RepeatIcon /></span>
+            <div className="repeat-preview-body">
+                <span className="repeat-preview-title">{preview.title}</span>
+                <span className="task-meta">
+                    <span className="task-chip">{preview.category}</span>
+                    {option && <span>{option.label}</span>}
+                    <span>
+                        Appears when you finish the one due{' '}
+                        <button type="button" className="link-button repeat-preview-link" onClick={onGoToOpenCopy}>
+                            {openDue}
+                        </button>
+                    </span>
+                </span>
+            </div>
+        </li>
     );
 }
 

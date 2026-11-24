@@ -119,7 +119,88 @@ export function parseTodoFields(body) {
         return { error: reminder.error };
     }
 
-    return { priority, category, description, dueDate, reminder: reminder.value };
+    const recurrence = parseRecurrence(body, dueDate);
+    if (recurrence.error) {
+        return { error: recurrence.error };
+    }
+
+    return { priority, category, description, dueDate, reminder: reminder.value, recurrence: recurrence.value };
+}
+
+// ---------- Repeating tasks ----------
+export const RECURRENCES = ['daily', 'weekdays', 'weekly', 'biweekly', 'monthly'];
+// The longest a task can keep repeating, counted from its due date.
+export const RECURRENCE_MAX_DAYS = 366;
+
+// recurrence ('daily' | 'weekdays' | 'weekly' | 'biweekly' | 'monthly', null/omitted =
+// doesn't repeat) and recurrence_until ('YYYY-MM-DD', the last date a copy may be due).
+// The end date is required so nothing repeats forever, and capped at a year.
+function parseRecurrence(body, dueDate) {
+    const rule = body.recurrence;
+    if (rule === undefined || rule === null || rule === '') {
+        return { value: null };
+    }
+    if (!RECURRENCES.includes(rule)) {
+        return { error: `Repeat must be one of: ${RECURRENCES.join(', ')}` };
+    }
+    if (!dueDate) {
+        return { error: 'Set a due date to make a task repeat' };
+    }
+
+    const until = body.recurrence_until;
+    if (until === undefined || until === null || until === '') {
+        return { error: 'Choose when the task stops repeating' };
+    }
+    if (!isValidDate(until)) {
+        return { error: 'The repeat end date must be a real date in YYYY-MM-DD format' };
+    }
+    if (until < dueDate) {
+        return { error: 'The repeat end date must be on or after the due date' };
+    }
+    if (until > addDays(dueDate, RECURRENCE_MAX_DAYS)) {
+        return { error: 'Tasks can repeat for up to a year' };
+    }
+
+    return { value: { rule, until } };
+}
+
+function addDays(date, days) {
+    const d = new Date(`${date}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+}
+
+// The due date of the next copy of a repeating task, as 'YYYY-MM-DD'. Monthly keeps the
+// day of the month, falling back to the month's last day (Jan 31 -> Feb 28).
+export function nextOccurrence(dueDate, rule) {
+    const d = new Date(`${dueDate}T00:00:00Z`);
+    switch (rule) {
+        case 'daily':
+            d.setUTCDate(d.getUTCDate() + 1);
+            break;
+        case 'weekdays':
+            do {
+                d.setUTCDate(d.getUTCDate() + 1);
+            } while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
+            break;
+        case 'weekly':
+            d.setUTCDate(d.getUTCDate() + 7);
+            break;
+        case 'biweekly':
+            d.setUTCDate(d.getUTCDate() + 14);
+            break;
+        case 'monthly': {
+            const day = d.getUTCDate();
+            d.setUTCDate(1);
+            d.setUTCMonth(d.getUTCMonth() + 1);
+            const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+            d.setUTCDate(Math.min(day, lastDay));
+            break;
+        }
+        default:
+            throw new Error(`Unknown recurrence: ${rule}`);
+    }
+    return d.toISOString().slice(0, 10);
 }
 
 // 'YYYY-MM-DD' that names a real calendar day (rejects e.g. 2026-02-30).

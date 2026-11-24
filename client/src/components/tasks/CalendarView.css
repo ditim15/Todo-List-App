@@ -233,6 +233,25 @@
     text-decoration: line-through;
 }
 
+/* Repeat previews: the later dates of a repeating task. A thin outline with no fill
+   and quieter text, so they read as "coming" rather than as tasks already set. */
+.calendar-task.calendar-task--preview {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    color: var(--ink-3);
+}
+
+.calendar-task--preview::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--prio);
+}
+
+@container tasks (min-width: 561px) {
+    .calendar-day--selected .calendar-task.calendar-task--preview {
+        background: transparent;
+    }
+}
+
 .calendar-more {
     padding-left: 6px;
     font-size: 0.7em;
@@ -286,6 +305,20 @@
         background: color-mix(in srgb, var(--ink-3) 45%, transparent);
     }
 
+    /* Narrow calendars draw tasks as dots; a preview is a hollow ring. */
+    .calendar-task.calendar-task--preview {
+        background: transparent;
+        box-shadow: inset 0 0 0 1.5px var(--prio);
+    }
+
+    .calendar-task.calendar-task--preview.calendar-task--high {
+        --prio: var(--prio-high);
+    }
+
+    .calendar-task.calendar-task--preview.calendar-task--low {
+        --prio: var(--prio-low);
+    }
+
     .calendar-task-title {
         display: none;
     }
@@ -331,6 +364,72 @@
     padding: 14px 2px;
     font-size: 0.88em;
     color: var(--ink-3);
+}
+
+/* Selected day: repeat previews under the real tasks, without checkboxes. */
+.repeat-previews {
+    margin-top: 6px;
+}
+
+.repeat-previews-title {
+    margin: 0;
+    padding: 6px 2px 4px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 0.8em;
+    font-weight: 700;
+}
+
+.repeat-previews-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.repeat-preview {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 2px;
+    border-bottom: 1px solid var(--line);
+}
+
+/* Sits where a task's checkbox would, so titles line up with the tasks above. */
+.repeat-preview-icon {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    color: var(--ink-3);
+}
+
+.repeat-preview-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.repeat-preview-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.repeat-preview-title {
+    color: var(--ink-2);
+    font-weight: 600;
+}
+
+.repeat-preview .link-button.repeat-preview-link {
+    display: inline;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .calendar-hint {

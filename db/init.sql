@@ -37,6 +37,17 @@ ALTER TABLE todos ADD COLUMN IF NOT EXISTS reminder_timezone VARCHAR(64);
 ALTER TABLE todos ADD COLUMN IF NOT EXISTS remind_at TIMESTAMPTZ;
 ALTER TABLE todos ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
 
+-- Repeating tasks. recurrence is how often the task comes back; recurrence_until is the
+-- last date a copy may be due (required, so nothing repeats forever). Only one copy is
+-- open at a time: ticking a repeating task off creates the next one (due date moved on
+-- by one step) if that date is on or before recurrence_until. recurrence_spawned marks
+-- a task whose next copy has been created, so un-ticking and re-ticking it doesn't
+-- create a second one. All NULL / false means the task doesn't repeat.
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS recurrence VARCHAR(10)
+    CHECK (recurrence IN ('daily', 'weekdays', 'weekly', 'biweekly', 'monthly'));
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS recurrence_until DATE;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS recurrence_spawned BOOLEAN NOT NULL DEFAULT false;
+
 -- The reminder scheduler only looks at reminders that haven't gone out yet.
 CREATE INDEX IF NOT EXISTS idx_todos_pending_reminders ON todos(remind_at)
     WHERE remind_at IS NOT NULL AND reminder_sent_at IS NULL;

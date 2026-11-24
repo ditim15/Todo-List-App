@@ -1,5 +1,5 @@
 import pool from '../db/pool.js';
-import { DATE_PATTERN, PRIORITIES, parseTodoFields, validateTitle } from '../utils/validation.js';
+import { DATE_PATTERN, PRIORITIES, nextOccurrence, parseTodoFields, validateTitle } from '../utils/validation.js';
 
 // The moment a reminder should go out: (due date - N days) at the given local time in
 // the user's timezone. Postgres does the conversion so DST is handled correctly.
@@ -47,6 +47,11 @@ function buildTodoFilters(userId, query) {
     // range is set.
     if (DATE_PATTERN.test(query.dueFrom)) add('due_date >= ?::date', query.dueFrom);
     if (DATE_PATTERN.test(query.dueTo)) add('due_date <= ?::date', query.dueTo);
+
+    // ?repeating=open: only the open copy of each repeating task. The calendar uses it
+    // to draw the later dates of a series as previews, even when the open copy is due
+    // before the month on screen.
+    if (query.repeating === 'open') conditions.push('NOT completed', 'recurrence IS NOT NULL');
 
     return { where: conditions.join(' AND '), values };
 }
@@ -183,14 +188,16 @@ const createTodo = async (req, res, next) => {
             return res.status(400).json({ message: REMINDER_PASSED_MESSAGE });
         }
         const reminder = fields.reminder ?? {};
+        const recurrence = fields.recurrence ?? {};
 
         // COALESCE keeps the column default (false) when `completed` is omitted.
         const todo = await pool.query(
             'INSERT INTO todos (user_id, title, description, completed, due_date, priority, category,'
-            + ' reminder_days_before, reminder_time, reminder_timezone, remind_at)'
-            + ' VALUES ($1, $2, $3, COALESCE($4, false), $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+            + ' reminder_days_before, reminder_time, reminder_timezone, remind_at, recurrence, recurrence_until)'
+            + ' VALUES ($1, $2, $3, COALESCE($4, false), $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
             [req.user.id, title.trim(), fields.description, completed, fields.dueDate, fields.priority, fields.category,
-                reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null, remindAt]
+                reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null, remindAt,
+                recurrence.rule ?? null, recurrence.until ?? null]
         );
 
         res.status(201).json({
@@ -223,7 +230,7 @@ const updateTodo = async (req, res, next) => {
         }
 
         const existing = await pool.query(
-            'SELECT remind_at, reminder_sent_at FROM todos WHERE todo_id = $1 AND user_id = $2',
+            'SELECT completed, remind_at, reminder_sent_at FROM todos WHERE todo_id = $1 AND user_id = $2',
             [req.params.id, req.user.id]
         );
         if (existing.rows.length === 0) {
@@ -243,33 +250,99 @@ const updateTodo = async (req, res, next) => {
         }
         const sentAt = reminderChanged ? null : previous.reminder_sent_at;
         const reminder = fields.reminder ?? {};
+        const recurrence = fields.recurrence ?? {};
 
-        // COALESCE keeps the current completed state if the client leaves it out.
-        const updated = await pool.query(
-            'UPDATE todos SET title = $1, description = $2, completed = COALESCE($3, completed),'
-            + ' due_date = $4, priority = $5, category = $6,'
-            + ' reminder_days_before = $7, reminder_time = $8, reminder_timezone = $9,'
-            + ' remind_at = $10, reminder_sent_at = $11, updated_at = NOW()'
-            + ' WHERE todo_id = $12 AND user_id = $13 RETURNING *',
-            [title.trim(), fields.description, completed, fields.dueDate,
-                fields.priority, fields.category,
-                reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null,
-                remindAt, sentAt, req.params.id, req.user.id]
-        );
+        // The update and (for a repeating task just ticked off) its next copy are saved
+        // together, so a failure can't leave one without the other.
+        const client = await pool.connect();
+        let todo;
+        let nextTodo = null;
+        try {
+            await client.query('BEGIN');
 
-        if (updated.rows.length === 0) {
+            // COALESCE keeps the current completed state if the client leaves it out.
+            const updated = await client.query(
+                'UPDATE todos SET title = $1, description = $2, completed = COALESCE($3, completed),'
+                + ' due_date = $4, priority = $5, category = $6,'
+                + ' reminder_days_before = $7, reminder_time = $8, reminder_timezone = $9,'
+                + ' remind_at = $10, reminder_sent_at = $11, recurrence = $12, recurrence_until = $13,'
+                + ' updated_at = NOW()'
+                + ' WHERE todo_id = $14 AND user_id = $15 RETURNING *',
+                [title.trim(), fields.description, completed, fields.dueDate,
+                    fields.priority, fields.category,
+                    reminder.daysBefore ?? null, reminder.time ?? null, reminder.timezone ?? null,
+                    remindAt, sentAt, recurrence.rule ?? null, recurrence.until ?? null,
+                    req.params.id, req.user.id]
+            );
+            todo = updated.rows[0];
+
+            if (todo && todo.completed && !previous.completed && todo.recurrence) {
+                nextTodo = await createNextOccurrence(client, todo);
+                if (nextTodo) todo.recurrence_spawned = true;
+            }
+
+            await client.query('COMMIT');
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+
+        if (!todo) {
             return res.status(404).json({
                 message: "Todo not found"
             });
         }
         res.status(200).json({
             message: "Todo updated successfully",
-            todo: updated.rows[0]
+            todo,
+            // The next copy of a repeating task, when ticking this one off created it.
+            next_todo: nextTodo
         });
     } catch (err) {
         next(err);
     }
 };
+
+// Creates the next copy of a repeating task that was just ticked off, inside the
+// caller's transaction. Returns the new todo, or null when the series has ended (the
+// next due date is after recurrence_until) or a copy was already made (the task was
+// un-ticked and ticked again). The copy keeps the title, notes, list, priority, repeat
+// rule and reminder; its reminder moves with the new due date, and one that would
+// already be in the past is marked as sent rather than going out late.
+async function createNextOccurrence(client, todo) {
+    const dueDate = nextOccurrence(todo.due_date, todo.recurrence);
+    if (dueDate > todo.recurrence_until) return null;
+
+    // Claim the right to make the copy, so two saves at once can't make two.
+    const claimed = await client.query(
+        'UPDATE todos SET recurrence_spawned = true WHERE todo_id = $1 AND NOT recurrence_spawned RETURNING todo_id',
+        [todo.todo_id]
+    );
+    if (claimed.rows.length === 0) return null;
+
+    const hasReminder = todo.reminder_days_before !== null;
+    const remindAt = hasReminder
+        ? await computeRemindAt(dueDate, {
+            daysBefore: todo.reminder_days_before,
+            time: todo.reminder_time,
+            timezone: todo.reminder_timezone,
+        })
+        : null;
+    const sentAt = remindAt && remindAt <= new Date() ? new Date() : null;
+
+    const inserted = await client.query(
+        'INSERT INTO todos (user_id, title, description, due_date, priority, category,'
+        + ' reminder_days_before, reminder_time, reminder_timezone, remind_at, reminder_sent_at,'
+        + ' recurrence, recurrence_until)'
+        + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
+        [todo.user_id, todo.title, todo.description, dueDate, todo.priority, todo.category,
+            todo.reminder_days_before, todo.reminder_time, todo.reminder_timezone, remindAt, sentAt,
+            todo.recurrence, todo.recurrence_until]
+    );
+    return inserted.rows[0];
+}
 
 // Renames one of the user's lists by moving all of its todos to the new name.
 // Renaming to a name that already exists merges the two lists.
