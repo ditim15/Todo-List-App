@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DoneYet?</title>
     <meta name="description" content="DoneYet? is a gentle reminder for busy students: every assignment, exam and deadline in one calm place." />
+    <!-- Installable web app: manifest, home-screen icons and the browser bar colour (the
+         top bar's surface in each theme). The service worker is registered in main.jsx. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161916" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="DoneYet" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <!-- Apply the saved light/dark choice before first paint so the page doesn't flash
          the wrong theme. Must use the same storage key as src/theme/ThemeContext.jsx. -->
     <script>

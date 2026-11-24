@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useInstallPrompt } from '../../pwa/installPrompt';
 import './AccountMenu.css';
 
 function SilhouetteIcon() {
@@ -16,6 +17,23 @@ function SettingsIcon() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+    );
+}
+
+function InstallIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="6" y="2" width="12" height="20" rx="2" />
+            <path d="M12 7v7M9 11l3 3 3-3M10 18h4" />
+        </svg>
+    );
+}
+
+function ShareIcon() {
+    return (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
         </svg>
     );
 }
@@ -38,6 +56,9 @@ function AccountMenu({ user, onLogout }) {
     const buttonRef = useRef(null);
     const menuRef = useRef(null);
     const menuId = useId();
+    // "Install app" shows only where the site can be installed and isn't yet.
+    const { mode: installMode, install } = useInstallPrompt();
+    const iosHelpRef = useRef(null);
 
     const items = () => Array.from(menuRef.current?.querySelectorAll('[role^="menuitem"]') ?? []);
 
@@ -160,6 +181,24 @@ function AccountMenu({ user, onLogout }) {
                                 <span>Account settings</span>
                             </button>
                         </li>
+                        {installMode && (
+                            <li role="none">
+                                <button
+                                    type="button"
+                                    className="account-item"
+                                    role="menuitem"
+                                    tabIndex={-1}
+                                    onClick={() => {
+                                        close();
+                                        if (installMode === 'prompt') install();
+                                        else iosHelpRef.current?.showModal();
+                                    }}
+                                >
+                                    <InstallIcon />
+                                    <span>Install app</span>
+                                </button>
+                            </li>
+                        )}
                         <li role="separator" className="account-separator" />
                         <li role="none">
                             <button
@@ -179,6 +218,20 @@ function AccountMenu({ user, onLogout }) {
                     </ul>
                 </div>
             )}
+
+            {/* Safari on iPhone and iPad can't install from a button, so this explains the
+                Share sheet route. A native dialog: Esc or the button closes it. */}
+            <dialog ref={iosHelpRef} className="install-help" aria-labelledby="install-help-title">
+                <h2 id="install-help-title">Add DoneYet to your Home Screen</h2>
+                <ol>
+                    <li>Tap the Share button <ShareIcon /> in Safari&apos;s toolbar.</li>
+                    <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+                    <li>Tap <strong>Add</strong>. DoneYet then opens full screen from its icon.</li>
+                </ol>
+                <form method="dialog">
+                    <button type="submit" className="install-help-close">Got it</button>
+                </form>
+            </dialog>
         </div>
     );
 }

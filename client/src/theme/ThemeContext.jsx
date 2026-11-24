@@ -39,6 +39,13 @@ export function ThemeProvider({ children }) {
 
     const theme = preference ?? (systemDark ? 'dark' : 'light');
 
+    // The phone's status/browser bar takes the top bar's colour (--surface) for the theme
+    // actually showing, which can differ from the system one index.html assumes.
+    useEffect(() => {
+        const color = theme === 'dark' ? '#161916' : '#ffffff';
+        document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.setAttribute('content', color));
+    }, [theme]);
+
     function toggleTheme() {
         const next = theme === 'dark' ? 'light' : 'dark';
         try {
