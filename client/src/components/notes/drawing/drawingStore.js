@@ -33,7 +33,7 @@ function loadPrefs() {
 }
 
 export function createDrawingStore() {
-    let state = { ...loadPrefs(), activeId: null, selectionKind: null };
+    let state = { ...loadPrefs(), activeId: null, activeKind: null, selectionKind: null };
     const listeners = new Set();
     let api = null;
     let pendingActivate = 0;
@@ -57,20 +57,21 @@ export function createDrawingStore() {
         },
         set(patch) {
             state = { ...state, ...patch };
-            if (Object.keys(patch).some((k) => k !== 'activeId' && k !== 'selectionKind')) save();
+            if (Object.keys(patch).some((k) => !['activeId', 'activeKind', 'selectionKind'].includes(k))) save();
             listeners.forEach((l) => l());
         },
         get api() {
             return api;
         },
-        activate(id, viewApi) {
+        // kind: 'drawing' (a drawing block) or 'page' (writing over the whole note).
+        activate(id, viewApi, kind = 'drawing') {
             api = viewApi;
-            this.set({ activeId: id, selectionKind: null });
+            this.set({ activeId: id, activeKind: kind, selectionKind: null });
         },
         deactivate(id) {
             if (state.activeId !== id) return;
             api = null;
-            this.set({ activeId: null, selectionKind: null });
+            this.set({ activeId: null, activeKind: null, selectionKind: null });
         },
         // A drawing that appears within a moment of this (the one just inserted) opens
         // for editing. A time window rather than a one-off flag, because React mounts a
@@ -79,6 +80,8 @@ export function createDrawingStore() {
             pendingActivate = Date.now();
         },
         isActivatePending: () => Date.now() - pendingActivate < 1000,
+        // Set by the note's handwriting layer (NoteInk): starts writing on the note.
+        openPage: null,
     };
 }
 

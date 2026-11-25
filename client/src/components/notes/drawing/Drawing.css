@@ -30,7 +30,7 @@
     --dw-orange: #ffb35c;
     --dw-purple: #c4a6ff;
     --dw-hl-opacity: 0.5;
-    --dw-hl-blend: normal;
+    --dw-hl-blend: screen;
   }
 }
 
@@ -43,7 +43,7 @@
   --dw-orange: #ffb35c;
   --dw-purple: #c4a6ff;
   --dw-hl-opacity: 0.5;
-  --dw-hl-blend: normal;
+  --dw-hl-blend: screen;
 }
 
 .dw-c-ink { --c: var(--dw-ink); }
@@ -385,4 +385,69 @@
 .note-tool.dw-mode {
   width: auto;
   padding: 0 var(--space-3);
+}
+
+/* ---------- Handwriting over the note (NoteInk) ----------
+   The note is a page: up to 760px wide, and exactly 760px (zoomed to fit a narrower
+   column) once it has handwriting, so the writing stays where it was put. Highlights
+   sit under the text, ink over it. Nothing here may change the page's layout between
+   writing and not, or the ink would no longer line up with the text. */
+.note-page {
+  position: relative;
+  isolation: isolate;
+  max-width: 760px;
+}
+
+.note-page.is-paged {
+  width: 760px;
+  max-width: none;
+}
+
+.note-page > :first-child {
+  position: relative;
+  z-index: 1;
+}
+
+.note-ink-under,
+.note-ink {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.note-ink-under {
+  z-index: 0;
+}
+
+.note-ink {
+  z-index: 2;
+}
+
+.note-page.is-writing {
+  outline: 1px dashed var(--accent);
+  outline-offset: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.note-page.is-writing .note-ink {
+  pointer-events: auto;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.note-page.is-writing.finger-draws .note-ink {
+  touch-action: none;
+}
+
+.note-page.is-writing.tool-eraser .note-ink { cursor: cell; }
+.note-page.is-writing.tool-rect .note-ink,
+.note-page.is-writing.tool-lasso .note-ink { cursor: default; }
+
+/* Text can't be selected or edited while writing; the pen has the page. */
+.note-page.is-writing .note-editor-content {
+  user-select: none;
+  -webkit-user-select: none;
 }

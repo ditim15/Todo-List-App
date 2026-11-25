@@ -122,6 +122,18 @@ describe('notes', () => {
         assert.equal(listed.preview, '[Drawing]');
     });
 
+    test('handwriting over the note saves on the document and is marked in the preview', async () => {
+        const api = as(await createUser());
+        const note = (await api.post('/notes', {})).body.note;
+        const ink = { width: 760, strokes: [{ tool: 'pen', color: 'ink', size: 4, pressure: false, points: [10, 20, 50, 80, 30, 50] }] };
+        const content = { type: 'doc', attrs: { ink }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Krebs cycle' }] }] };
+
+        assert.equal((await api.put(`/notes/${note.id}`, { content })).status, 200);
+        assert.deepEqual((await api.get(`/notes/${note.id}`)).body.note.content.attrs.ink, ink);
+        const [listed] = (await api.get('/notes/tree')).body.notes;
+        assert.equal(listed.preview, '[Handwriting] Krebs cycle');
+    });
+
     test("another user can't read, change or delete them", async () => {
         const owner = as(await createUser());
         const stranger = as(await createUser());

@@ -76,10 +76,25 @@ const FileAttachment = Node.create({
     },
 });
 
+// The document node. Same as Tiptap's own, plus `ink`: the handwriting written over the
+// whole note ({ width, strokes }, see drawing/NoteInk.jsx), or null for none. Kept on the
+// document so it saves, undoes and loads with the note's text.
+const NoteDocument = Node.create({
+    name: 'doc',
+    topNode: true,
+    content: 'block+',
+    addAttributes() {
+        return { ink: { default: null, rendered: false } };
+    },
+});
+
 export function noteExtensions() {
     return [
+        // The note itself (top node), with the handwriting written over it.
+        NoteDocument,
         // StarterKit (v3) includes underline and links, configured here.
         StarterKit.configure({
+            document: false,
             heading: { levels: [1, 2, 3] },
             link: {
                 openOnClick: false,

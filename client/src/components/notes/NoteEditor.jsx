@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { FILE_TYPES, IMAGE_TYPES, MAX_FILE_BYTES, noteExtensions } from './editorExtensions';
 import DrawingToolbar from './drawing/DrawingToolbar';
+import NoteInk from './drawing/NoteInk';
 import { useDrawingState } from './drawing/drawingStore';
 
 // Small inline icons for the toolbar (decorative; buttons carry aria-labels).
@@ -18,6 +19,7 @@ const ICONS = {
     link: <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" />,
     image: <path d="M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9.5h.01" />,
     file: <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4" />,
+    write: <path d="M4 20l4.2-1L19 8.2a2.1 2.1 0 0 0-3-3L5.1 16zM14.5 6.7l2.8 2.8M13 20h7" />,
     drawing: <path d="M3 17.5c2.2-4.6 4.6-7.6 6.6-6.4 2.4 1.4-2.2 5.8.2 6.9 2 .9 4.2-3.7 6.3-6.6M14.8 7.2l2-2a1.8 1.8 0 0 1 2.6 2.6l-2 2M14.8 7.2l2.6 2.6M14.8 7.2l-3.4 3.4-.6 3.2 3.2-.6 3.4-3.4" />,
     undo: <path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" />,
     redo: <path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3" />,
@@ -115,7 +117,8 @@ function Toolbar({ editor, onPickImage, onPickFile, isUploading }) {
                 <ToolButton label="Link" icon="link" active={editor.isActive('link')} onClick={setLink} />
                 <ToolButton label="Add image" icon="image" disabled={isUploading} onClick={onPickImage} />
                 <ToolButton label="Attach PDF" icon="file" disabled={isUploading} onClick={onPickFile} />
-                <ToolButton label="Add drawing" icon="drawing" onClick={insertDrawing} />
+                <ToolButton label="Write on the note" icon="write" onClick={() => drawings.openPage?.()} />
+                <ToolButton label="Add drawing space" icon="drawing" onClick={insertDrawing} />
             </div>
             <div className="note-tool-group note-tool-group--end">
                 <ToolButton label="Undo" icon="undo" disabled={!editor.can().undo()} onClick={() => chain().undo().run()} />
@@ -241,7 +244,9 @@ function NoteEditor({ initialContent, onChange, onUpload, editorRef }) {
                     {uploading > 0 ? `Uploading ${uploading} file${uploading > 1 ? 's' : ''}…` : uploadError}
                 </p>
             )}
-            <EditorContent editor={editor} />
+            <NoteInk editor={editor}>
+                <EditorContent editor={editor} />
+            </NoteInk>
         </div>
     );
 }

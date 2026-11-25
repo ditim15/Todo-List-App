@@ -150,7 +150,7 @@ function DrawingToolbar({ store }) {
                         <Icon name="finger" />
                     </Tool>
                 )}
-                <Tool label="Delete drawing" active={false} onClick={() => store.api?.removeDrawing()}>
+                <Tool label={s.activeKind === 'page' ? 'Clear all handwriting' : 'Delete drawing'} active={false} onClick={() => store.api?.removeDrawing()}>
                     <Icon name="trash" />
                 </Tool>
                 <button type="button" className="dw-done" onMouseDown={(e) => e.preventDefault()} onClick={() => store.api?.finish()}>

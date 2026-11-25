@@ -206,6 +206,10 @@ const ORDERED_LEVELS = Array.from({ length: 9 }, (_, level) => ({
 export async function noteToDocx({ title, content }, files = () => null) {
     const ctx = { indent: 0, quote: false, list: null, level: 0, files, counter: { lists: 0 } };
     const body = blocks(content?.content ?? [], ctx);
+    // Handwriting over the note stays in DoneYet; say so at the top.
+    if (Array.isArray(content?.attrs?.ink?.strokes) && content.attrs.ink.strokes.length > 0) {
+        body.unshift(new Paragraph({ children: [new TextRun({ text: '✏ This note has handwriting (open it in DoneYet to see it)', italics: true, color: '6B6B6B' })] }));
+    }
     const doc = new Document({
         title: title || 'Untitled',
         creator: 'DoneYet?',

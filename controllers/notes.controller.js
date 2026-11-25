@@ -383,7 +383,11 @@ const updateNote = async (req, res, next) => {
                 return res.status(413).json({ message: 'This note is too long to save. Split it into two notes.' });
             }
             set('content', json);
-            set('content_text', documentText(content).trim().slice(0, 100000));
+            // Handwriting over the note (the document's ink) has no text; it's marked so a
+            // note that's only handwriting doesn't preview as "Empty note".
+            const handwritten = Array.isArray(content.attrs?.ink?.strokes) && content.attrs.ink.strokes.length > 0;
+            const text = documentText(content).trim();
+            set('content_text', (handwritten ? `[Handwriting] ${text}` : text).trim().slice(0, 100000));
             referenced = [...referencedAttachments(content)];
         }
 
