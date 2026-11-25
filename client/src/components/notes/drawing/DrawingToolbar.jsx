@@ -20,7 +20,7 @@ const ICONS = {
 const TOOLS = [
     { tool: 'pen', label: 'Pen' },
     { tool: 'highlighter', label: 'Highlighter' },
-    { tool: 'eraser', label: 'Eraser (removes whole strokes)' },
+    { tool: 'eraser', label: 'Eraser' },
     { tool: 'rect', label: 'Rectangle select' },
     { tool: 'lasso', label: 'Lasso select' },
 ];
@@ -121,13 +121,24 @@ function DrawingToolbar({ store }) {
                 ))}
             </div>
 
-            <div className="note-tool-group dw-style" role="group" aria-label={isPen ? 'Pen width' : 'Highlighter width'}>
-                {sizes.map((size, i) => (
-                    <Tool key={size} label={`${SIZE_NAMES[i]} ${isPen ? 'pen' : 'highlighter'}`} active={currentSize === i} disabled={off} onClick={() => pickSize(i)}>
-                        <span className={`dw-size-dot dw-size-${i}${isPen ? '' : ' is-highlighter'}`} aria-hidden="true" />
+            {s.tool === 'eraser' ? (
+                <div className="note-tool-group dw-eraser-modes" role="group" aria-label="What the eraser removes">
+                    <Tool label="Erase only what's under the eraser" active={s.eraserMode === 'area'} onClick={() => store.set({ eraserMode: 'area' })} className="dw-mode">
+                        <span className="note-tool-text">Area</span>
                     </Tool>
-                ))}
-            </div>
+                    <Tool label="Erase whole strokes" active={s.eraserMode === 'stroke'} onClick={() => store.set({ eraserMode: 'stroke' })} className="dw-mode">
+                        <span className="note-tool-text">Stroke</span>
+                    </Tool>
+                </div>
+            ) : (
+                <div className="note-tool-group dw-style" role="group" aria-label={isPen ? 'Pen width' : 'Highlighter width'}>
+                    {sizes.map((size, i) => (
+                        <Tool key={size} label={`${SIZE_NAMES[i]} ${isPen ? 'pen' : 'highlighter'}`} active={currentSize === i} disabled={off} onClick={() => pickSize(i)}>
+                            <span className={`dw-size-dot dw-size-${i}${isPen ? '' : ' is-highlighter'}`} aria-hidden="true" />
+                        </Tool>
+                    ))}
+                </div>
+            )}
 
             <div className="note-tool-group">
                 {showFinger && (

@@ -193,6 +193,48 @@ export function strokeTouches(stroke, x, y, radius) {
     return false;
 }
 
+// The area eraser: removes only the part of the stroke under the eraser (a circle of
+// `radius` at x, y). Returns null if the stroke isn't touched, otherwise what's left of
+// it: none, one or several strokes (erasing across the middle of a line cuts it in two).
+export function eraseFromStroke(stroke, x, y, radius) {
+    const reach = radius + stroke.size * 0.35;
+    const b = strokeBounds(stroke);
+    if (x < b.x - reach || x > b.x + b.w + reach || y < b.y - reach || y > b.y + b.h + reach) return null;
+    if (!strokeTouches(stroke, x, y, radius)) return null;
+
+    // Add points along long segments, so the cut lands where the eraser was rather than
+    // at the nearest recorded point.
+    const step = Math.max(2, radius / 3);
+    const src = stroke.points;
+    const dense = [src[0], src[1], src[2]];
+    for (let i = 3; i < src.length; i += 3) {
+        const [ax, ay, ap] = [src[i - 3], src[i - 2], src[i - 1]];
+        const [bx, by, bp] = [src[i], src[i + 1], src[i + 2]];
+        const n = Math.ceil(Math.hypot(bx - ax, by - ay) / step);
+        for (let k = 1; k <= n; k++) {
+            const t = k / n;
+            dense.push(Math.round(ax + (bx - ax) * t), Math.round(ay + (by - ay) * t), Math.round(ap + (bp - ap) * t));
+        }
+    }
+
+    const pieces = [];
+    let run = [];
+    for (let i = 0; i < dense.length; i += 3) {
+        if (Math.hypot(dense[i] - x, dense[i + 1] - y) <= reach) {
+            if (run.length) pieces.push(run);
+            run = [];
+        } else {
+            run.push(dense[i], dense[i + 1], dense[i + 2]);
+        }
+    }
+    if (run.length) pieces.push(run);
+    // A lone leftover point from a line would show as a stray dot, so it goes too.
+    const isDot = src.length === 3;
+    return pieces
+        .filter((points) => isDot || points.length >= 6)
+        .map((points) => ({ ...stroke, points }));
+}
+
 function pointInPolygon(x, y, polygon) {
     let inside = false;
     for (let i = 0, j = polygon.length - 2; i < polygon.length; j = i, i += 2) {

@@ -24,9 +24,11 @@ function loadPrefs() {
             // rejection). Until then, or if turned back on, fingers draw.
             fingerDraws: saved.fingerDraws !== false,
             penSeen: saved.penSeen === true,
+            // "area" erases only what's under the eraser; "stroke" removes whole strokes.
+            eraserMode: saved.eraserMode === 'stroke' ? 'stroke' : 'area',
         };
     } catch {
-        return { tool: 'pen', penColor: 'ink', penSize: 1, highlighterColor: 'yellow', highlighterSize: 1, fingerDraws: true, penSeen: false };
+        return { tool: 'pen', penColor: 'ink', penSize: 1, highlighterColor: 'yellow', highlighterSize: 1, fingerDraws: true, penSeen: false, eraserMode: 'area' };
     }
 }
 
@@ -37,11 +39,11 @@ export function createDrawingStore() {
     let pendingActivate = 0;
 
     function save() {
-        const { tool, penColor, penSize, highlighterColor, highlighterSize, fingerDraws, penSeen } = state;
+        const { tool, penColor, penSize, highlighterColor, highlighterSize, fingerDraws, penSeen, eraserMode } = state;
         // A selection tool isn't remembered: the next drawing starts with something that draws.
         const kept = tool === 'rect' || tool === 'lasso' || tool === 'eraser' ? 'pen' : tool;
         try {
-            localStorage.setItem(PREFS_KEY, JSON.stringify({ tool: kept, penColor, penSize, highlighterColor, highlighterSize, fingerDraws, penSeen }));
+            localStorage.setItem(PREFS_KEY, JSON.stringify({ tool: kept, penColor, penSize, highlighterColor, highlighterSize, fingerDraws, penSeen, eraserMode }));
         } catch {
             // Private mode: the choice just isn't remembered.
         }

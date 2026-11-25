@@ -4,7 +4,7 @@ import { closeHistory } from '@tiptap/pm/history';
 import { useDrawingState } from './drawingStore';
 import {
     DRAWING_WIDTH, HIGHLIGHTER_SIZES, MAX_HEIGHT, MIN_HEIGHT, PEN_SIZES,
-    addPoint, centerlinePath, cleanHeight, cleanStroke, contentBottom, pressurePath, rectFrom,
+    addPoint, centerlinePath, cleanHeight, cleanStroke, contentBottom, eraseFromStroke, pressurePath, rectFrom,
     strokeBounds, strokeTouches, strokesInLasso, strokesInRect, transformStroke, unionBounds,
 } from './geometry';
 import './Drawing.css';
@@ -88,7 +88,8 @@ function DrawingView({ node, editor, getPos }) {
     // made on (an undo or another change clears it).
     const [selection, setSelection] = useState({ indices: [], of: null });
     const selected = active && selection.of === rawStrokes ? selection.indices : NONE;
-    const [erased, setErased] = useState(null);       // strokes hidden mid-erase
+    const [erased, setErased] = useState(null);       // strokes hidden mid-erase (whole-stroke eraser)
+    const [working, setWorking] = useState(null);     // strokes as cut so far (area eraser)
     const [preview, setPreview] = useState(null);     // move/scale of the selection mid-drag
     const [region, setRegion] = useState(null);       // rectangle or lasso being drawn
     const [liveHeight, setLiveHeight] = useState(null);
@@ -336,6 +337,37 @@ function DrawingView({ node, editor, getPos }) {
         ring.setAttribute('r', 12 / scale);
     }
 
+    // Area eraser: cuts away what's under the eraser. Fast swipes are filled in between
+    // samples, so a quick stroke of the eraser doesn't skip over lines.
+    function eraseAreaAt(g, pt) {
+        const radius = 12 / scale;
+        const from = g.last ?? pt;
+        const steps = Math.max(1, Math.ceil(Math.hypot(pt.x - from.x, pt.y - from.y) / (radius / 2)));
+        let current = g.working;
+        let changed = false;
+        for (let k = 1; k <= steps; k++) {
+            const x = from.x + ((pt.x - from.x) * k) / steps;
+            const y = from.y + ((pt.y - from.y) * k) / steps;
+            const next = [];
+            for (const s of current) {
+                const left = eraseFromStroke(s, x, y, radius);
+                if (left === null) next.push(s);
+                else {
+                    next.push(...left);
+                    changed = true;
+                }
+            }
+            current = next;
+        }
+        g.last = pt;
+        if (changed) {
+            g.working = current;
+            g.changed = true;
+            setWorking(current);
+        }
+        showEraser(pt);
+    }
+
     function eraseAt(g, pt) {
         let changed = false;
         strokes.forEach((s, i) => {
@@ -389,8 +421,13 @@ function DrawingView({ node, editor, getPos }) {
             setSelection({ indices: [], of: null });
             drawLive();
         } else if (tool === 'eraser') {
-            gesture.current = { kind: 'erase', pointerId: e.pointerId, hits: new Set() };
-            eraseAt(gesture.current, pt);
+            if (tools.eraserMode === 'stroke') {
+                gesture.current = { kind: 'erase', pointerId: e.pointerId, hits: new Set() };
+                eraseAt(gesture.current, pt);
+            } else {
+                gesture.current = { kind: 'erase-area', pointerId: e.pointerId, working: strokes, changed: false, last: null };
+                eraseAreaAt(gesture.current, pt);
+            }
         } else if (selectionBox && onHandle(pt, selectionBox)) {
             gesture.current = { kind: 'scale', pointerId: e.pointerId, start: pt, box: selectionBox };
         } else if (selectionBox && inBox(pt, selectionBox)) {
@@ -430,6 +467,8 @@ function DrawingView({ node, editor, getPos }) {
             drawLive();
         } else if (g.kind === 'erase') {
             for (const ev of all) eraseAt(g, toPoint(ev));
+        } else if (g.kind === 'erase-area') {
+            for (const ev of all) eraseAreaAt(g, toPoint(ev));
         } else if (g.kind === 'rect') {
             setRegion({ kind: 'rect', rect: rectFrom(g.start, toPoint(e)) });
         } else if (g.kind === 'lasso') {
@@ -452,6 +491,7 @@ function DrawingView({ node, editor, getPos }) {
         drawLive();
         showEraser(null);
         setErased(null);
+        setWorking(null);
         setRegion(null);
         setPreview(null);
     }
@@ -467,6 +507,8 @@ function DrawingView({ node, editor, getPos }) {
             saveStrokes([...savedStrokes(), g.stroke]);
         } else if (g.kind === 'erase') {
             if (g.hits.size) saveStrokes(strokes.filter((_, i) => !g.hits.has(i)), { grow: false });
+        } else if (g.kind === 'erase-area') {
+            if (g.changed) saveStrokes(g.working, { grow: false });
         } else if (g.kind === 'rect' || g.kind === 'lasso') {
             const pt = toPoint(e);
             const picked = g.kind === 'rect'
@@ -572,7 +614,9 @@ function DrawingView({ node, editor, getPos }) {
                 onPointerCancel={cancelGesture}
                 onLostPointerCapture={(e) => gesture.current?.pointerId === e.pointerId && gesture.current.kind !== 'stroke' && cancelGesture()}
             >
-                <StrokeLayer strokes={strokes} indices={restIndices} />
+                {working
+                    ? <StrokeLayer strokes={working} indices={working.map((_, i) => i)} />
+                    : <StrokeLayer strokes={strokes} indices={restIndices} />}
                 {selected.length > 0 && (
                     <g className="dw-selected" transform={transformAttr(preview)}>
                         <StrokeLayer strokes={strokes} indices={selected} />

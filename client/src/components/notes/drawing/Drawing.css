@@ -380,3 +380,9 @@
     background: var(--surface-hover);
   }
 }
+
+/* Eraser modes: two text buttons in place of the widths. */
+.note-tool.dw-mode {
+  width: auto;
+  padding: 0 var(--space-3);
+}
