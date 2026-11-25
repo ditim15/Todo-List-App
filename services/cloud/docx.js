@@ -174,6 +174,9 @@ function block(node, ctx) {
             const file = ctx.files(node.attrs?.attachmentId);
             return [placeholder(ctx, '📎', node.attrs?.filename || file?.name || 'file', file)];
         }
+        case 'drawing':
+            // Drawings are only kept in DoneYet (Word can't show them as they're stored).
+            return [para(ctx, { children: [new TextRun({ text: '✏ Drawing (open this note in DoneYet to see it)', italics: true, color: '6B6B6B' })] })];
         default:
             return node.content ? blocks(node.content, ctx) : [para(ctx, { children: [new TextRun(node.text ?? '')] })];
     }

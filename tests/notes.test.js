@@ -109,6 +109,19 @@ describe('notes', () => {
         assert.equal((await api.put(`/notes/${note.id}`, { content: 'hello' })).status, 400);
     });
 
+    test('a drawing saves with the note and shows in the preview', async () => {
+        const api = as(await createUser());
+        const note = (await api.post('/notes', {})).body.note;
+        const strokes = [{ tool: 'pen', color: 'blue', size: 4, pressure: true, points: [10, 20, 40, 60, 80, 70] }];
+        const content = { type: 'doc', content: [{ type: 'drawing', attrs: { height: 560, strokes } }] };
+
+        assert.equal((await api.put(`/notes/${note.id}`, { content })).status, 200);
+        const loaded = (await api.get(`/notes/${note.id}`)).body.note;
+        assert.deepEqual(loaded.content.content[0].attrs.strokes, strokes);
+        const [listed] = (await api.get('/notes/tree')).body.notes;
+        assert.equal(listed.preview, '[Drawing]');
+    });
+
     test("another user can't read, change or delete them", async () => {
         const owner = as(await createUser());
         const stranger = as(await createUser());

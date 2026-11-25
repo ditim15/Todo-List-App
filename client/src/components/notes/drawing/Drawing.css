@@ -1,0 +1,382 @@
+/* ---------- Drawings in notes ----------
+   A drawing is a sheet in the note's column: the page surface with a faint dot grid,
+   a hairline border, and the accent outline while it's being drawn on. Ink colours
+   follow the theme (Ink is black on light, white on dark); highlighters sit under the
+   ink like a real highlighter. */
+
+.note-editor {
+  --dw-ink: #111411;
+  --dw-blue: #2746d0;
+  --dw-red: #c42b1c;
+  --dw-green: #1d6a45;
+  --dw-orange: #b85d00;
+  --dw-purple: #6b3fc4;
+  --dw-yellow: #ffdc3d;
+  --dw-mint: #3fe08c;
+  --dw-pink: #ff7ab8;
+  --dw-sky: #63bdfd;
+  --dw-peach: #ff9f52;
+  --dw-hl-opacity: 0.55;
+  --dw-hl-blend: multiply;
+  --dw-dot: color-mix(in srgb, var(--line-strong) 45%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .note-editor {
+    --dw-ink: #eef0ec;
+    --dw-blue: #92a8ff;
+    --dw-red: #ff8a7a;
+    --dw-green: #5fdc9a;
+    --dw-orange: #ffb35c;
+    --dw-purple: #c4a6ff;
+    --dw-hl-opacity: 0.5;
+    --dw-hl-blend: normal;
+  }
+}
+
+/* Same values as above, for an explicit dark choice. Keep the two blocks in sync. */
+:root[data-theme="dark"] .note-editor {
+  --dw-ink: #eef0ec;
+  --dw-blue: #92a8ff;
+  --dw-red: #ff8a7a;
+  --dw-green: #5fdc9a;
+  --dw-orange: #ffb35c;
+  --dw-purple: #c4a6ff;
+  --dw-hl-opacity: 0.5;
+  --dw-hl-blend: normal;
+}
+
+.dw-c-ink { --c: var(--dw-ink); }
+.dw-c-blue { --c: var(--dw-blue); }
+.dw-c-red { --c: var(--dw-red); }
+.dw-c-green { --c: var(--dw-green); }
+.dw-c-orange { --c: var(--dw-orange); }
+.dw-c-purple { --c: var(--dw-purple); }
+.dw-c-yellow { --c: var(--dw-yellow); }
+.dw-c-mint { --c: var(--dw-mint); }
+.dw-c-pink { --c: var(--dw-pink); }
+.dw-c-sky { --c: var(--dw-sky); }
+.dw-c-peach { --c: var(--dw-peach); }
+
+/* ---------- The sheet ---------- */
+.note-drawing-node {
+  margin: 0.9em 0;
+}
+
+.note-drawing {
+  position: relative;
+  container-type: inline-size;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.note-drawing:hover:not(.is-active) {
+  border-color: var(--line-strong);
+}
+
+.note-drawing:focus-visible,
+.ProseMirror-focused .note-drawing-node.ProseMirror-selectednode .note-drawing {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.note-drawing.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: crosshair;
+}
+
+.note-drawing-surface {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+  /* A dot every 4% of the width, so the grid scales with the drawing. */
+  background-image: radial-gradient(circle at center, var(--dw-dot) 1px, transparent 1.6px);
+  background-size: 4cqw 4cqw;
+  background-position: 2cqw 2cqw;
+  /* Fingers scroll the note unless they're drawing (then the drawing cancels it). */
+  touch-action: manipulation;
+}
+
+.note-drawing.is-active.finger-draws .note-drawing-surface {
+  touch-action: none;
+}
+
+.note-drawing.tool-eraser .note-drawing-surface { cursor: cell; }
+.note-drawing.tool-rect .note-drawing-surface,
+.note-drawing.tool-lasso .note-drawing-surface { cursor: default; }
+
+/* ---------- Strokes ---------- */
+.dw-stroke {
+  fill: none;
+  stroke: var(--c, var(--dw-ink));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dw-stroke.is-filled {
+  fill: var(--c, var(--dw-ink));
+  stroke: none;
+}
+
+.dw-highlights {
+  mix-blend-mode: var(--dw-hl-blend);
+}
+
+.dw-stroke.dw-highlighter {
+  opacity: var(--dw-hl-opacity);
+}
+
+.dw-region,
+.dw-selection {
+  fill: color-mix(in srgb, var(--accent) 7%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.dw-region {
+  stroke-linejoin: round;
+}
+
+.dw-selection {
+  fill: color-mix(in srgb, var(--accent) 4%, transparent);
+  cursor: move;
+}
+
+.dw-handle {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  cursor: nwse-resize;
+}
+
+.dw-eraser-ring {
+  fill: color-mix(in srgb, var(--ink) 6%, transparent);
+  stroke: var(--ink-3);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.note-drawing-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ---------- Selection bar (Duplicate, Delete) ---------- */
+.note-drawing-selbar {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  transform: translate(-50%, calc(-100% - 6px));
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  cursor: default;
+  white-space: nowrap;
+}
+
+.note-drawing-selbar.is-below {
+  transform: translate(-50%, 6px);
+}
+
+.note-drawing-selbar button {
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-drawing-selbar button:hover {
+  background: var(--surface-hover);
+}
+
+.note-drawing-selbar button.is-danger {
+  color: var(--critical-text);
+}
+
+.note-drawing-selbar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---------- Height grip ---------- */
+.note-drawing-grip {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 24px;
+  padding: 0;
+  transform: translate(-50%, 50%);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.note-drawing-grip span {
+  width: 22px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 -4px 0 var(--accent), 0 4px 0 var(--accent);
+  transform: scaleY(0.75);
+}
+
+.note-drawing-grip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Room below for the grip, which hangs over the bottom edge. */
+.note-drawing-node:has(.note-drawing.is-active) {
+  margin-bottom: calc(0.9em + 12px);
+}
+
+@media (pointer: coarse) {
+  .note-drawing-selbar button {
+    min-height: var(--tap);
+  }
+
+  .note-drawing-grip {
+    width: 72px;
+    height: 32px;
+  }
+
+  /* A bigger touch area than the visible pill. */
+  .note-drawing-grip::after {
+    content: '';
+    position: absolute;
+    inset: -8px -12px;
+  }
+}
+
+/* ---------- Drawing tools in the note toolbar ---------- */
+.dw-swatch-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.dw-swatch-dot.is-highlighter {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  opacity: 0.85;
+}
+
+.note-tool.dw-swatch.is-active {
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.dw-size-dot {
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dw-size-0 { width: 5px; height: 5px; }
+.dw-size-1 { width: 9px; height: 9px; }
+.dw-size-2 { width: 15px; height: 15px; }
+
+.dw-size-dot.is-highlighter {
+  width: 20px;
+  border-radius: 2px;
+}
+
+.dw-size-0.is-highlighter { height: 5px; }
+.dw-size-1.is-highlighter { height: 9px; }
+.dw-size-2.is-highlighter { height: 13px; }
+
+.dw-done {
+  height: var(--field);
+  margin-left: var(--space-1);
+  padding: 0 var(--space-4);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dw-done:hover {
+  background: var(--accent-hover);
+}
+
+.dw-done:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Phones and tablets in portrait: the note toolbar is normally one row you swipe
+   sideways; the drawing tools wrap instead, so the colours and Done stay in view. */
+.note-toolbar .dw-style-toggle-group {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .note-toolbar.note-toolbar--drawing {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+/* Phones: colours and widths fold behind one button showing the current colour. */
+@media (max-width: 600px) {
+  .note-toolbar--drawing .dw-style-toggle-group {
+    display: flex;
+  }
+
+  .note-toolbar--drawing .dw-style {
+    display: none;
+  }
+
+  .note-toolbar--drawing:has(.dw-style-toggle[aria-expanded="true"]:not(:disabled)) .dw-style {
+    display: flex;
+  }
+
+  .note-toolbar--drawing .note-tool-group + .note-tool-group {
+    padding-left: 6px;
+  }
+
+  .dw-style-toggle[aria-expanded="true"] {
+    background: var(--surface-hover);
+  }
+}

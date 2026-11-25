@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { Placeholder } from '@tiptap/extensions';
+import Drawing from './drawing/drawingExtension';
 
 export function formatFileSize(bytes) {
     if (!Number.isFinite(bytes)) return '';
@@ -95,6 +96,7 @@ export function noteExtensions() {
         TaskItem.configure({ nested: true }),
         NoteImage,
         FileAttachment,
+        Drawing,
     ];
 }
 

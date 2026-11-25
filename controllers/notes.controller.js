@@ -48,6 +48,8 @@ function optionalId(value) {
 function documentText(node) {
     if (!node || typeof node !== 'object') return '';
     if (node.type === 'text' && typeof node.text === 'string') return node.text;
+    // A marker, so a note that's only a sketch doesn't preview as "Empty note".
+    if (node.type === 'drawing') return '[Drawing]';
     if (!Array.isArray(node.content)) return '';
     const parts = node.content.map(documentText);
     // Block nodes are separated by a space so words from adjacent paragraphs don't merge.

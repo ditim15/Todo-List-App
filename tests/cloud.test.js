@@ -589,13 +589,14 @@ describe('helpers', () => {
                 { type: 'image', attrs: { attachmentId: 5, alt: 'A cell' } },
                 { type: 'fileAttachment', attrs: { attachmentId: 9, filename: 'syllabus.pdf' } },
                 { type: 'image', attrs: { attachmentId: 404 } },
+                { type: 'drawing', attrs: { height: 560, strokes: [{ tool: 'pen', color: 'ink', size: 4, pressure: false, points: [10, 10, 50, 90, 40, 50] }] } },
             ],
         };
         const files = (id) => (id === 5 ? { name: 'cell.png', embed: { data: PNG, mimeType: 'image/png', size: imageSize(PNG, 'image/png') } }
             : id === 9 ? { name: 'syllabus.pdf', siblingName: 'Week 1 - syllabus.pdf' } : null);
         const doc = await readDocx(await noteToDocx({ title: 'Week #1', content }, files));
 
-        for (const text of ['Week #1', 'Plan', 'chapter 3', 'one', 'two', '☑', 'done', '☐', 'to do', 'first', 'quoted', 'x = 1', 'y = 2', '(missing)']) {
+        for (const text of ['Week #1', 'Plan', 'chapter 3', 'one', 'two', '☑', 'done', '☐', 'to do', 'first', 'quoted', 'x = 1', 'y = 2', '(missing)', 'Drawing (open this note in DoneYet to see it)']) {
             assert.ok(doc.xml.includes(text), `has "${text}"`);
         }
         assert.match(doc.xml, /<w:b\/>[\s\S]*chapter 3/, 'bold');
