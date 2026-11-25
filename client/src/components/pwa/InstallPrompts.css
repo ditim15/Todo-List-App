@@ -1,0 +1,190 @@
+/* Install prompts (components/pwa): the once-only install offer card and the iPhone /
+   iPad "Add to Home Screen" steps dialog. */
+
+/* iPhone / iPad "Add to Home Screen" steps. It floats above the page, so it takes the
+   one soft shadow and 6px corners (DESIGN.md: floating panels). */
+.install-help {
+    width: min(360px, calc(100vw - 32px));
+    padding: var(--space-5);
+    background: var(--surface);
+    color: var(--ink-2);
+    border: var(--border) solid var(--line-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    font-family: var(--font-text);
+}
+
+.install-help::backdrop {
+    background: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.install-help h2 {
+    margin: 0 0 var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-thick) solid var(--rule);
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.install-help ol {
+    margin: 0;
+    padding-left: 1.3em;
+    line-height: 1.5;
+}
+
+.install-help li + li {
+    margin-top: var(--space-2);
+}
+
+.install-help li svg {
+    vertical-align: -3px;
+    color: var(--ink);
+}
+
+.install-help strong {
+    color: var(--ink);
+}
+
+.install-help form {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-5);
+}
+
+.install-help-close {
+    min-height: var(--tap);
+    padding: 0 var(--space-5);
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.install-help-close:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+
+/* ---------- Install offer card (InstallOffer.jsx) ----------
+   Floats just above the assistant button (and the phone tab bar), so it covers neither.
+   A floating panel: the one soft shadow and 6px corners, headed by the 2px ink rule. */
+.install-offer {
+    position: fixed;
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: calc(20px + 52px + var(--space-3));
+    z-index: 45;
+    display: flex;
+    gap: var(--space-3);
+    max-width: 420px;
+    margin-left: auto;
+    padding: var(--space-4);
+    background: var(--surface);
+    color: var(--ink-2);
+    border: var(--border) solid var(--line-strong);
+    border-top: var(--border-thick) solid var(--rule);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    font-family: var(--font-text);
+}
+
+.install-offer svg {
+    flex: none;
+}
+
+.install-offer-body {
+    min-width: 0;
+}
+
+.install-offer h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+}
+
+.install-offer p {
+    margin: var(--space-1) 0 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.install-offer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.install-offer-accept,
+.install-offer-dismiss {
+    min-height: var(--tap);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.install-offer-accept {
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+}
+
+.install-offer-accept:hover {
+    background: var(--accent-hover);
+}
+
+.install-offer-dismiss {
+    background: transparent;
+    color: var(--ink-2);
+    border: var(--border) solid var(--line-strong);
+}
+
+.install-offer-dismiss:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+}
+
+.install-offer-accept:focus-visible,
+.install-offer-dismiss:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Small screens: the assistant button sits a little lower. */
+@media (max-width: 480px) {
+    .install-offer {
+        bottom: calc(16px + 52px + var(--space-3));
+    }
+}
+
+/* Phones: above the bottom tab bar and the lifted assistant button. */
+@media (max-width: 600px) {
+    .install-offer {
+        bottom: calc(62px + var(--space-3) + 52px + var(--space-3) + env(safe-area-inset-bottom));
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .install-offer {
+        animation: install-offer-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes install-offer-in {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+    }
+}

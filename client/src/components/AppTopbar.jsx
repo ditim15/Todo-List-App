@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import NudgeLogo from './brand/NudgeLogo';
 import ThemeToggle from './ThemeToggle';
 import AccountMenu from './account/AccountMenu';
+import InstallOffer from './pwa/InstallOffer';
 import './AppTopbar.css';
 
 // Top bar for the signed-in app (dashboard and notes): logo, Tasks / Notes tabs, the
@@ -45,6 +46,8 @@ function AppTopbar() {
                 <ThemeToggle />
                 <AccountMenu user={user} onLogout={handleLogout} />
             </div>
+            {/* One-time "add to home screen" offer on phones and tablets (see InstallOffer). */}
+            <InstallOffer />
         </header>
     );
 }
