@@ -39,7 +39,7 @@ function readStrokes(strokes) {
 }
 
 // The stroke's coverage (0–1 per pixel) within its bounding box, at `scale` pixels per unit.
-function strokeMask(stroke, scale, imgW, imgH) {
+function strokeMask(stroke, scale, imgW, imgH, top = 0) {
     const pts = [];
     let prevP = null;
     for (let i = 0; i + 1 < stroke.points.length; i += 3) {
@@ -47,7 +47,7 @@ function strokeMask(stroke, scale, imgW, imgH) {
         const p = prevP === null ? raw : prevP * 0.4 + raw * 0.6;
         prevP = p;
         const width = stroke.tool === 'pen' && stroke.pressure ? pressureWidth(stroke.size, p) : stroke.size;
-        pts.push({ x: stroke.points[i] * scale, y: stroke.points[i + 1] * scale, r: Math.max(0.5, (width * scale) / 2) });
+        pts.push({ x: stroke.points[i] * scale, y: (stroke.points[i + 1] - top) * scale, r: Math.max(0.5, (width * scale) / 2) });
     }
     if (pts.length === 0) return null;
     const maxR = Math.max(...pts.map((q) => q.r)) + 1;
@@ -129,9 +129,10 @@ function encodePng(rgb, width, height) {
     ]);
 }
 
-// strokes: a drawing's strokes; width/height: its size in drawing units; pixelWidth: the
-// image's width. Returns { data (PNG Buffer), width, height } in pixels.
-export function drawingToPng({ strokes, width = 1000, height = 560, pixelWidth = 1200 }) {
+// strokes: a drawing's strokes; width/height: the area to draw in drawing units, starting
+// `top` units down (to cut a tall page into pieces); pixelWidth: the image's width.
+// Returns { data (PNG Buffer), width, height } in pixels.
+export function drawingToPng({ strokes, width = 1000, height = 560, top = 0, pixelWidth = 1200 }) {
     let scale = pixelWidth / width;
     const units = clamp(Number(height) || 560, 50, 6000);
     if (pixelWidth * units * scale > MAX_PIXELS) scale = Math.sqrt(MAX_PIXELS / (width * units));
@@ -142,7 +143,7 @@ export function drawingToPng({ strokes, width = 1000, height = 560, pixelWidth =
     const list = readStrokes(strokes);
     // Highlighters first, multiplied like ink on paper; pens over them.
     for (const stroke of [...list.filter((s) => s.tool === 'highlighter'), ...list.filter((s) => s.tool === 'pen')]) {
-        const m = strokeMask(stroke, scale, imgW, imgH);
+        const m = strokeMask(stroke, scale, imgW, imgH, top);
         if (!m) continue;
         const [cr, cg, cb] = stroke.color;
         const highlight = stroke.tool === 'highlighter';
@@ -165,4 +166,13 @@ export function drawingToPng({ strokes, width = 1000, height = 560, pixelWidth =
         }
     }
     return { data: encodePng(rgb, imgW, imgH), width: imgW, height: imgH };
+}
+
+// The lowest point the strokes reach, in drawing units.
+export function strokesBottom(strokes) {
+    let bottom = 0;
+    for (const s of readStrokes(strokes)) {
+        for (let i = 1; i < s.points.length; i += 3) bottom = Math.max(bottom, s.points[i] + s.size);
+    }
+    return bottom;
 }

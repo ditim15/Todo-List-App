@@ -97,12 +97,17 @@ function NoteInk({ editor, onUpload, children }) {
         if (store.getState().activeId === PAGE_ID) return; // retaken once writing is done
         const fp = fingerprint();
         if (!fp || editor.state.doc.attrs.ink?.pagesFor === fp) return;
-        // The ink layer appears a moment after the note opens; wait for it.
-        if (!pageRef.current.querySelector('svg.note-ink path.dw-stroke[d]:not([d=""])')) {
-            clearTimeout(s.timer);
-            s.timer = setTimeout(() => s.take(), 1000);
+        // The ink layers appear a moment after the note opens; wait for them (either one:
+        // a note can be all highlighter, which sits in the layer under the text).
+        if (!pageRef.current.querySelector('svg.note-ink path.dw-stroke:not([d=""]), svg.note-ink-under path.dw-stroke')) {
+            s.waits = (s.waits ?? 0) + 1;
+            if (s.waits <= 10) {
+                clearTimeout(s.timer);
+                s.timer = setTimeout(() => s.take(), 1000);
+            }
             return;
         }
+        s.waits = 0;
         s.running = true;
         try {
             const files = await snapshotPages(pageRef.current, PAGE_WIDTH);

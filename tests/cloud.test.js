@@ -628,8 +628,10 @@ describe('helpers', () => {
         assert.match(doc.xml, /Typed text/);
         assert.deepEqual(referencedAttachmentIds(content), [7, 8], 'the page pictures are backed up');
 
-        // Pictures not taken yet (the note hasn't been opened since writing on it).
+        // No pictures from the app yet: the server draws the handwriting itself.
         const waiting = await readDocx(await noteToDocx({ title: 'Bio', content: { ...content, attrs: { ink: { ...ink, pages: [] } } } }, files));
-        assert.match(waiting.xml, /Open it in DoneYet once to add it to this backup/);
+        assert.equal(waiting.media.length, 1, 'the handwriting, drawn out');
+        assert.match(waiting.xml, /descr="Handwriting written on the note"/);
+        assert.ok(waiting.xml.indexOf('Handwriting written on the note') < waiting.xml.indexOf('Krebs cycle'));
     });
 });

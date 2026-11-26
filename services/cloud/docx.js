@@ -7,7 +7,7 @@
 //
 // Word can only embed PNG, JPEG, GIF and BMP. Other attachments (PDFs, WebP images) are
 // saved next to the note by the sync, and the document names that file in their place.
-import { drawingToPng } from './inkImage.js';
+import { drawingToPng, strokesBottom } from './inkImage.js';
 import {
     AlignmentType, BorderStyle, Document, ExternalHyperlink, HeadingLevel, ImageRun, LevelFormat,
     Packer, Paragraph, ShadingType, TextRun,
@@ -222,7 +222,33 @@ function handwrittenPages(content, files) {
     if (!Array.isArray(ink?.strokes) || ink.strokes.length === 0) return [];
     const note = (text) => new Paragraph({ children: [new TextRun({ text, italics: true, color: '6B6B6B' })] });
     const pages = (Array.isArray(ink.pages) ? ink.pages : []).map((id) => files(id)?.embed).filter(Boolean);
-    if (pages.length === 0) return [note('✏ This note has handwriting. Open it in DoneYet once to add it to this backup.')];
+    if (pages.length === 0) {
+        // No pictures from the app yet (the note hasn't been open long enough since it was
+        // written on): the handwriting is drawn here instead, without the text under it,
+        // cut into page-sized pieces. The typed text follows as usual.
+        const width = Number(ink.width) > 0 ? Number(ink.width) : 760;
+        const pageUnits = Math.round(width * (11 / 8.5));
+        const bottom = strokesBottom(ink.strokes);
+        const count = Math.max(1, Math.min(20, Math.ceil(bottom / pageUnits)));
+        const pieces = [];
+        for (let i = 0; i < count; i++) {
+            const height = Math.min(pageUnits, Math.max(50, bottom - i * pageUnits + 16));
+            const png = drawingToPng({ strokes: ink.strokes, width, height, top: i * pageUnits, pixelWidth: width * 2 });
+            pieces.push(new Paragraph({
+                children: [new ImageRun({
+                    type: 'png',
+                    data: png.data,
+                    transformation: fitted(png),
+                    altText: { name: 'Handwriting', description: 'Handwriting written on the note', title: 'Handwriting' },
+                })],
+            }));
+        }
+        return [
+            note('✏ Handwriting on this note. Open the note in DoneYet to add a picture of the page with the text and handwriting together.'),
+            ...pieces,
+            new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun('Typed text')] }),
+        ];
+    }
     return [
         note('✏ The note as written, with handwriting. Its typed text follows.'),
         ...pages.map((page, i) => new Paragraph({
