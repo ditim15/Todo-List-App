@@ -244,7 +244,7 @@ function NoteEditor({ initialContent, onChange, onUpload, editorRef }) {
                     {uploading > 0 ? `Uploading ${uploading} file${uploading > 1 ? 's' : ''}…` : uploadError}
                 </p>
             )}
-            <NoteInk editor={editor}>
+            <NoteInk editor={editor} onUpload={onUpload}>
                 <EditorContent editor={editor} />
             </NoteInk>
         </div>

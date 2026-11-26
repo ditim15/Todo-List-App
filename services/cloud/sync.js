@@ -292,7 +292,7 @@ async function runSync({ sync, connection, provider }) {
 
         const embedded = used.filter((x) => canEmbed(x.mime_type));
         const hash = sha256(JSON.stringify([
-            'docx-v1', name, note.title, note.content,
+            'docx-v2', name, note.title, note.content,
             embedded.map((a) => [a.id, a.size_bytes]), [...siblings.entries()],
         ]));
         await ensureFile('note', note.id, folderRef, name, hash, DOCX_MIME, async () => {

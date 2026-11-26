@@ -7,6 +7,7 @@
 //
 // Word can only embed PNG, JPEG, GIF and BMP. Other attachments (PDFs, WebP images) are
 // saved next to the note by the sync, and the document names that file in their place.
+import { drawingToPng } from './inkImage.js';
 import {
     AlignmentType, BorderStyle, Document, ExternalHyperlink, HeadingLevel, ImageRun, LevelFormat,
     Packer, Paragraph, ShadingType, TextRun,
@@ -174,9 +175,20 @@ function block(node, ctx) {
             const file = ctx.files(node.attrs?.attachmentId);
             return [placeholder(ctx, '📎', node.attrs?.filename || file?.name || 'file', file)];
         }
-        case 'drawing':
-            // Drawings are only kept in DoneYet (Word can't show them as they're stored).
-            return [para(ctx, { children: [new TextRun({ text: '✏ Drawing (open this note in DoneYet to see it)', italics: true, color: '6B6B6B' })] })];
+        case 'drawing': {
+            // A drawing space, drawn out as a picture (inkImage.js).
+            const strokes = Array.isArray(node.attrs?.strokes) ? node.attrs.strokes : [];
+            if (strokes.length === 0) return [];
+            const png = drawingToPng({ strokes, width: 1000, height: node.attrs?.height });
+            return [para(ctx, {
+                children: [new ImageRun({
+                    type: 'png',
+                    data: png.data,
+                    transformation: fitted(png),
+                    altText: { name: 'Drawing', description: 'A drawing from the note', title: 'Drawing' },
+                })],
+            })];
+        }
         default:
             return node.content ? blocks(node.content, ctx) : [para(ctx, { children: [new TextRun(node.text ?? '')] })];
     }
@@ -201,15 +213,36 @@ const ORDERED_LEVELS = Array.from({ length: 9 }, (_, level) => ({
     style: { paragraph: { indent: { left: INDENT * 2 * (level + 1), hanging: INDENT } } },
 }));
 
+// A note with handwriting over its text starts with pictures of its pages as written:
+// the app snapshots them (text, highlights and ink together, see
+// client/src/components/notes/drawing/pageSnapshot.js) and keeps them as attachments
+// listed in `ink.pages`. The typed text follows, so it can still be searched and edited.
+function handwrittenPages(content, files) {
+    const ink = content?.attrs?.ink;
+    if (!Array.isArray(ink?.strokes) || ink.strokes.length === 0) return [];
+    const note = (text) => new Paragraph({ children: [new TextRun({ text, italics: true, color: '6B6B6B' })] });
+    const pages = (Array.isArray(ink.pages) ? ink.pages : []).map((id) => files(id)?.embed).filter(Boolean);
+    if (pages.length === 0) return [note('✏ This note has handwriting. Open it in DoneYet once to add it to this backup.')];
+    return [
+        note('✏ The note as written, with handwriting. Its typed text follows.'),
+        ...pages.map((page, i) => new Paragraph({
+            children: [new ImageRun({
+                type: EMBEDDABLE[page.mimeType],
+                data: page.data,
+                transformation: fitted(page.size),
+                altText: { name: `Page ${i + 1}`, description: `Page ${i + 1} of the note, with handwriting`, title: `Page ${i + 1}` },
+            })],
+        })),
+        new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun('Typed text')] }),
+    ];
+}
+
 // `files(attachmentId)` -> { name, embed?: { data, mimeType, size }, siblingName? } or
 // null if the attachment is missing. Resolves to the .docx file as a Buffer.
 export async function noteToDocx({ title, content }, files = () => null) {
     const ctx = { indent: 0, quote: false, list: null, level: 0, files, counter: { lists: 0 } };
     const body = blocks(content?.content ?? [], ctx);
-    // Handwriting over the note stays in DoneYet; say so at the top.
-    if (Array.isArray(content?.attrs?.ink?.strokes) && content.attrs.ink.strokes.length > 0) {
-        body.unshift(new Paragraph({ children: [new TextRun({ text: '✏ This note has handwriting (open it in DoneYet to see it)', italics: true, color: '6B6B6B' })] }));
-    }
+    body.unshift(...handwrittenPages(content, files));
     const doc = new Document({
         title: title || 'Untitled',
         creator: 'DoneYet?',
@@ -224,6 +257,10 @@ export async function noteToDocx({ title, content }, files = () => null) {
 export function referencedAttachmentIds(content) {
     const ids = [];
     const seen = new Set();
+    // Snapshots of a handwritten note's pages come first, as they lead the document.
+    for (const id of Array.isArray(content?.attrs?.ink?.pages) ? content.attrs.ink.pages : []) {
+        if (Number.isInteger(id) && !seen.has(id)) { seen.add(id); ids.push(id); }
+    }
     (function visit(node) {
         if (!node || typeof node !== 'object') return;
         if ((node.type === 'image' || node.type === 'fileAttachment') && Number.isInteger(node.attrs?.attachmentId)) {

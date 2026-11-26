@@ -56,9 +56,13 @@ function documentText(node) {
     return parts.join(node.type === 'paragraph' || node.type === 'heading' ? '' : ' ').replace(/\s+/g, ' ');
 }
 
-// Every attachment id the document refers to (image and file nodes).
+// Every attachment id the document refers to (image and file nodes, and the page
+// snapshots of a handwritten note).
 function referencedAttachments(node, ids = new Set()) {
     if (!node || typeof node !== 'object') return ids;
+    if (node.type === 'doc' && Array.isArray(node.attrs?.ink?.pages)) {
+        node.attrs.ink.pages.forEach((id) => Number.isInteger(id) && ids.add(id));
+    }
     const id = Number(node.attrs?.attachmentId);
     if ((node.type === 'image' || node.type === 'fileAttachment') && Number.isInteger(id)) ids.add(id);
     if (Array.isArray(node.content)) node.content.forEach((child) => referencedAttachments(child, ids));

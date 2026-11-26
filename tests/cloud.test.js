@@ -596,7 +596,7 @@ describe('helpers', () => {
             : id === 9 ? { name: 'syllabus.pdf', siblingName: 'Week 1 - syllabus.pdf' } : null);
         const doc = await readDocx(await noteToDocx({ title: 'Week #1', content }, files));
 
-        for (const text of ['Week #1', 'Plan', 'chapter 3', 'one', 'two', '☑', 'done', '☐', 'to do', 'first', 'quoted', 'x = 1', 'y = 2', '(missing)', 'Drawing (open this note in DoneYet to see it)']) {
+        for (const text of ['Week #1', 'Plan', 'chapter 3', 'one', 'two', '☑', 'done', '☐', 'to do', 'first', 'quoted', 'x = 1', 'y = 2', '(missing)']) {
             assert.ok(doc.xml.includes(text), `has "${text}"`);
         }
         assert.match(doc.xml, /<w:b\/>[\s\S]*chapter 3/, 'bold');
@@ -604,8 +604,9 @@ describe('helpers', () => {
         assert.doesNotMatch(doc.rels, /javascript:/, 'unsafe links are left as text');
         assert.match(doc.xml, /Consolas/, 'code in a monospace font');
         assert.match(doc.xml, /saved in Drive as &quot;Week 1 - syllabus\.pdf&quot;/);
-        assert.equal(doc.media.length, 1);
+        assert.equal(doc.media.length, 2, 'the image, and the drawing drawn out as a picture');
         assert.match(doc.xml, /descr="A cell"/, 'alt text kept');
+        assert.match(doc.xml, /descr="A drawing from the note"/);
 
         assert.deepEqual(referencedAttachmentIds(content), [5, 9, 404]);
         assert.deepEqual(imageSize(PNG, 'image/png'), { width: 1, height: 1 });
@@ -613,5 +614,22 @@ describe('helpers', () => {
         Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]).copy(jpeg, 0);
         Buffer.from([0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x20, 0x00, 0x40]).copy(jpeg, 20);
         assert.deepEqual(imageSize(jpeg, 'image/jpeg'), { width: 64, height: 32 });
+    });
+
+    test('handwritten notes start with pictures of their pages, then the typed text', async () => {
+        const ink = { width: 760, strokes: [{ tool: 'pen', color: 'ink', size: 4, points: [10, 10, 50, 90, 40, 50] }], pages: [7, 8] };
+        const content = { type: 'doc', attrs: { ink }, content: [paragraph('Krebs cycle')] };
+        const files = (id) => ({ name: `Page ${id}.png`, embed: { data: PNG, mimeType: 'image/png', size: imageSize(PNG, 'image/png') } });
+        const doc = await readDocx(await noteToDocx({ title: 'Bio', content }, files));
+        assert.match(doc.xml, /Page 1 of the note/);
+        assert.match(doc.xml, /Page 2 of the note/);
+        assert.match(doc.xml, /The note as written, with handwriting/);
+        assert.ok(doc.xml.indexOf('Page 1 of the note') < doc.xml.indexOf('Krebs cycle'), 'pages come before the text');
+        assert.match(doc.xml, /Typed text/);
+        assert.deepEqual(referencedAttachmentIds(content), [7, 8], 'the page pictures are backed up');
+
+        // Pictures not taken yet (the note hasn't been opened since writing on it).
+        const waiting = await readDocx(await noteToDocx({ title: 'Bio', content: { ...content, attrs: { ink: { ...ink, pages: [] } } } }, files));
+        assert.match(waiting.xml, /Open it in DoneYet once to add it to this backup/);
     });
 });
